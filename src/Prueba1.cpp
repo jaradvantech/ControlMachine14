@@ -31,7 +31,7 @@ pthread_t DisplayServerThread;
 pthread_t RFIDClientThread;
 pthread_t PLCThread;
 pthread_t AlgorithmThread;
-
+//
 //------------------------------------------------------------------------------
 // SysSleep (copied from sysutils.cpp) multiplatform millisec sleep
 //------------------------------------------------------------------------------

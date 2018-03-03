@@ -46,7 +46,7 @@ all: Prueba1
 Prueba1: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -L"/home/andres/eclipse-workspace/Prueba1/src/connexion" -pthread -o "Prueba1" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++ -L"/home/andres/git/ControlMachine14/src/connexion" -pthread -o "Prueba1" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
