@@ -31,7 +31,7 @@ pthread_t DisplayServerThread;
 pthread_t RFIDClientThread;
 pthread_t PLCThread;
 pthread_t AlgorithmThread;
-//
+////Prueba
 //------------------------------------------------------------------------------
 // SysSleep (copied from sysutils.cpp) multiplatform millisec sleep
 //------------------------------------------------------------------------------
@@ -161,7 +161,7 @@ int main() {
 					if(!boost::equals(StorageGetStoredUID(i),"0000000000000000")){	//If the change is to another pallet, read it.
 						StorageReadAllMemory(i);
 						//cout<< "This simulates a memory Read" << endl;
-					}else{															//If the change is to no pallet, clear the memory.
+					}else{						 									//If the change is to no pallet, clear the memory.
 						StorageCleanPalletMemory(i);
 					}
 				}
