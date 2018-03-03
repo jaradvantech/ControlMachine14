@@ -1,0 +1,1 @@
+src/connexion/connexionRFID.o: ../src/connexion/connexionRFID.c
