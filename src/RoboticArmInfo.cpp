@@ -209,7 +209,7 @@ int PerformGlobalReading(){
 }
 //--------------------------------------------------------------------
 // PerformGlobalWriting stores at the PLC the public variables of the object that are set somewhere else in the code
-//--------------------------------------------------------------------
+//--------------------------------------------NUMBEROFARMS------------------------
 int PerformGlobalWriting(){
 	byte Buffer[RoboticArm::GetConfig().WritingLength*NUMBEROFARMS];
 

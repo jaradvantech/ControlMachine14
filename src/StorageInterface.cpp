@@ -23,7 +23,7 @@ int StorageConfigureRFID_Restart(){
     PrepareForPetitions_Restart();
 	return 1;
 }
-
+//TODO: Memory leak on IndividualPallet* mPallet=
 //////////////////////////////////////////////////////////////////////////////
 /// Read/Write to RFID  AND/OR WRITE PROGRAM MEMORY.
 /// OPERATION LAYER. ALL OPERATIONS HAVE TO BE CALLED THROUGH THIS FUNCTIONS.

@@ -1,25 +1,25 @@
 src/connexion/connexionDisplay.o: ../src/connexion/connexionDisplay.cpp \
- /home/baseconfig/eclipse-workspace/ControlMachine/src/connexion/connexionDisplay.h \
- /home/baseconfig/eclipse-workspace/ControlMachine/src/StorageInterface.h \
- /home/baseconfig/eclipse-workspace/ControlMachine/src/connexion/connexionRFID.h \
- /home/baseconfig/eclipse-workspace/ControlMachine/src/connexion/TCPClientLibrary.h \
- /home/baseconfig/eclipse-workspace/ControlMachine/src/RoboticArmInfo.h \
- /home/baseconfig/eclipse-workspace/ControlMachine/src/connexion/connexionPLC.h \
- /home/baseconfig/eclipse-workspace/ControlMachine/src/connexion/connexionPLCdatahandler.h \
- /home/baseconfig/eclipse-workspace/ControlMachine/src/Algorithm.h
+ /home/andres/git/ControlMachine14/src/connexion/connexionDisplay.h \
+ /home/andres/git/ControlMachine14/src/StorageInterface.h \
+ /home/andres/git/ControlMachine14/src/connexion/connexionRFID.h \
+ /home/andres/git/ControlMachine14/src/connexion/TCPClientLibrary.h \
+ /home/andres/git/ControlMachine14/src/RoboticArmInfo.h \
+ /home/andres/git/ControlMachine14/src/connexion/connexionPLC.h \
+ /home/andres/git/ControlMachine14/src/connexion/connexionPLCdatahandler.h \
+ /home/andres/git/ControlMachine14/src/Algorithm.h
 
-/home/baseconfig/eclipse-workspace/ControlMachine/src/connexion/connexionDisplay.h:
+/home/andres/git/ControlMachine14/src/connexion/connexionDisplay.h:
 
-/home/baseconfig/eclipse-workspace/ControlMachine/src/StorageInterface.h:
+/home/andres/git/ControlMachine14/src/StorageInterface.h:
 
-/home/baseconfig/eclipse-workspace/ControlMachine/src/connexion/connexionRFID.h:
+/home/andres/git/ControlMachine14/src/connexion/connexionRFID.h:
 
-/home/baseconfig/eclipse-workspace/ControlMachine/src/connexion/TCPClientLibrary.h:
+/home/andres/git/ControlMachine14/src/connexion/TCPClientLibrary.h:
 
-/home/baseconfig/eclipse-workspace/ControlMachine/src/RoboticArmInfo.h:
+/home/andres/git/ControlMachine14/src/RoboticArmInfo.h:
 
-/home/baseconfig/eclipse-workspace/ControlMachine/src/connexion/connexionPLC.h:
+/home/andres/git/ControlMachine14/src/connexion/connexionPLC.h:
 
-/home/baseconfig/eclipse-workspace/ControlMachine/src/connexion/connexionPLCdatahandler.h:
+/home/andres/git/ControlMachine14/src/connexion/connexionPLCdatahandler.h:
 
-/home/baseconfig/eclipse-workspace/ControlMachine/src/Algorithm.h:
+/home/andres/git/ControlMachine14/src/Algorithm.h:

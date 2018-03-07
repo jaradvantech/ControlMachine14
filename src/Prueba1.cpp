@@ -99,7 +99,7 @@ void init(){
 	//--------------------------------------------------------------------
 	 ClientPlc14 = new TS7Client();
 
-	 InfoPlc14.PlcAddress = "192.168.1.199";
+	 InfoPlc14.PlcAddress = "192.168.0.199";
 	 InfoPlc14.PlcRack = 0;
 	 InfoPlc14.PlcSlot = 1;
 	 CliConnectPLC(ClientPlc14,InfoPlc14);
