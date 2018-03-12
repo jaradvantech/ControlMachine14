@@ -17,7 +17,7 @@ bool RoboticArm::TestPattern;
 bool RoboticArm::InquiryTheTile;
 bool RoboticArm::TransmissionManualDebugging;
 short RoboticArm::PCState;
-int16_t RoboticArm::Z_AxisDeceletationDistance;
+int16_t RoboticArm::Z_AxisDeceletationDistance=0;
 int16_t RoboticArm::Z_AxisStandbyValue;
 int16_t RoboticArm::ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance; //Yup bitches. I'm serious, in the manual had this name and I decided to keep it.
 int16_t RoboticArm::ThePulseOfZ_AxisAdvanceDownInAdvance;
@@ -39,10 +39,10 @@ RoboticArm::RoboticArm(){
 	//--------------------------------------------------------------------
     // DATA RED FROM THE PLC
 	//--------------------------------------------------------------------
-    HasDischarged=1; 				//0:Yes  1:No
-    PhotosensorOfManipulator=1;		//0:Yes  1:No
+    HasDischarged=0; 				//0:Yes  1:No
+    PhotosensorOfManipulator=0;		//0:Yes  1:No
     ManipulatorStatePosition=0;		//0:Standby 1:No Standby
-    DischargedTheBrickConfirm=1;	//?????????????????
+    DischargedTheBrickConfirm=0;	//?????????????????
     LeftStorageBinSecurity=0;		//0:No  1:Alarm Looking from the beginning to the end
     RightStorageBinSecurity=0;		//0:No  1:Alarm Looking from the beginning to the end
     AlarmArray=0;					//Array 0-15 bool
@@ -52,12 +52,12 @@ RoboticArm::RoboticArm(){
     // DATA TO BE SENT TO THE PLC
 	//--------------------------------------------------------------------
     StorageBinDirection=0;			//0:A 1:B
-	ManipulatorReset=0;				//0:Reset 1:Done?
-	StorageBinFullA=1;				//0:Yes 1:No
-	StorageBinFullB=1;				//0:Yes 1:No
+	ManipulatorReset=1;				//0:Reset 1:Done?
+	StorageBinFullA=0;				//0:Yes 1:No
+	StorageBinFullB=0;				//0:Yes 1:No
 	BarCodeReadStateA=0;			//0:NO 1:YES
 	BarCodeReadStateB=0;			//0:NO 1:YES
-    ManipulatorMode=0;				//0:Manual 1:Automatic
+    ManipulatorMode=1;				//0:Manual 1:Automatic
     VacuumValve=0;					//0:Open 1:Close
     ManualForwardBackward=0;		//0:Stop 1:Forward 2:Backward
 	ManualLeftRight=0;				//0:Stop 1:Left 2:Right
@@ -211,12 +211,22 @@ int PerformGlobalReading(){
 // PerformGlobalWriting stores at the PLC the public variables of the object that are set somewhere else in the code
 //--------------------------------------------NUMBEROFARMS------------------------
 int PerformGlobalWriting(){
-	byte Buffer[RoboticArm::GetConfig().WritingLength*NUMBEROFARMS];
-
-		int BytesPerArm = RoboticArm::GetConfig().WritingLength;
+	byte Buffer[RoboticArm::GetConfig().CommonBytesWriting +
+				RoboticArm::GetConfig().AmmountOfArms *
+				(RoboticArm::GetConfig().Padding + RoboticArm::GetConfig().WritingLength)];
+		S7_SetBitAt(Buffer, 0, 0, RoboticArm::CommunicationExchange);
+		S7_SetBitAt(Buffer, 0, 1, RoboticArm::TestPattern);
+		S7_SetBitAt(Buffer, 0, 2, RoboticArm::InquiryTheTile);
+		S7_SetBitAt(Buffer, 0, 4, RoboticArm::TransmissionManualDebugging);
+		S7_SetBitAt(Buffer, 1, 0, RoboticArm::PCState);
+		S7_SetBitAt(Buffer, 2, 0, RoboticArm::Z_AxisDeceletationDistance);
+		S7_SetBitAt(Buffer, 4, 0, RoboticArm::Z_AxisStandbyValue);
+		S7_SetBitAt(Buffer, 6, 0, RoboticArm::ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance);
+		S7_SetBitAt(Buffer, 8, 0, RoboticArm::ThePulseOfZ_AxisAdvanceDownInAdvance);
 
 		for(int j=0;j<NUMBEROFARMS;j++){
-			int StartByteOfThisArm =j*BytesPerArm;
+			int StartByteOfThisArm =RoboticArm::GetConfig().CommonBytesWriting + RoboticArm::GetConfig().Padding +
+					j*(RoboticArm::GetConfig().WritingLength + RoboticArm::GetConfig().Padding);
 
 			S7_SetBitAt(Buffer, 0+StartByteOfThisArm, 0, GlobalArm[j]->StorageBinDirection);
 			S7_SetBitAt(Buffer, 0+StartByteOfThisArm, 1, GlobalArm[j]->ManipulatorReset);
@@ -235,8 +245,10 @@ int PerformGlobalWriting(){
 			S7_SetDIntAt(Buffer, 8+StartByteOfThisArm, GlobalArm[j]->ValueOfCatchDrop);
 		}
 		int res = RoboticArm::GetConfig().Client->DBWrite(RoboticArm::GetConfig().IODBWriting,
-				GlobalArm[0]->GetConfig().WritingStartByte,
-				GlobalArm[0]->GetConfig().WritingLength*NUMBEROFARMS,
+				0,
+				RoboticArm::GetConfig().CommonBytesWriting +
+				RoboticArm::GetConfig().AmmountOfArms *
+				(RoboticArm::GetConfig().Padding + RoboticArm::GetConfig().WritingLength),
 													 Buffer);
 	    return res;
 }
@@ -252,7 +264,7 @@ void initGlobalArms(TS7Client *Client){
 	 RoboticArm::Setup(Client,
 				 	NUMBEROFARMS,
 					2, //DBRead
-			 		3, //DBWrite
+			 		1, //DBWrite
 			 		16,  //Padding bytes
 					16,  //Common Reading bytes
 					10,  //Common Writing bytes
