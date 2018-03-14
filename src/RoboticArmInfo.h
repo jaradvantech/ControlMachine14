@@ -112,4 +112,6 @@ int PerformGlobalReading();
 int PerformGlobalWriting();
 void initGlobalArms(TS7Client *Client);
 RoboticArm * DesiredRoboticArm(int NumberOfTheArm);
+int getTotalArms(void);
+
 #endif /* ROBOTICARMINFO_H_ */

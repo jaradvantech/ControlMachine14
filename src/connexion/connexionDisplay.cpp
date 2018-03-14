@@ -15,105 +15,105 @@
 #include <boost/lexical_cast.hpp>
 #include <Algorithm.h>
 
+inline const char * const BoolToString(bool b)
+{
+	return b ? "1" : "0";
+}
 
 /*
-std::string Command_PGSI(RoboticArm GlobalArm[],std::string const& Buffer) {
+ * PLC Get the information of Single Robotic Arm
+ * Rev.: RBS
+ */
+std::string Command_PGSI(std::string const& Buffer)
+{
 	std::string Answer;
 	int mPlcNumber = boost::lexical_cast<int>(Buffer.substr(5, 2));
-	int mRoboticArm = boost::lexical_cast<int>(Buffer.substr(8, 2));
+	int mArmNumber = boost::lexical_cast<int>(Buffer.substr(8, 2));
+	RoboticArm* mArm = DesiredRoboticArm(mArmNumber);
 
-	Answer = "PGSI_";
-	Answer += Buffer.substr(5, 2); //mPlcNumber
+	Answer  = "PGSI_";
+	Answer += (boost::format("%02u") % mPlcNumber).str();
 	Answer += "_";
-	Answer += Buffer.substr(8, 2); //mRoboticArm
+	Answer += (boost::format("%02u") % mArmNumber).str();
 	Answer += "_";
-	Answer += TCPSBoolToString(GlobalArm[mRoboticArm].HasDischarged);
+	Answer += BoolToString(mArm->HasDischarged);
 	Answer += "_";
-	Answer += TCPSBoolToString(
-			GlobalArm[mRoboticArm].PhotosensorOfManipulator);
+	Answer += BoolToString(mArm->PhotosensorOfManipulator);
 	Answer += "_";
-	Answer +=
-			(boost::format("%01u") % GlobalArm[mRoboticArm].HasDischarged).str();
-	Answer += (boost::format("%01u")
-			% GlobalArm[mRoboticArm].PhotosensorOfManipulator).str();
-	Answer += (boost::format("%01u")
-			% GlobalArm[mRoboticArm].ManipulatorStatePosition).str();
-	Answer += (boost::format("%01u")
-			% GlobalArm[mRoboticArm].DischargedTheBrickConfirm).str();
-	Answer += (boost::format("%01u")
-			% GlobalArm[mRoboticArm].LeftStorageBinSecurity).str();
-	Answer += (boost::format("%01u")
-			% GlobalArm[mRoboticArm].RightStorageBinSecurity).str();
+	Answer += (boost::format("%01u") % mArm->HasDischarged).str();
+	Answer += (boost::format("%01u") % mArm->PhotosensorOfManipulator).str();
+	Answer += (boost::format("%01u") % mArm->ManipulatorStatePosition).str();
+	Answer += (boost::format("%01u") % mArm->DischargedTheBrickConfirm).str();
+	Answer += (boost::format("%01u") % mArm->LeftStorageBinSecurity).str();
+	Answer += (boost::format("%01u") % mArm->RightStorageBinSecurity).str();
 	Answer += "_";
-	Answer +=
-			(boost::format("%05u") % abs(GlobalArm[mRoboticArm].AlarmArray)).str();
+	Answer += (boost::format("%05u") % abs(mArm->AlarmArray)).str();
 	Answer += "_";
-	Answer += (boost::format("%01u")
-			% GlobalArm[mRoboticArm].ManipulatorRepositionState).str();
+	Answer += (boost::format("%01u") % mArm->ManipulatorRepositionState).str();
 	Answer += "_";
 
-	if (GlobalArm[mRoboticArm].ActualValueEncoder > 0)
+	if(mArm->ActualValueEncoder > 0)
 		Answer += "0";
 	else
 		Answer += "1";
 
-	Answer += (boost::format("%010u")
-			% abs(GlobalArm[mRoboticArm].ActualValueEncoder)).str();
-
+	Answer += (boost::format("%010u") % abs(mArm->ActualValueEncoder)).str();
 	Answer += "\r\n";
 	return Answer;
 
 }
 
-std::string Command_PGAI(RoboticArm GlobalArm[],std::string const& Buffer) {
+/*
+ * PLC Get the information of ALL of the Robotic Arms
+ * Rev.: RBS
+ */
+std::string Command_PGAI(std::string const& Buffer) {
 	std::string Answer;
 	int mPlcNumber = boost::lexical_cast<int>(Buffer.substr(5, 2));
-	int mRoboticArm = boost::lexical_cast<int>(Buffer.substr(8, 2));
+	int mArmNumber = boost::lexical_cast<int>(Buffer.substr(8, 2));
+	int TotalArms  = getTotalArms();
 
-	Answer = "PGAI_";
-	Answer += Buffer.substr(5, 2); //mPlcNumber
+	Answer  = "PGAI_";
+	Answer += (boost::format("%02u") % mPlcNumber).str();
 	Answer += "_";
-	Answer += Buffer.substr(8, 2); //mRoboticArm
+	Answer += (boost::format("%02u") % mArmNumber).str();
+	Answer += "_";
 
-	for (int i = 0; i < mRoboticArm; i++) {
-		Answer += "_";
-		Answer += TCPSBoolToString(GlobalArm[i].HasDischarged);
-		Answer += "_";
-		Answer += TCPSBoolToString(GlobalArm[i].PhotosensorOfManipulator);
-		Answer += "_";
+	//Add information of every arm
+	for(int i=0; i<TotalArms; i++)
+	{
+		RoboticArm* mArm = DesiredRoboticArm(i);
 
-		Answer += (boost::format("%01u") % GlobalArm[i].HasDischarged).str();
-		Answer += (boost::format("%01u")
-				% GlobalArm[i].PhotosensorOfManipulator).str();
-		Answer += (boost::format("%01u")
-				% GlobalArm[i].ManipulatorStatePosition).str();
-		Answer += (boost::format("%01u")
-				% GlobalArm[i].DischargedTheBrickConfirm).str();
-		Answer +=
-				(boost::format("%01u") % GlobalArm[i].LeftStorageBinSecurity).str();
-		Answer +=
-				(boost::format("%01u") % GlobalArm[i].RightStorageBinSecurity).str();
 		Answer += "_";
-		Answer += (boost::format("%05u") % abs(GlobalArm[i].AlarmArray)).str();
+		Answer += BoolToString(mArm->HasDischarged);
 		Answer += "_";
-		Answer += (boost::format("%01u")
-				% GlobalArm[i].ManipulatorRepositionState).str();
+		Answer += BoolToString(mArm->PhotosensorOfManipulator);
+		Answer += "_";
+		Answer += (boost::format("%01u") % mArm->HasDischarged).str();
+		Answer += (boost::format("%01u") % mArm->PhotosensorOfManipulator).str();
+		Answer += (boost::format("%01u") % mArm->ManipulatorStatePosition).str();
+		Answer += (boost::format("%01u") % mArm->DischargedTheBrickConfirm).str();
+		Answer += (boost::format("%01u") % mArm->LeftStorageBinSecurity).str();
+		Answer += (boost::format("%01u") % mArm->RightStorageBinSecurity).str();
+		Answer += "_";
+		Answer += (boost::format("%05u") % abs(mArm->AlarmArray)).str();
+		Answer += "_";
+		Answer += (boost::format("%01u") % mArm->ManipulatorRepositionState).str();
 		Answer += "_";
 
-		if (GlobalArm[i].ActualValueEncoder > 0)
+		if (mArm->ActualValueEncoder > 0)
 			Answer += "0";
 		else
 			Answer += "1";
 
-		Answer += (boost::format("%010u")
-				% abs(GlobalArm[i].ActualValueEncoder)).str();
+		Answer += (boost::format("%010u") % abs(mArm->ActualValueEncoder)).str();
 	}
 
 	Answer += "\r\n";
 
 	return Answer;
 }
-*/
+
 
 std::string Command_RGMV(std::string const& Buffer) {
 	std::string Answer;

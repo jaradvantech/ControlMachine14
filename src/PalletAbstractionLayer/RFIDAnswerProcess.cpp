@@ -55,7 +55,7 @@ int AnswerOfRU(std::string Answer, int RFIDServer){
 		std::cout << "One error (or more) has been detected when reading the UID" << std::endl;
 		return 0;
 	}else{
-		IndividualPallet* mPallet= DesiredPallet(RFIDServer*4+(Channel));
+
 		//--------------------------------------------------------------------
 		// IF NO ERRORS PERFORM THE FOLLOWING OPERATIONS
 		//--------------------------------------------------------------------
@@ -64,6 +64,9 @@ int AnswerOfRU(std::string Answer, int RFIDServer){
 		mUID=Answer.substr(22,UIDLength*2);						  //Extract the UID
 
 		Channel=boost::lexical_cast<short>(Answer.substr(13,2)); //Get the channel of the UID
+
+		IndividualPallet* mPallet= DesiredPallet(RFIDServer*4+(Channel));
+
 		if(mUID==""){
 			mUID+=(boost::format("%016u")%"").str();		  //In case that there is no UID, continue as UID=0000000000000000
 			//Not sure									  //And format the whole computer's memory with 01s

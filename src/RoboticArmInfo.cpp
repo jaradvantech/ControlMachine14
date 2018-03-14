@@ -37,7 +37,7 @@ long RoboticArm::EnterTheTileStartingCodeValue;
 //--------------------------------------------------------------
 RoboticArm::RoboticArm(){
 	//--------------------------------------------------------------------
-    // DATA RED FROM THE PLC
+    // DATA READ FROM THE PLC
 	//--------------------------------------------------------------------
     HasDischarged=0; 				//0:Yes  1:No
     PhotosensorOfManipulator=0;		//0:Yes  1:No
@@ -107,7 +107,7 @@ bool RoboticArm::Setup(TS7Client *SetClient,
     } else return -1;
 }
 //--------------------------------------------------------------------
-// PerformReading stores at the public variables of the object the values that are red from the PLC
+// PerformReading stores at the public variables of the object the values that are read from the PLC
 //--------------------------------------------------------------------
 /*
 int RoboticArm::PerformLocalReading(){
@@ -263,8 +263,8 @@ void initGlobalArms(TS7Client *Client){
 	 }
 	 RoboticArm::Setup(Client,
 				 	NUMBEROFARMS,
-					2, //DBRead
-			 		1, //DBWrite
+					2,   //DBRead
+			 		1,   //DBWrite
 			 		16,  //Padding bytes
 					16,  //Common Reading bytes
 					10,  //Common Writing bytes
@@ -276,4 +276,12 @@ void initGlobalArms(TS7Client *Client){
 
 RoboticArm * DesiredRoboticArm(int NumberOfTheArm){
 	return GlobalArm[NumberOfTheArm-1];
+}
+
+/*
+ * RBS
+ */
+int getTotalArms(void)
+{
+	return NUMBEROFARMS;
 }
