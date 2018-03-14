@@ -17,7 +17,7 @@ class IndividualPallet {
 	public:
 		IndividualPallet();
 		std::string UID;
-		bool VirtualPallet;
+		//bool VirtualPallet;
 		bool UIDChanged;
 		int UIDChanged_count;
 		short Brick[112]; //112 bytes info per Pallet

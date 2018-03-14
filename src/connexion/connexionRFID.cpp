@@ -14,6 +14,15 @@ const short NUMBEROFRFIDREADERS=3;
 const std::string RFIDIPADRESS[NUMBEROFRFIDREADERS] = {"192.168.0.79",
 													   "192.168.0.80",
 													   "192.168.0.81"};
+
+/*Simulation ***************************************************************************/
+const std::string RFIDSIMIPADRESS = "127.0.0.1";
+const int RFIDPORT[NUMBEROFRFIDREADERS] = { 34000,
+											34001,
+											34002};
+/***************************************************************************************/
+
+
 RFIDReader *RFIDManager[NUMBEROFRFIDREADERS];
 std::deque<std::string> messageList;
 std::deque<std::string> emergencyList;
@@ -33,11 +42,13 @@ void RFIDReaders_Start(){
 	}
 
 	for(int i=0;i<NUMBEROFRFIDREADERS;i++){
-		PetitionOf_ConfigUnit(i,RFIDIPADRESS[i] , 33000,
-		    0, 0, 0);
+		/*REAL LIFE ****************************************************************************/
+		//PetitionOf_ConfigUnit(i, RFIDIPADRESS[i], 33000, 0, 0, 0);
+		/*Simulation ***************************************************************************/
+		PetitionOf_ConfigUnit(i, RFIDSIMIPADRESS, RFIDPORT[i], 0, 0, 0);
+
 		for(int j=1;j<=4;j++){
-			PetitionOf_ConfigChannel(i, j, 11, 1000, 4,
-					   28,  1);
+			PetitionOf_ConfigChannel(i, j, 11, 1000, 4, 28,  1);
 		}
 	}
 }

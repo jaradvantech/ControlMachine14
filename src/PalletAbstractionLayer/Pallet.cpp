@@ -12,8 +12,8 @@ IndividualPallet* Pallet[10];
 
 IndividualPallet::IndividualPallet(){
 	//Empty Constructor
-	UID="";
-	VirtualPallet=0;
+	UID="0000000000000000";
+	//VirtualPallet=0;
 	UIDChanged=0;
 	UIDChanged_count=0;
 }

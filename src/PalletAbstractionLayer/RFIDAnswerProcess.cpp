@@ -55,7 +55,7 @@ int AnswerOfRU(std::string Answer, int RFIDServer){
 		std::cout << "One error (or more) has been detected when reading the UID" << std::endl;
 		return 0;
 	}else{
-		IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
+		IndividualPallet* mPallet= DesiredPallet(RFIDServer*4+(Channel));
 		//--------------------------------------------------------------------
 		// IF NO ERRORS PERFORM THE FOLLOWING OPERATIONS
 		//--------------------------------------------------------------------

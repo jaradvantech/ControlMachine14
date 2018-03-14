@@ -40,19 +40,19 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: ControlMachine14
+all: Prueba1
 
 # Tool invocations
-ControlMachine14: $(OBJS) $(USER_OBJS)
+Prueba1: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -L"/home/andres/git/ControlMachine14/src/connexion" -pthread -o "ControlMachine14" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++ -L"/home/baseconfig/git/ControlMachine14/src/connexion" -pthread -o "Prueba1" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(CC_DEPS)$(C++_DEPS)$(EXECUTABLES)$(C_UPPER_DEPS)$(CXX_DEPS)$(OBJS)$(CPP_DEPS)$(C_DEPS) ControlMachine14
+	-$(RM) $(CC_DEPS)$(C++_DEPS)$(EXECUTABLES)$(C_UPPER_DEPS)$(CXX_DEPS)$(OBJS)$(CPP_DEPS)$(C_DEPS) Prueba1
 	-@echo ' '
 
 .PHONY: all clean dependents

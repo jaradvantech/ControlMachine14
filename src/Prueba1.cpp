@@ -86,7 +86,8 @@ void * PLCAdquisitionLoop(void *Arg){
 		//Check(ClientPlc14,PerformGlobalReading(),"GLOBAL READING");
 		PerformGlobalReading();
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
-		Check(ClientPlc14,PerformGlobalWriting(),"GLOBAL Writing");
+		//Check(ClientPlc14,,"GLOBAL Writing");
+		PerformGlobalWriting();
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		//std::chrono::_V2::high_resolution_clock::time_point t2 = std::chrono::_V2::high_resolution_clock::now();
 
@@ -113,8 +114,8 @@ void init(){
 	 //--------------------------------------------------------------------
 	 // CONFIGURE RFID Servers
 	 //--------------------------------------------------------------------
-	 //StorageConfigureRFID_StartUp();
-	 //pthread_create(&RFIDClientThread, NULL, RFIDLoop, (void *)0);
+	 StorageConfigureRFID_StartUp();
+	 pthread_create(&RFIDClientThread, NULL, RFIDLoop, (void *)0);
 	 //--------------------------------------------------------------------
 	 // CONFIGURE ROBOTIC ARMS
 	 //--------------------------------------------------------------------
@@ -124,13 +125,10 @@ void init(){
 	 //--------------------------------------------------------------------
 	 // CONFIGURE PALLETS
 	 //--------------------------------------------------------------------
+
+
 	 initPallet(10);
-	 for(int i=1;i<=10;i++){
-		DesiredPallet(i)->VirtualPallet=1;
-		StorageFormatMemory(i);
-	 }
-		int age;
-		cin >> age;
+
 	 pthread_create(&AlgorithmThread, NULL, Algorithm, (void *)0);
 
 
@@ -153,6 +151,12 @@ int main() {
 		cin >> age;
 		cin >> age;
 
+		 for(int i=1;i<=10;i++){
+			//DesiredPallet(i)->VirtualPallet=1;
+			//StorageFormatMemory(i);
+		 }
+			cin >> age;
+			cin >> age;
 		//Algorithm implementation.
 		while(1){
 
