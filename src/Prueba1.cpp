@@ -128,6 +128,8 @@ void init(){
 
 
 	 initPallet(10);
+		int age;
+		cin >> age;
 
 	 pthread_create(&AlgorithmThread, NULL, Algorithm, (void *)0);
 

@@ -87,8 +87,8 @@ int AnswerOfRU(std::string Answer, int RFIDServer){
 		//--------------------------------------------------------------------
 		//--------------------------------------------------------------------
 
-		std::cout << "UID Red successfully. Server: " << RFIDServer <<" Channel: " <<  Channel << "  Tag: "<< mUID << std::endl;
-		std::cout << "+-----------------------------------------------------" <<std::endl;
+		//std::cout << "UID Red successfully. Server: " << RFIDServer <<" Channel: " <<  Channel << "  Tag: "<< mUID << std::endl;
+		//std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 1;
 	}
 

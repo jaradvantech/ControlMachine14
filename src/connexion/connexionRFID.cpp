@@ -11,16 +11,13 @@
 #include <PalletAbstractionLayer/RFIDAnswerProcess.h>
 #include <PalletAbstractionLayer/RFIDPetitionProcess.h>
 const short NUMBEROFRFIDREADERS=3;
-const std::string RFIDIPADRESS[NUMBEROFRFIDREADERS] = {"192.168.0.79",
-													   "192.168.0.80",
-													   "192.168.0.81"};
+const std::string RFID_IP_ADRESS[NUMBEROFRFIDREADERS] = {"192.168.0.112",
+														 "192.168.0.112",
+														 "192.168.0.112"};
+const int RFID_PORT[NUMBEROFRFIDREADERS] = { 34000,
+											 34001,
+											 34002};
 
-/*Simulation ***************************************************************************/
-const std::string RFIDSIMIPADRESS = "127.0.0.1";
-const int RFIDPORT[NUMBEROFRFIDREADERS] = { 34000,
-											34001,
-											34002};
-/***************************************************************************************/
 
 
 RFIDReader *RFIDManager[NUMBEROFRFIDREADERS];
@@ -42,10 +39,7 @@ void RFIDReaders_Start(){
 	}
 
 	for(int i=0;i<NUMBEROFRFIDREADERS;i++){
-		/*REAL LIFE ****************************************************************************/
-		//PetitionOf_ConfigUnit(i, RFIDIPADRESS[i], 33000, 0, 0, 0);
-		/*Simulation ***************************************************************************/
-		PetitionOf_ConfigUnit(i, RFIDSIMIPADRESS, RFIDPORT[i], 0, 0, 0);
+		PetitionOf_ConfigUnit(i, RFID_IP_ADRESS[i], RFID_PORT[i], 0, 0, 0);
 
 		for(int j=1;j<=4;j++){
 			PetitionOf_ConfigChannel(i, j, 11, 1000, 4, 28,  1);
@@ -169,7 +163,7 @@ void * RFIDLoop(void *Arg){
 			 //Close connection, but not sure if it's working as expected JAGM
 			 RFIDManager[RFIDServer]->ShutdownConnection();
 			 RFIDManager[RFIDServer]->InitializeClient();
-			PetitionOf_ConfigUnit(RFIDServer,RFIDIPADRESS[RFIDServer] , 33000, 0, 0, 0);
+			PetitionOf_ConfigUnit(RFIDServer,RFID_IP_ADRESS[RFIDServer] , RFID_PORT[RFIDServer], 0, 0, 0);
 				for(int j=1;j<=4;j++){
 					PetitionOf_ConfigChannel(RFIDServer, j, 11, 1000, 4,28,  1);
 				}

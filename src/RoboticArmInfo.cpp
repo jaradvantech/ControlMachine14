@@ -52,11 +52,11 @@ RoboticArm::RoboticArm(){
     // DATA TO BE SENT TO THE PLC
 	//--------------------------------------------------------------------
     StorageBinDirection=0;			//0:A 1:B
-	ManipulatorReset=1;				//0:Reset 1:Done?
-	StorageBinFullA=0;				//0:Yes 1:No
-	StorageBinFullB=0;				//0:Yes 1:No
-	BarCodeReadStateA=0;			//0:NO 1:YES
-	BarCodeReadStateB=0;			//0:NO 1:YES
+	ManipulatorReset=0;				//0:Reset 1:Done?
+	StorageBinFullA=1;				//0:Yes 1:No
+	StorageBinFullB=1;				//0:Yes 1:No
+	BarCodeReadStateA=1;			//0:NO 1:YES
+	BarCodeReadStateB=1;			//0:NO 1:YES
     ManipulatorMode=1;				//0:Manual 1:Automatic
     VacuumValve=0;					//0:Open 1:Close
     ManualForwardBackward=0;		//0:Stop 1:Forward 2:Backward
@@ -187,8 +187,9 @@ int PerformGlobalReading(){
 	RoboticArm::TileGrade=Buffer[4];
 	RoboticArm::ChangeColor=Buffer[5];
 	RoboticArm::SystemState=Buffer[6];
-	RoboticArm::ActualValueOfTheLineEncoder=S7_GetDIntAt(Buffer,8);
-	RoboticArm::EnterTheTileStartingCodeValue=S7_GetDIntAt(Buffer,12);
+	RoboticArm::EnterTheTileStartingCodeValue=S7_GetDIntAt(Buffer,8);
+	RoboticArm::ActualValueOfTheLineEncoder=S7_GetDIntAt(Buffer,12);
+
 
 		for(int j=0;j<RoboticArm::GetConfig().AmmountOfArms;j++){
 

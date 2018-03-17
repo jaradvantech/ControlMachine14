@@ -52,11 +52,12 @@
 #define _NUMBEROFBRICKSONLINE 3
 #define _NUMBEROFMANIPULATORS 5
 #define _MAXIMUMNUMBEROFBRICKSONLINE 10
-#define _LINELENGTH 10000
-#define _MANIPULATORWORKINGTIME 3000
+#define _LINELENGTH 80000
+#define _MANIPULATORWORKINGTIME 6000
+#define _ENCODERTOLERANCE 30
 
-const int ManipulatorFixedPositions[_NUMBEROFMANIPULATORS+1]={15000,1800,3800,5800,7800,9800};
-std::array<long,_NUMBEROFMANIPULATORS+1> ManipulatorReadiness={15000,15000,15000,15000,15000,15000};
+const int ManipulatorFixedPositions[_NUMBEROFMANIPULATORS+1]={80000,5870,9783,13696,17609,21522};
+std::array<long,_NUMBEROFMANIPULATORS+1> ManipulatorReadiness={80000,80000,80000,80000,80000,80000};
 //JUST A REMINDER: BrickOnTheLine //0:Position  1: Grade And Colour coded  2: Assigned pallet  3:DNI
 std::deque<std::array<long,4>> BricksOnTheLine_List; //0 is the brick more near to the end of the line.
 std::deque<long> BricksOnTheLine_AvailableDNI;
@@ -166,7 +167,7 @@ int CheckRestriction(std::shared_ptr<Node> writingNode, int BrickIterator){
 	int TemporaryBrickAssignedManipulator=(TemporaryAssignedPallet+1)/2;
 	//Now we know which manipulator will take care of the brick. But is this possible?
 	//If the position of the brick is greater than the position of the manipulator, no.
-	if (BricksOnTheLine_List.at(BrickIterator).at(0)>=ManipulatorFixedPositions[TemporaryBrickAssignedManipulator]*0.95) return 2; // brick has passed by the manipulator
+	if (BricksOnTheLine_List.at(BrickIterator).at(0)>=ManipulatorFixedPositions[TemporaryBrickAssignedManipulator]-_ENCODERTOLERANCE) return 2; // brick has passed by the manipulator
 	//And if the manipulator is going to be bussy when the brick arrives, neither.
 	if (BricksOnTheLine_List.at(BrickIterator).at(0)>writingNode->new_available_time[TemporaryBrickAssignedManipulator]) return 2; // manipulator will be bussy when the brick arrives
 	//When we return 2, we have to keep moving horizontally.
@@ -181,41 +182,65 @@ void * Algorithm(void *Arg) {
 	bool DoOnce=0;
 	std::cout<< "here we are"<< std::endl;
 
-
 	long lastBrick_Position=RoboticArm::EnterTheTileStartingCodeValue;
 	long mPreviousValueOfTheLineEncoder=RoboticArm::ActualValueOfTheLineEncoder;
-
+	std::deque<std::array<long,4>> BricksOnTheQueue_List; //0:Position  1: Grade And Colour coded  2: Assigned pallet  3:DNI
+	bool BrickOnTheQueueDetected=false;
 	while(1){
 		//Update the bricks position.
 		//std::cout << "Encoder actual " << RoboticArm::ActualValueOfTheLineEncoder << std::endl;
 		//std::cout << "Encoder previous " << mPreviousValueOfTheLineEncoder << std::endl;
-		int EncoderAdvance = RoboticArm::ActualValueOfTheLineEncoder-mPreviousValueOfTheLineEncoder; //Get how much the encoder did advance
-		mPreviousValueOfTheLineEncoder+=EncoderAdvance; //Take this value and update for next iterations
-		//std::cout << "Encoder advance " << EncoderAdvance << std::endl;
 
+		int EncoderAdvance;
+		if(RoboticArm::ActualValueOfTheLineEncoder-mPreviousValueOfTheLineEncoder>=0){
+			EncoderAdvance = RoboticArm::ActualValueOfTheLineEncoder-mPreviousValueOfTheLineEncoder; //Get how much the encoder did advance
+			mPreviousValueOfTheLineEncoder+=EncoderAdvance; //Take this value and update for next iterations
+		} else {
+			EncoderAdvance = RoboticArm::ActualValueOfTheLineEncoder+100000-mPreviousValueOfTheLineEncoder; //Get how much the encoder did advance
+			mPreviousValueOfTheLineEncoder+=EncoderAdvance-100000;
+		}
+		//std::cout << "Encoder advance " << EncoderAdvance << std::endl;
 		//We know how much the line advanced, it's time to update the bricks information
 		for(int i=0;i<BricksOnTheLine_List.size();i++){
 			BricksOnTheLine_List.at(i).at(0)+=EncoderAdvance; //Take every brick on the list and update its position.
-
 		}
 		//Update the new_available_time with the help of EncoderAdvance
 		for(int i=1; i<_NUMBEROFMANIPULATORS;i++){
-			if(ManipulatorReadiness[i]<15000)ManipulatorReadiness[i]+=EncoderAdvance;
+			if(ManipulatorReadiness[i]<ManipulatorFixedPositions[0])ManipulatorReadiness[i]+=EncoderAdvance;
 		}
-
 
 		//Check if it's out of the line
 		if(BricksOnTheLine_List.size() && BricksOnTheLine_List.begin()->at(0)>=_LINELENGTH){
+			std::cout << "Brick abandons the line because its position is "<< BricksOnTheLine_List.begin()->at(0) << std::endl;
 			BricksOnTheLine_AvailableDNI.push_front(BricksOnTheLine_List.begin()->at(3));
 			BricksOnTheLine_List.pop_front();
 		}
+		//Check for new bricks on the queue.
+		int TileGrade = RoboticArm::TileGrade;
+		if(TileGrade !=0 && BrickOnTheQueueDetected==false){ //We have a new brick on the photosensor 1
+			BrickOnTheQueueDetected=true;
 
-		//Check for new bricks.
-		if(RoboticArm::EnterTheTileStartingCodeValue !=lastBrick_Position){ //We have a new brick
-			lastBrick_Position=RoboticArm::EnterTheTileStartingCodeValue;		//Update the values for future iterations
 			std::array<long,4> BrickOnTheLine; //0:Position  1: Grade And Colour coded  2: Assigned pallet  3:DNI
 
-			BrickOnTheLine = {RoboticArm::ActualValueOfTheLineEncoder-RoboticArm::EnterTheTileStartingCodeValue, RoboticArm::TileGrade,0, BricksOnTheLine_AvailableDNI.at(0)};
+			BrickOnTheLine = {0, TileGrade+16, 0,0};
+			BricksOnTheQueue_List.push_back(BrickOnTheLine);
+			std::cout << "Brick of the type "<< BrickOnTheLine[1] << " enters the line" << std::endl;
+			std::cout << "brick detected PS1" << std::endl;
+		}else if(TileGrade==0){
+			BrickOnTheQueueDetected=false;
+
+		}
+		//Check for new bricks in the line.
+
+		if(RoboticArm::EnterTheTileStartingCodeValue !=lastBrick_Position){ //We have a new brick on the photosensor 4
+			std::cout << "brick detected PS4" << std::endl;
+			lastBrick_Position=RoboticArm::EnterTheTileStartingCodeValue;		//Update the values for future iterations
+			std::array<long,4> BrickOnTheLine = BricksOnTheQueue_List.front(); //0:Position  1: Grade And Colour coded  2: Assigned pallet  3:DNI
+			BricksOnTheQueue_List.pop_front();
+			int TypeOfBrick= BrickOnTheLine[1];
+			std::cout << "Brick of the type "<< BrickOnTheLine[1] << " still is" << std::endl;
+			BrickOnTheLine = {RoboticArm::ActualValueOfTheLineEncoder-RoboticArm::EnterTheTileStartingCodeValue, TypeOfBrick,0, BricksOnTheLine_AvailableDNI.at(0)};
+			std::cout << "Brick of the type "<< BrickOnTheLine[1] << " enters the line again" << std::endl;
 			BricksOnTheLine_AvailableDNI.pop_front();
 			BricksOnTheLine_List.push_back(BrickOnTheLine);
 			DoOnce=1; //This way the calculations will be activated
@@ -230,13 +255,14 @@ void * Algorithm(void *Arg) {
 			int ActualBrickAssignedPallet=BricksOnTheLine_List.at(i).at(2);     //
 			int ActualBrickAssignedManipulator=(ActualBrickAssignedPallet+1)/2; //
 
-			if(ActualBrickPosition>= ManipulatorFixedPositions[ActualBrickAssignedManipulator]*0.95 &&
-					ActualBrickPosition<= ManipulatorFixedPositions[ActualBrickAssignedManipulator]*1.05){//if it's between the range action of the manipulator
+			if(ActualBrickPosition>= ManipulatorFixedPositions[ActualBrickAssignedManipulator]-_ENCODERTOLERANCE &&
+					ActualBrickPosition<= ManipulatorFixedPositions[ActualBrickAssignedManipulator]+_ENCODERTOLERANCE){//if it's between the range action of the manipulator
 				//WE DON'T NEED TO GIVE ANY SPECIFIC ORDER HERE TO THE PLC.
 				StorageAddBrick(ActualBrickAssignedPallet,ActualBrickRaw >> 4, ActualBrickRaw & 15);
+				std::cout << "Taking out "<< i <<" to pallet "<< ActualBrickAssignedPallet << " the brick "<< ActualBrickRaw << std::endl;
 				BricksOnTheLine_AvailableDNI.push_front(BricksOnTheLine_List.at(i).at(3));
 				BricksOnTheLine_List.erase(BricksOnTheLine_List.begin()+i);
-			} else if(ActualBrickPosition >= ManipulatorFixedPositions[ActualBrickAssignedManipulator]*1.05){
+			} else if(ActualBrickPosition >= ManipulatorFixedPositions[ActualBrickAssignedManipulator]+_ENCODERTOLERANCE){
 				//If for any reason a brick missed the manipulator, most likely because the program was bussy with the algorithm
 				DoOnce=1; //recalculate?
 			}
@@ -316,7 +342,6 @@ void * Algorithm(void *Arg) {
 			}
 		}
 		//the tree building succeeded
-
 		if(DoOnceExecuted && PathAndPointsContainer.size()!=0){
 			if(DoOnceExecuted && ((PathAndPointsContainer.at(0).size()-1)==BricksOnTheLine_List.size())){
 				//TODO: Soooo here we have all the paths and it's points! It's time to choose one from PathAndPointsContainer

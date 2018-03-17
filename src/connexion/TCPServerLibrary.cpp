@@ -23,10 +23,13 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <pthread.h>
 #include "math.h"
+#include <chrono>
+#include <thread>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <StorageInterface.h>
 #include <connexionDisplay.h>
+
 #define TRUE   1
 #define FALSE  0
 
@@ -207,11 +210,11 @@ void * OpenServer(void *Arg)
 
                 	if (boost::contains(bufferRead, "PGSI"))
                 	{
-						//bufferWrite = Command_PGSI(bufferRead);
+						bufferWrite = Command_PGSI(bufferRead);
 					}
-                	else if (boost::contains(bufferRead, "PGAI"))
+                	else if (boost::contains(bufferRead, "PWDA"))
                 	{
-						//bufferWrite = Command_PGAI(bufferRead);
+						bufferWrite = Command_PWDA(bufferRead);
 					}
                 	else if (boost::contains(bufferRead,"RGMV_"))
                 	{
@@ -248,6 +251,7 @@ void * OpenServer(void *Arg)
                 	//bufferWrite=bufferRead;
                     send(sd , bufferWrite.c_str() , strlen( bufferWrite.c_str() ) , 0 );
             		bufferWrite="";
+            		std::this_thread::sleep_for(std::chrono::milliseconds(5));
                 }
             }
         }

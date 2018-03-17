@@ -31,14 +31,11 @@ std::string Command_PGSI(std::string const& Buffer)
 	int mArmNumber = boost::lexical_cast<int>(Buffer.substr(8, 2));
 	RoboticArm* mArm = DesiredRoboticArm(mArmNumber);
 
+	/*Arm specific variables*/
 	Answer  = "PGSI_";
 	Answer += (boost::format("%02u") % mPlcNumber).str();
 	Answer += "_";
 	Answer += (boost::format("%02u") % mArmNumber).str();
-	Answer += "_";
-	Answer += BoolToString(mArm->HasDischarged);
-	Answer += "_";
-	Answer += BoolToString(mArm->PhotosensorOfManipulator);
 	Answer += "_";
 	Answer += (boost::format("%01u") % mArm->HasDischarged).str();
 	Answer += (boost::format("%01u") % mArm->PhotosensorOfManipulator).str();
@@ -51,69 +48,70 @@ std::string Command_PGSI(std::string const& Buffer)
 	Answer += "_";
 	Answer += (boost::format("%01u") % mArm->ManipulatorRepositionState).str();
 	Answer += "_";
-
-	if(mArm->ActualValueEncoder > 0)
-		Answer += "0";
-	else
-		Answer += "1";
-
 	Answer += (boost::format("%010u") % abs(mArm->ActualValueEncoder)).str();
+	Answer += "_";
+
+	/*Common Variables*/
+	Answer += (boost::format("%01u") % mArm->TheQueueOfPhotosensor_1).str();
+	Answer += (boost::format("%01u") % mArm->TheQueueOfPhotosensor_2).str();
+	Answer += (boost::format("%01u") % mArm->TheQueueOfPhotosensor_3).str();
+	Answer += (boost::format("%01u") % mArm->TheQueueOfPhotosensor_4).str();
+	Answer += (boost::format("%01u") % mArm->StationInterlock_16).str();
+	Answer += (boost::format("%01u") % mArm->WhetherOrNotPutTheTileTo_16).str();
+	Answer += "_";
+	Answer += (boost::format("%05u") % abs(mArm->EquipmentAlarmArray)).str();
+	Answer += "_";
+	Answer += (boost::format("%03u") % mArm->TileGrade).str();
+	Answer += "_";
+	Answer += (boost::format("%03u") % mArm->ChangeColor).str();
+	Answer += "_";
+	Answer += (boost::format("%03u") % mArm->SystemState).str();
+	Answer += "_";
+	Answer += (boost::format("%010u") % abs(mArm->ActualValueOfTheLineEncoder)).str();
+	Answer += "_";
+	Answer += (boost::format("%010u") % abs(mArm->EnterTheTileStartingCodeValue)).str();
 	Answer += "\r\n";
 	return Answer;
 
 }
+
 
 /*
- * PLC Get the information of ALL of the Robotic Arms
- * Rev.: RBS
+ * RBS; PLC Write DAta
  */
-std::string Command_PGAI(std::string const& Buffer) {
-	std::string Answer;
-	int mPlcNumber = boost::lexical_cast<int>(Buffer.substr(5, 2));
+std::string Command_PWDA(std::string const& Buffer){
+	std::cout << Buffer << std::endl;
 	int mArmNumber = boost::lexical_cast<int>(Buffer.substr(8, 2));
-	int TotalArms  = getTotalArms();
+	RoboticArm* mArm = DesiredRoboticArm(mArmNumber);
 
-	Answer  = "PGAI_";
-	Answer += (boost::format("%02u") % mPlcNumber).str();
-	Answer += "_";
-	Answer += (boost::format("%02u") % mArmNumber).str();
-	Answer += "_";
+	mArm->StorageBinDirection = readBool(Buffer.substr(11, 1));
+	mArm->ManipulatorReset = readBool(Buffer.substr(12, 1));
+	mArm->StorageBinFullA = readBool(Buffer.substr(13, 1));
+	mArm->StorageBinFullB = readBool(Buffer.substr(14, 1));
+	mArm->BarCodeReadStateA = readBool(Buffer.substr(15, 1));
+	mArm->BarCodeReadStateB = readBool(Buffer.substr(16, 1));
+	mArm->ManipulatorMode = readBool(Buffer.substr(17, 1));
+	mArm->VacuumValve = readBool(Buffer.substr(18, 1));
+	mArm->ManualForwardBackward = Buffer.substr(20,3);
+	mArm->ManualLeftRight = Buffer.substr(24,3);
+	mArm->ManualUpDown = Buffer.substr(28,3);
+	mArm->CatchOrDrop = Buffer.substr(32,3);
+	mArm->WhatToDoWithTheBrick = Buffer.substr(35,3);
+	mArm->PulseZAxis = Buffer.substr(39,6);
+	mArm->ValueOfCatchDrop = Buffer.substr(46,6);
 
-	//Add information of every arm
-	for(int i=0; i<TotalArms; i++)
-	{
-		RoboticArm* mArm = DesiredRoboticArm(i);
+	mArm->CommunicationExchange = readBool(Buffer.substr(53, 1));
+	mArm->TestPattern = readBool(Buffer.substr(54, 1));
+	mArm->InquiryTheTile = readBool(Buffer.substr(55, 1));
+	mArm->TransmissionManualDebugging = readBool(Buffer.substr(56, 1));
+	mArm->PCState = Buffer.substr(58,3);
+	mArm->Z_AxisDeceletationDistance = Buffer.substr(62,6);
+	mArm->Z_AxisStandbyValue = Buffer.substr(69,6);
+	mArm->ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance = Buffer.substr(77,6);
+	mArm->ThePulseOfZ_AxisAdvanceDownInAdvance = Buffer.substr(84,6);
 
-		Answer += "_";
-		Answer += BoolToString(mArm->HasDischarged);
-		Answer += "_";
-		Answer += BoolToString(mArm->PhotosensorOfManipulator);
-		Answer += "_";
-		Answer += (boost::format("%01u") % mArm->HasDischarged).str();
-		Answer += (boost::format("%01u") % mArm->PhotosensorOfManipulator).str();
-		Answer += (boost::format("%01u") % mArm->ManipulatorStatePosition).str();
-		Answer += (boost::format("%01u") % mArm->DischargedTheBrickConfirm).str();
-		Answer += (boost::format("%01u") % mArm->LeftStorageBinSecurity).str();
-		Answer += (boost::format("%01u") % mArm->RightStorageBinSecurity).str();
-		Answer += "_";
-		Answer += (boost::format("%05u") % abs(mArm->AlarmArray)).str();
-		Answer += "_";
-		Answer += (boost::format("%01u") % mArm->ManipulatorRepositionState).str();
-		Answer += "_";
-
-		if (mArm->ActualValueEncoder > 0)
-			Answer += "0";
-		else
-			Answer += "1";
-
-		Answer += (boost::format("%010u") % abs(mArm->ActualValueEncoder)).str();
-	}
-
-	Answer += "\r\n";
-
-	return Answer;
+	return "\r\n";
 }
-
 
 std::string Command_RGMV(std::string const& Buffer) {
 	std::string Answer;
@@ -230,4 +228,12 @@ std::string Command_RPRV(std::string const& Buffer) {
 	}
 	Answer+="\r\n";
 	return Answer;
+}
+
+bool readBool(std::string mString)
+{
+	if(mString=="0" || mString=="00")
+		return false;
+	else
+		return true;
 }

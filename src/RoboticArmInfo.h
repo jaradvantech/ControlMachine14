@@ -52,7 +52,7 @@ class RoboticArm{
 				int SetWritingLength);
     static RoboticArmConfigInfo GetConfig();
 	//--------------------------------------------------------------------
-    // DATA RED FROM THE PLC
+    // DATA READ FROM THE PLC
 	//--------------------------------------------------------------------
     static bool TheQueueOfPhotosensor_1;
     static bool TheQueueOfPhotosensor_2;
