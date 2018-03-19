@@ -11,9 +11,9 @@
 #include <PalletAbstractionLayer/RFIDAnswerProcess.h>
 #include <PalletAbstractionLayer/RFIDPetitionProcess.h>
 const short NUMBEROFRFIDREADERS=3;
-const std::string RFID_IP_ADRESS[NUMBEROFRFIDREADERS] = {"192.168.0.112",
-														 "192.168.0.112",
-														 "192.168.0.112"};
+const std::string RFID_IP_ADRESS[NUMBEROFRFIDREADERS] = {"127.0.0.1",
+														 "127.0.0.1",
+														 "127.0.0.1"};
 const int RFID_PORT[NUMBEROFRFIDREADERS] = { 34000,
 											 34001,
 											 34002};

@@ -80,7 +80,6 @@ std::string Command_PGSI(std::string const& Buffer)
  * RBS; PLC Write DAta
  */
 std::string Command_PWDA(std::string const& Buffer){
-	std::cout << Buffer << std::endl;
 	int mArmNumber = boost::lexical_cast<int>(Buffer.substr(8, 2));
 	RoboticArm* mArm = DesiredRoboticArm(mArmNumber);
 
@@ -92,23 +91,23 @@ std::string Command_PWDA(std::string const& Buffer){
 	mArm->BarCodeReadStateB = readBool(Buffer.substr(16, 1));
 	mArm->ManipulatorMode = readBool(Buffer.substr(17, 1));
 	mArm->VacuumValve = readBool(Buffer.substr(18, 1));
-	mArm->ManualForwardBackward = Buffer.substr(20,3);
-	mArm->ManualLeftRight = Buffer.substr(24,3);
-	mArm->ManualUpDown = Buffer.substr(28,3);
-	mArm->CatchOrDrop = Buffer.substr(32,3);
-	mArm->WhatToDoWithTheBrick = Buffer.substr(35,3);
-	mArm->PulseZAxis = Buffer.substr(39,6);
-	mArm->ValueOfCatchDrop = Buffer.substr(46,6);
+	mArm->ManualForwardBackward = boost::lexical_cast<short>(Buffer.substr(20,3));
+	mArm->ManualLeftRight = boost::lexical_cast<short>(Buffer.substr(24,3));
+	mArm->ManualUpDown = boost::lexical_cast<short>(Buffer.substr(28,3));
+	mArm->CatchOrDrop =  boost::lexical_cast<short>(Buffer.substr(32,3));
+	mArm->WhatToDoWithTheBrick = boost::lexical_cast<short>(Buffer.substr(36,3));
+	mArm->PulseZAxis = boost::lexical_cast<int>(Buffer.substr(40,6));
+	mArm->ValueOfCatchDrop = boost::lexical_cast<long>(Buffer.substr(47,6));
 
-	mArm->CommunicationExchange = readBool(Buffer.substr(53, 1));
-	mArm->TestPattern = readBool(Buffer.substr(54, 1));
-	mArm->InquiryTheTile = readBool(Buffer.substr(55, 1));
-	mArm->TransmissionManualDebugging = readBool(Buffer.substr(56, 1));
-	mArm->PCState = Buffer.substr(58,3);
-	mArm->Z_AxisDeceletationDistance = Buffer.substr(62,6);
-	mArm->Z_AxisStandbyValue = Buffer.substr(69,6);
-	mArm->ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance = Buffer.substr(77,6);
-	mArm->ThePulseOfZ_AxisAdvanceDownInAdvance = Buffer.substr(84,6);
+	mArm->CommunicationExchange = readBool(Buffer.substr(54, 1));
+	mArm->TestPattern = readBool(Buffer.substr(55, 1));
+	mArm->InquiryTheTile = readBool(Buffer.substr(56, 1));
+	mArm->TransmissionManualDebugging = readBool(Buffer.substr(57, 1));
+	mArm->PCState = (short) boost::lexical_cast<int>(Buffer.substr(59,3));
+	mArm->Z_AxisDeceletationDistance = boost::lexical_cast<int>(Buffer.substr(63,6));
+	mArm->Z_AxisStandbyValue = boost::lexical_cast<int>(Buffer.substr(70,6));
+	mArm->ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance = boost::lexical_cast<int>(Buffer.substr(77,6));
+	mArm->ThePulseOfZ_AxisAdvanceDownInAdvance = boost::lexical_cast<int>(Buffer.substr(84,6));
 
 	return "\r\n";
 }
