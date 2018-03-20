@@ -133,22 +133,23 @@ void TCPClient::detach()
 
 	if(_connected!=0){
 		shutdown(sock,2);
-  	if (close(sock)<0)
-  	{
-	    	printf("+-----------------------------------------------------\n");
-	    	perror("| Disconnection failed. Error");
-    	    printf("| FAILED to disconnect RFID Receiver\n");
-    	    printf("+-----------------------------------------------------\n");
-  	} else {
-  		sock=-1;
-  		port = 0;
-  		address = "";
-  		_connected=0;
-  	printf("+-----------------------------------------------------\n");
-    printf("| Disconnected from RFID Receiver\n");
-    printf("+-----------------------------------------------------\n");
-  	}
+		if (close(sock)<0)
+		{
+				printf("+-----------------------------------------------------\n");
+				perror("| Disconnection failed. Error");
+				printf("| FAILED to disconnect RFID Receiver\n");
+				printf("+-----------------------------------------------------\n");
+		} else {
+			sock=-1;
+			port = 0;
+			address = "";
+			_connected=0;
+		printf("+-----------------------------------------------------\n");
+		printf("| Disconnected from RFID Receiver\n");
+		printf("+-----------------------------------------------------\n");
+		}
 	}else{
+		close(sock);
 	  	printf("+-----------------------------------------------------\n");
 	    printf("| Tried to close a flagged as closed socket\n");
 	    printf("+-----------------------------------------------------\n");
