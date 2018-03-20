@@ -203,11 +203,8 @@ void * OpenServer(void *Arg)
                 {
                     //set the string terminating NULL byte on the end
                 	bufferRead[valread]= '\0';
-                    //of the data read
 
-                	/// HERE IS WHERE MAGIC HAPPENS
-                   	//std::cout << "Red: " << bufferRead << std::endl;
-
+                	//TODO RBS, replace contains by substring(0,4)
                 	if (boost::contains(bufferRead, "PGSI"))
                 	{
 						bufferWrite = Command_PGSI(bufferRead);
@@ -235,6 +232,15 @@ void * OpenServer(void *Arg)
                 	else if (boost::contains(bufferRead,"RPRV_"))
                 	{
                 	    bufferWrite = Command_RPRV(bufferRead);
+                	}
+                	else if (boost::contains(bufferRead,"PING"))
+                	{
+                		/* RBS 20/03/2018
+                		 * Used to test connection. If this fails, the display app
+                		 * will try reestablishing the communication.
+                		 */
+
+                	    bufferWrite = "PLC14 echo reply";
                 	}
 
 

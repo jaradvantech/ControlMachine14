@@ -10,26 +10,28 @@
 #include <boost/lexical_cast.hpp>
 #include <PalletAbstractionLayer/RFIDAnswerProcess.h>
 #include <PalletAbstractionLayer/RFIDPetitionProcess.h>
-const short NUMBEROFRFIDREADERS=3;
-const std::string RFID_IP_ADRESS[NUMBEROFRFIDREADERS] = {"127.0.0.1",
-														 "127.0.0.1",
-														 "127.0.0.1"};
-const int RFID_PORT[NUMBEROFRFIDREADERS] = { 34000,
-											 34001,
-											 34002};
+#include "ConfigParser.h"
 
-
-
-RFIDReader *RFIDManager[NUMBEROFRFIDREADERS];
+int NUMBEROFRFIDREADERS;
+const std::string *RFID_IP_ADRESS;
+const int *RFID_PORT;
+std::vector<RFIDReader*> RFIDManager;
 std::deque<std::string> messageList;
 std::deque<std::string> emergencyList;
+
 //////////////////////////////////////////
 //Functions to perform the normal working, external layer.
 //////////////////////////////////////////
 
 void RFIDReaders_Configure(){
-	for(int i=0;i<NUMBEROFRFIDREADERS;i++){
-		RFIDManager[i]=new RFIDReader();
+	 //added by RBS on March 19th
+	 ConfigParser config("/home/baseconfig/unit14.conf");
+	 RFID_PORT = config.GetServerPorts();
+	 RFID_IP_ADRESS = config.GetServerIPs();
+	 NUMBEROFRFIDREADERS = config.GetServerNumber();
+
+	 for(int i=0;i<NUMBEROFRFIDREADERS;i++){
+		RFIDManager.push_back(new RFIDReader());
 	}
 }
 void RFIDReaders_Start(){
@@ -163,7 +165,8 @@ void * RFIDLoop(void *Arg){
 			 //Close connection, but not sure if it's working as expected JAGM
 			 RFIDManager[RFIDServer]->ShutdownConnection();
 			 RFIDManager[RFIDServer]->InitializeClient();
-			PetitionOf_ConfigUnit(RFIDServer,RFID_IP_ADRESS[RFIDServer] , RFID_PORT[RFIDServer], 0, 0, 0);
+
+			 PetitionOf_ConfigUnit(RFIDServer,RFID_IP_ADRESS[RFIDServer] , RFID_PORT[RFIDServer], 0, 0, 0);
 				for(int j=1;j<=4;j++){
 					PetitionOf_ConfigChannel(RFIDServer, j, 11, 1000, 4,28,  1);
 				}

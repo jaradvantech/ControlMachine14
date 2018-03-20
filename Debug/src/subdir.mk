@@ -5,18 +5,21 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
 ../src/Algorithm.cpp \
+../src/ConfigParser.cpp \
 ../src/Prueba1.cpp \
 ../src/RoboticArmInfo.cpp \
 ../src/StorageInterface.cpp 
 
 OBJS += \
 ./src/Algorithm.o \
+./src/ConfigParser.o \
 ./src/Prueba1.o \
 ./src/RoboticArmInfo.o \
 ./src/StorageInterface.o 
 
 CPP_DEPS += \
 ./src/Algorithm.d \
+./src/ConfigParser.d \
 ./src/Prueba1.d \
 ./src/RoboticArmInfo.d \
 ./src/StorageInterface.d 
