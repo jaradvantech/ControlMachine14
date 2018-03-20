@@ -209,15 +209,15 @@ void * OpenServer(void *Arg)
                 	{
 						bufferWrite = Command_PGSI(bufferRead);
 					}
-                	else if (boost::contains(bufferRead, "PWDA"))
+                	else if (boost::contains(bufferRead,"PWDA"))
                 	{
 						bufferWrite = Command_PWDA(bufferRead);
 					}
-                	else if (boost::contains(bufferRead,"RGMV_"))
+                	else if (boost::contains(bufferRead,"RGMV"))
                 	{
 						bufferWrite = Command_RGMV(bufferRead);
 					}
-                	else if (boost::contains(bufferRead,"RFMV_"))
+                	else if (boost::contains(bufferRead,"RFMV"))
                 	{
                 		bufferWrite = Command_RFMV(bufferRead);
                 	}
@@ -225,11 +225,11 @@ void * OpenServer(void *Arg)
                 	{
                 	    bufferWrite = Command_RAMV(bufferRead);
                 	}
-                	else if (boost::contains(bufferRead,"RDMV_"))
+                	else if (boost::contains(bufferRead,"RDMV"))
                 	{
                 	    bufferWrite = Command_RDMV(bufferRead);
                 	}
-                	else if (boost::contains(bufferRead,"RPRV_"))
+                	else if (boost::contains(bufferRead,"RPRV"))
                 	{
                 	    bufferWrite = Command_RPRV(bufferRead);
                 	}
@@ -240,7 +240,7 @@ void * OpenServer(void *Arg)
                 		 * will try reestablishing the communication.
                 		 */
 
-                	    bufferWrite = "PLC14 echo reply";
+                	    bufferWrite = "PING_PLC14_echo_reply";
                 	}
 
 
