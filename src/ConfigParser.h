@@ -15,13 +15,14 @@ class ConfigParser {
 		ConfigParser();
 		ConfigParser(std::string);
 		void SetConfigFilename(std::string);
-		int GetArmNumber();
-		int GetServerNumber();
-		int * GetServerPorts();
-		std::string * GetServerIPs();
-
+		std::vector<int> GetArmPositions();
+		std::vector<int>GetServerPorts();
+		std::vector<std::string> GetServerIPs();
+		int SaveConfig(std::vector<int> ArmPositionsVector, std::vector<std::string> RFIDIPAddresses, std::vector<int> RFIDPorts);
 	private:
-		std::string Filename;
+		std::string _Filename;
+		template<typename T> std::vector<T>		ReadLineAndAddToVector(int line);
+
 };
 
 

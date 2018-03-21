@@ -30,6 +30,7 @@
 #include <StorageInterface.h>
 #include <connexionDisplay.h>
 
+
 #define TRUE   1
 #define FALSE  0
 
@@ -51,6 +52,10 @@ void * OpenServer(void *Arg)
     int max_sd;
     struct sockaddr_in address;
 
+    std::chrono::time_point<std::chrono::system_clock> previous_response_time[30];
+    for(int i=0;i<30;i++){
+    	previous_response_time[i]=std::chrono::system_clock::now();
+    }
     char bufferRead[1025];  //data buffer of 1K
     std::string bufferWrite;  //data buffer of 1K
 
@@ -134,12 +139,42 @@ void * OpenServer(void *Arg)
 
         //wait for an activity on one of the sockets , timeout is NULL ,
         //so wait indefinitely
-        activity = select( max_sd + 1 , &readfds , NULL , NULL , NULL);
+        struct timeval tv;
+        tv.tv_sec = 3;  /* 5 Secs Timeout */
+        tv.tv_usec = 0;  // Not init'ing this can cause strange errors
+
+
+
+        activity = select( max_sd + 1 , &readfds , NULL , NULL , &tv);
 
         if ((activity < 0) && (errno!=EINTR))
         {
             printf("select error");
         }
+        //check for dead timed out sockets
+        for (i = 0; i < max_clients; i++)
+        {
+			//if position is NOT empty
+			if (client_socket[i] != 0)
+			{
+				std::chrono::duration<double> elapsed_time =
+						std::chrono::system_clock::now()
+								- previous_response_time[i];
+
+				if (elapsed_time.count() > 10)
+				{
+					getpeername(client_socket[i], (struct sockaddr*) &address,
+							(socklen_t*) &addrlen);
+					printf("Host lost connection , ip %s , port %d \n",
+							inet_ntoa(address.sin_addr),
+							ntohs(address.sin_port));
+					//Close the socket and mark as 0 in list for reuse
+					close(client_socket[i]);
+					client_socket[i] = 0;
+				}
+			}
+		}
+
 
         //If something happened on the master socket ,
         //then its an incoming connection
@@ -172,7 +207,7 @@ void * OpenServer(void *Arg)
                 if( client_socket[i] == 0 )
                 {
                     client_socket[i] = new_socket;
-
+                    previous_response_time[i]=std::chrono::system_clock::now();
                     printf("Adding to list of sockets as %d\n" , i);
 
                     break;
@@ -200,16 +235,15 @@ void * OpenServer(void *Arg)
                     //Close the socket and mark as 0 in list for reuse
                     close( sd );
                     client_socket[i] = 0;
-                    std::cout << "valread is " << valread <<std::endl;
                 }
 
                 //Echo back the message that came in
                 else
                 {
+
                     //set the string terminating NULL byte on the end
                 	bufferRead[valread]= '\0';
-                	std::cout << "valread is " << valread <<std::endl;
-
+                    previous_response_time[i]=std::chrono::system_clock::now();
                 	bool ServerIsReady = true;
                 	//TODO RBS, replace contains by substring(0,4)
                 	if (boost::contains(bufferRead, "PGSI") && ServerIsReady)

@@ -11,7 +11,11 @@
 #include <sstream>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/spirit/home/support/detail/hold_any.hpp>
+#include <boost/any.hpp>
 #include "ConfigParser.h"
+
+
 
 ConfigParser::ConfigParser()
 {
@@ -19,157 +23,103 @@ ConfigParser::ConfigParser()
 
 ConfigParser::ConfigParser(std::string mFilename)
 {
-	this->Filename = mFilename;
+	this->_Filename = mFilename;
 }
 
 void ConfigParser::SetConfigFilename(std::string mFilename)
 {
-	this->Filename = mFilename;
+	this->_Filename = mFilename;
 }
 
-int ConfigParser::GetArmNumber()
+std::vector<int> ConfigParser::GetArmPositions()
 {
-	std::ifstream InputStream(Filename);
-	int retval = -1;
-	if(InputStream.is_open())
-	{
-		std::string Line;
-
-		//First line is number of arms
-		std::getline(InputStream, Line);
-		retval = boost::lexical_cast<int>(Line);
-
-		InputStream.close();
-	}
-	else
-		std::cout << "GetArmNumber(): Can't access config file " << Filename << std::endl;
-
-	return retval;
+	return ReadLineAndAddToVector<int>(1);
 }
 
-int ConfigParser::GetServerNumber()
+
+
+std::vector<std::string> ConfigParser::GetServerIPs()
 {
-	std::ifstream InputStream(Filename);
-	int retval = -1;
-	if(InputStream.is_open())
-	{
-		std::string Line;
 
-		//Skip one line
-		std::getline(InputStream, Line);
-		//Second line is the number of RFID servers
-		std::getline(InputStream, Line);
-		retval = boost::lexical_cast<int>(Line);
-
-		InputStream.close();
-	}
-	else
-		std::cout << "GetServerNumber(): Can't access config file " << Filename << std::endl;
-
-	return retval;
+	return ReadLineAndAddToVector<std::string>(2);
 }
 
-int * ConfigParser::GetServerPorts()
+std::vector<int>ConfigParser::GetServerPorts()
 {
-	std::ifstream InputStream(Filename);
-	int * ServerPortsArray = NULL;
-
-	if(InputStream.is_open())
-	{
-		std::string CurrentValue, Line;
-
-		//Skip two lines
-		for(int i=0; i<2; i++)
-			std::getline(InputStream, Line);
-		//third line is the RFID server ports in use, separated by commas
-		std::getline(InputStream, Line);
-
-		//Create sstream object from read line to ease parsing.
-		std::stringstream LineToParse(Line);
-
-		//Create array and fill with data from file
-		int ServerNumber = GetServerNumber();
-		ServerPortsArray = new int[ServerNumber];
-		for(int i=0; i<ServerNumber; i++)
-		{
-			std::getline(LineToParse, CurrentValue, ',');
-			ServerPortsArray[i] = boost::lexical_cast<int>(CurrentValue);
-		}
-		InputStream.close();
-	}
-	else
-		std::cout << "GetServerPorts(): Can't access config file " << Filename << std::endl;
-
-	return ServerPortsArray;
+	return ReadLineAndAddToVector<int>(3);
 }
 
-std::string * ConfigParser::GetServerIPs()
+int ConfigParser::SaveConfig(std::vector<int> ArmPositionsVector, std::vector<std::string> RFIDIPAddresses, std::vector<int> RFIDPorts)
 {
-	std::ifstream InputStream(Filename);
-	std::string * ServerIPArray = NULL;
+	/*
+	//save types:
 
-	if(InputStream.is_open())
-	{
-		std::string CurrentValue, Line;
+	//Get the old configuration
+	//Prepare the old configuration in an easy to iterate way
+	std::vector<boost::spirit::hold_any> OldVectorsToOperate;
+	OldVectorsToOperate.push_back(GetArmPositions());
+	OldVectorsToOperate.push_back(GetServerIPs());
+	OldVectorsToOperate.push_back(GetServerPorts());
 
-		//Skip three lines
-		for(int i=0; i<3; i++)
-			std::getline(InputStream, Line);
-		//4th line is the RFID server IP's, separated by commas
-		std::getline(InputStream, Line);
+	//Prepare the new configuration in an easy to iterate way
+	std::vector<boost::any>  NewVectorsToOperate;
+	NewVectorsToOperate.push_back(ArmPositionsVector);
+	NewVectorsToOperate.push_back(RFIDIPAddresses);
+	NewVectorsToOperate.push_back(RFIDPorts);
 
-		//Create sstream object from read line to ease parsing.
-		std::stringstream LineToParse(Line);
 
-		//Create array and fill with data from file
-		int ServerNumber = GetServerNumber();
-		ServerIPArray = new std::string[ServerNumber];
-		for(int i=0; i<ServerNumber; i++)
-		{
-			std::getline(LineToParse, CurrentValue, ',');
-			ServerIPArray[i] = CurrentValue;
-		}
-		InputStream.close();
-	}
-	else
-		std::cout << "GetServerIPs(): Can't access config file " << Filename << std::endl;
+	//Prepare the new configuration in an easy to iterate way
 
-	return ServerIPArray;
-}
-/* TODO; implement
-
-int SaveConfig(std::string Filename)
-{
-	std::ofstream OutputStream(Filename);
-	int retVal = 0;
-
+	std::ofstream OutputStream(_Filename);
 	if(OutputStream.is_open())
 	{
-		//Save number of arms
-		OutputStream << ArmNumber << std::endl;
-
-		//Save number of servers
-		OutputStream << RFIDServers << std::endl;
-
-		//Save Ports
-		for(int i=0; i<ArmNumber; i++)
-		{
-			OutputStream << std::to_string(RFIDPorts[i]) << ",";
+		//loop through all what we have to write
+		for(uint i=0;i<NewVectorsToOperate.size()-1;i++){//For every vector to operate
+			for(uint j=0;j<boost::any_cast<std::vector<boost::any>>(NewVectorsToOperate[i]).size()-1;j++){//For every item in the vector to operate
+				OutputStream<<boost::any_cast<std::vector<boost::spirit::hold_any>>(NewVectorsToOperate[i])[j] << ",";
+			}
+			OutputStream<<",\n";
 		}
-		OutputStream << std::endl;
-
-		//Save IP's
-		for(int i=0; i<ArmNumber; i++)
-		{
-			OutputStream << RFIDIPAddresses[i] << ",";
-		}
-		OutputStream << std::endl;
-
-
+		OutputStream<<"\n";
 		OutputStream.close();
 	}
-
-	return retVal;
+	else
+	{
+		std::cout << "Error: can't write file " << _Filename << std::endl;
+		return 0;
+	}
+	return 1;
+	*/
 }
-*/
 
+template<typename T> std::vector<T>
+ConfigParser::ReadLineAndAddToVector(int line)
+{
+	std::ifstream InputStream(_Filename);
+	std::vector<T> VectorToReturn;
+
+	if(InputStream.is_open())
+	{
+		std::string CurrentValue, Line;
+
+		//Skip n lines
+		for(int i=1; i<=line; i++)
+					std::getline(InputStream, Line);
+		//all is separated by commas
+		//Create sstream object from read line to ease parsing.
+		std::stringstream LineToParse(Line);
+
+		//Populate vector with
+		bool moreinfo=true;
+		while(moreinfo)
+		{
+			std::getline(LineToParse, CurrentValue, ',');
+			if(CurrentValue.size()==0)moreinfo=false; //if the thing that we are reading is between 2 commas, its size must be 0
+			else VectorToReturn.push_back(boost::lexical_cast<T>(CurrentValue)); //The first server will be at the position 0 of the vector
+		}
+		InputStream.close();
+	}
+	else
+		std::cout << "Can't access config file " << _Filename << std::endl;
+	return VectorToReturn;
+}
