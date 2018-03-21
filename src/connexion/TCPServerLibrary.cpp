@@ -75,6 +75,7 @@ void * OpenServer(void *Arg)
 
     //set master socket to allow multiple connections ,
     if( setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt,
+
           sizeof(opt)) < 0 )
     {
         perror("setsockopt");
@@ -119,6 +120,7 @@ void * OpenServer(void *Arg)
         for ( i = 0 ; i < max_clients ; i++)
         {
             //socket descriptor
+
             sd = client_socket[i];
 
             //if valid socket descriptor then add to read list
@@ -143,6 +145,7 @@ void * OpenServer(void *Arg)
         //then its an incoming connection
         if (FD_ISSET(master_socket, &readfds))
         {
+
             if ((new_socket = accept(master_socket,
                     (struct sockaddr *)&address, (socklen_t*)&addrlen))<0)
             {
@@ -169,6 +172,7 @@ void * OpenServer(void *Arg)
                 if( client_socket[i] == 0 )
                 {
                     client_socket[i] = new_socket;
+
                     printf("Adding to list of sockets as %d\n" , i);
 
                     break;
@@ -196,6 +200,7 @@ void * OpenServer(void *Arg)
                     //Close the socket and mark as 0 in list for reuse
                     close( sd );
                     client_socket[i] = 0;
+                    std::cout << "valread is " << valread <<std::endl;
                 }
 
                 //Echo back the message that came in
@@ -203,35 +208,65 @@ void * OpenServer(void *Arg)
                 {
                     //set the string terminating NULL byte on the end
                 	bufferRead[valread]= '\0';
+                	std::cout << "valread is " << valread <<std::endl;
 
+                	bool ServerIsReady = true;
                 	//TODO RBS, replace contains by substring(0,4)
-                	if (boost::contains(bufferRead, "PGSI"))
+                	if (boost::contains(bufferRead, "PGSI") && ServerIsReady)
                 	{
-						bufferWrite = Command_PGSI(bufferRead);
+						try {bufferWrite = Command_PGSI(bufferRead);}
+						catch(...){
+							std::cout << "Command_PGSI threw"<< std::endl;
+							bufferWrite = "Error_PGSI\r\n";
+						}
 					}
-                	else if (boost::contains(bufferRead,"PWDA"))
+                	else if (boost::contains(bufferRead,"PWDA") && ServerIsReady)
                 	{
-						bufferWrite = Command_PWDA(bufferRead);
+                		try {bufferWrite = Command_PWDA(bufferRead);}
+						catch(...){
+							std::cout << "Command_PWDA threw"<< std::endl;
+							bufferWrite = "Error_PWDA\r\n";
+						}
 					}
-                	else if (boost::contains(bufferRead,"RGMV"))
+                	else if (boost::contains(bufferRead,"RGMV") && ServerIsReady)
                 	{
-						bufferWrite = Command_RGMV(bufferRead);
+                		try {bufferWrite = Command_RGMV(bufferRead);}
+						catch(...){
+							std::cout << "Command_RGMV threw"<< std::endl;
+							bufferWrite = "Error_RGMV\r\n";
+						}
 					}
-                	else if (boost::contains(bufferRead,"RFMV"))
+                	else if (boost::contains(bufferRead,"RFMV") && ServerIsReady)
                 	{
-                		bufferWrite = Command_RFMV(bufferRead);
+                		try {bufferWrite = Command_RFMV(bufferRead);}
+						catch(...){
+							std::cout << "Command_RFMV threw"<< std::endl;
+							bufferWrite = "Error_RFMV\r\n";
+						}
                 	}
-                	else if (boost::contains(bufferRead,"RAMV"))
+                	else if (boost::contains(bufferRead,"RAMV") && ServerIsReady)
                 	{
-                	    bufferWrite = Command_RAMV(bufferRead);
+                		try {bufferWrite = Command_RAMV(bufferRead);}
+						catch(...){
+							std::cout << "Command_RAMV threw"<< std::endl;
+							bufferWrite = "Error_RAMV\r\n";
+						}
                 	}
-                	else if (boost::contains(bufferRead,"RDMV"))
+                	else if (boost::contains(bufferRead,"RDMV") && ServerIsReady)
                 	{
-                	    bufferWrite = Command_RDMV(bufferRead);
+                		try {bufferWrite = Command_RDMV(bufferRead);}
+						catch(...){
+							std::cout << "Command_RDMV threw"<< std::endl;
+							bufferWrite = "Error_RDMV\r\n";
+						}
                 	}
-                	else if (boost::contains(bufferRead,"RPRV"))
+                	else if (boost::contains(bufferRead,"RPRV") && ServerIsReady)
                 	{
-                	    bufferWrite = Command_RPRV(bufferRead);
+                		try {bufferWrite = Command_RPRV(bufferRead);}
+						catch(...){
+							std::cout << "Command_RPRV threw"<< std::endl;
+							bufferWrite = "Error_RPRV\r\n";
+						}
                 	}
                 	else if (boost::contains(bufferRead,"PING"))
                 	{
@@ -240,7 +275,8 @@ void * OpenServer(void *Arg)
                 		 * will try reestablishing the communication.
                 		 */
 
-                	    bufferWrite = "PING_PLC14_echo_reply";
+                	    bufferWrite = "PING_PLC14_echo_reply\r\n";
+
                 	}
 
 
@@ -249,7 +285,7 @@ void * OpenServer(void *Arg)
 						bufferWrite = "Incorrect!!\r\n";
 					}
 
-
+                	std::cout << bufferWrite << std::endl;
 
 
 

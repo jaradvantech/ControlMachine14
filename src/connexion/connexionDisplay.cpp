@@ -196,6 +196,9 @@ std::string Command_RPRV(std::string const& Buffer) {
 	for(int i=1;i<=mNumberOfPallets;i++){
 		Answer+= "_";
 		Answer+=StorageGetStoredUID(i);
+		/*
+		 * Be careful with this char(), if it is 0, the string will be terminated and everything will crash.
+		 */
 		Answer+=char(StorageGetRaw(i,0));
 		if(StorageGetNumberOfBricks(i)>0){
 			Answer+=char(StorageGetRaw(i,StorageGetNumberOfBricks(i)));
@@ -220,10 +223,13 @@ std::string Command_RPRV(std::string const& Buffer) {
 	Answer+=(boost::format("%06u")%(RoboticArm::ActualValueOfTheLineEncoder)).str();
 
 	//For every manipulator
+	std::cout << "NumberOfPallets/2: " << mNumberOfPallets/2 << std::endl;
+
 	for(int i=1;i<=mNumberOfPallets/2;i++){
 		Answer+="_";
 		Answer+=(boost::format("%06u")%(DesiredRoboticArm(i)->ActualValueEncoder)).str();
 		Answer+=(boost::format("%06u")%(DesiredRoboticArm(i)->ValueOfCatchDrop)).str();
+		std::cout << "Iteration " << i << ": " << Answer << std::endl;
 	}
 	Answer+="\r\n";
 	return Answer;

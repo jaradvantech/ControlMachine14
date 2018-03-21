@@ -12,10 +12,15 @@ IndividualPallet* Pallet[10];
 
 IndividualPallet::IndividualPallet(){
 	//Empty Constructor
-	UID="0000000000000000";
+	UID="SERVER_NOT_READY";
 	//VirtualPallet=0;
 	UIDChanged=0;
 	UIDChanged_count=0;
+
+	Brick[0]=17;
+	for(int i=1;i<112;i++){					//For each byte starting at position 0, so: for all memory positions
+		Brick[i]=1;		//Write in the computer's memory the value used for empty
+	}
 }
 
 IndividualPallet * DesiredPallet(int NumberOfThePallet){

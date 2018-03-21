@@ -67,6 +67,7 @@ RoboticArm::RoboticArm(){
 	PulseZAxis=0;					//High speed to low speed
 	ValueOfCatchDrop=0;				//Pulse of grab target
 	//--------------------------------------------------------------------
+
 }
 //--------------------------------------------------------------------
 // Setup Simply tells where to get the data from
