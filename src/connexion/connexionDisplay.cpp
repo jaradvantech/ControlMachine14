@@ -109,7 +109,7 @@ std::string Command_PWDA(std::string const& Buffer){
 	mArm->ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance = boost::lexical_cast<int>(Buffer.substr(77,6));
 	mArm->ThePulseOfZ_AxisAdvanceDownInAdvance = boost::lexical_cast<int>(Buffer.substr(84,6));
 
-	return "\r\n";
+	return Buffer;
 }
 
 std::string Command_RGMV(std::string const& Buffer) {
@@ -223,13 +223,10 @@ std::string Command_RPRV(std::string const& Buffer) {
 	Answer+=(boost::format("%06u")%(RoboticArm::ActualValueOfTheLineEncoder)).str();
 
 	//For every manipulator
-	std::cout << "NumberOfPallets/2: " << mNumberOfPallets/2 << std::endl;
-
 	for(int i=1;i<=mNumberOfPallets/2;i++){
 		Answer+="_";
 		Answer+=(boost::format("%06u")%(DesiredRoboticArm(i)->ActualValueEncoder)).str();
 		Answer+=(boost::format("%06u")%(DesiredRoboticArm(i)->ValueOfCatchDrop)).str();
-		std::cout << "Iteration " << i << ": " << Answer << std::endl;
 	}
 	Answer+="\r\n";
 	return Answer;

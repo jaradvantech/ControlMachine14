@@ -253,6 +253,7 @@ void * OpenServer(void *Arg)
 							std::cout << "Command_PGSI threw"<< std::endl;
 							bufferWrite = "Error_PGSI\r\n";
 						}
+						std::cout << bufferWrite << std::endl;
 					}
                 	else if (boost::contains(bufferRead,"PWDA") && ServerIsReady)
                 	{
@@ -311,6 +312,8 @@ void * OpenServer(void *Arg)
 
                 	    bufferWrite = "PING_PLC14_echo_reply\r\n";
 
+                	    std::cout << ".";
+                	    fflush(stdout);
                 	}
 
 
@@ -319,7 +322,6 @@ void * OpenServer(void *Arg)
 						bufferWrite = "Incorrect!!\r\n";
 					}
 
-                	std::cout << bufferWrite << std::endl;
 
 
 
