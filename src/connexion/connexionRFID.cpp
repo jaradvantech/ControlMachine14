@@ -13,8 +13,8 @@
 #include "ConfigParser.h"
 
 int NUMBEROFRFIDREADERS;
-const std::string *RFID_IP_ADRESS;
-const int *RFID_PORT;
+std::vector<std::string> RFID_IP_ADRESS;
+std::vector<int> RFID_PORT;
 std::vector<RFIDReader*> RFIDManager;
 std::deque<std::string> messageList;
 std::deque<std::string> emergencyList;
@@ -25,10 +25,10 @@ std::deque<std::string> emergencyList;
 
 void RFIDReaders_Configure(){
 	 //added by RBS on March 19th
-	 ConfigParser config("/home/baseconfig/unit14.conf");
+	 ConfigParser config("/home/andres/unit14.conf");
 	 RFID_PORT = config.GetServerPorts();
 	 RFID_IP_ADRESS = config.GetServerIPs();
-	 NUMBEROFRFIDREADERS = config.GetServerNumber();
+	 NUMBEROFRFIDREADERS = RFID_IP_ADRESS.size();
 
 	 for(int i=0;i<NUMBEROFRFIDREADERS;i++){
 		RFIDManager.push_back(new RFIDReader());
