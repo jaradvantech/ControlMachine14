@@ -29,6 +29,7 @@
 #include <boost/lexical_cast.hpp>
 #include <StorageInterface.h>
 #include <connexionDisplay.h>
+#include <SynchronizationPoints.h>
 
 
 #define TRUE   1
@@ -111,7 +112,7 @@ void * OpenServer(void *Arg)
     addrlen = sizeof(address);
     puts("Waiting for connections ...");
 
-
+	Synchro::DecreaseSynchronizationPointValue(0);
     while(KeepConnectionOpened)
     {
         //clear the socket set
@@ -250,16 +251,15 @@ void * OpenServer(void *Arg)
                 	{
 						try {bufferWrite = Command_PGSI(bufferRead);}
 						catch(...){
-							std::cout << "Command_PGSI threw"<< std::endl;
+							std::cout << "Command_PGSI exception: bad syntax"<< std::endl;
 							bufferWrite = "Error_PGSI\r\n";
 						}
-						std::cout << bufferWrite << std::endl;
 					}
                 	else if (boost::contains(bufferRead,"PWDA") && ServerIsReady)
                 	{
                 		try {bufferWrite = Command_PWDA(bufferRead);}
 						catch(...){
-							std::cout << "Command_PWDA threw"<< std::endl;
+							std::cout << "Command_PWDA exception: bad syntax"<< std::endl;
 							bufferWrite = "Error_PWDA\r\n";
 						}
 					}
@@ -267,7 +267,7 @@ void * OpenServer(void *Arg)
                 	{
                 		try {bufferWrite = Command_RGMV(bufferRead);}
 						catch(...){
-							std::cout << "Command_RGMV threw"<< std::endl;
+							std::cout << "Command_RGMV exception: bad syntax"<< std::endl;
 							bufferWrite = "Error_RGMV\r\n";
 						}
 					}
@@ -275,7 +275,7 @@ void * OpenServer(void *Arg)
                 	{
                 		try {bufferWrite = Command_RFMV(bufferRead);}
 						catch(...){
-							std::cout << "Command_RFMV threw"<< std::endl;
+							std::cout << "Command_RFMV exception: bad syntax"<< std::endl;
 							bufferWrite = "Error_RFMV\r\n";
 						}
                 	}
@@ -283,7 +283,7 @@ void * OpenServer(void *Arg)
                 	{
                 		try {bufferWrite = Command_RAMV(bufferRead);}
 						catch(...){
-							std::cout << "Command_RAMV threw"<< std::endl;
+							std::cout << "Command_RAMV exception: bad syntax"<< std::endl;
 							bufferWrite = "Error_RAMV\r\n";
 						}
                 	}
@@ -291,7 +291,7 @@ void * OpenServer(void *Arg)
                 	{
                 		try {bufferWrite = Command_RDMV(bufferRead);}
 						catch(...){
-							std::cout << "Command_RDMV threw"<< std::endl;
+							std::cout << "Command_RDMV exception: bad syntax"<< std::endl;
 							bufferWrite = "Error_RDMV\r\n";
 						}
                 	}
@@ -299,7 +299,7 @@ void * OpenServer(void *Arg)
                 	{
                 		try {bufferWrite = Command_RPRV(bufferRead);}
 						catch(...){
-							std::cout << "Command_RPRV threw"<< std::endl;
+							std::cout << "Command_RPRV exception: bad syntax"<< std::endl;
 							bufferWrite = "Error_RPRV\r\n";
 						}
                 	}

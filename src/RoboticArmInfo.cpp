@@ -17,10 +17,10 @@ bool RoboticArm::TestPattern;
 bool RoboticArm::InquiryTheTile;
 bool RoboticArm::TransmissionManualDebugging;
 short RoboticArm::PCState;
-int16_t RoboticArm::Z_AxisDeceletationDistance=0;
-int16_t RoboticArm::Z_AxisStandbyValue;
-int16_t RoboticArm::ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance; //Yup bitches. I'm serious, in the manual had this name and I decided to keep it.
-int16_t RoboticArm::ThePulseOfZ_AxisAdvanceDownInAdvance;
+int RoboticArm::Z_AxisDeceletationDistance;
+int RoboticArm::Z_AxisStandbyValue;
+int RoboticArm::ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance; //Yup bitches. I'm serious, in the manual had this name and I decided to keep it.
+int RoboticArm::ThePulseOfZ_AxisAdvanceDownInAdvance;
 //_________________________________________________________
 bool RoboticArm::TheQueueOfPhotosensor_1;
 bool RoboticArm::TheQueueOfPhotosensor_2;
@@ -28,7 +28,7 @@ bool RoboticArm::TheQueueOfPhotosensor_3;
 bool RoboticArm::TheQueueOfPhotosensor_4;
 bool RoboticArm::StationInterlock_16;
 bool RoboticArm::WhetherOrNotPutTheTileTo_16;
-uint16_t RoboticArm::EquipmentAlarmArray;
+int RoboticArm::EquipmentAlarmArray;
 short RoboticArm::TileGrade;
 short RoboticArm::ChangeColor;
 short RoboticArm::SystemState;
@@ -220,11 +220,11 @@ int PerformGlobalWriting(){
 		S7_SetBitAt(Buffer, 0, 1, RoboticArm::TestPattern);
 		S7_SetBitAt(Buffer, 0, 2, RoboticArm::InquiryTheTile);
 		S7_SetBitAt(Buffer, 0, 4, RoboticArm::TransmissionManualDebugging);
-		S7_SetBitAt(Buffer, 1, 0, RoboticArm::PCState);
-		S7_SetBitAt(Buffer, 2, 0, RoboticArm::Z_AxisDeceletationDistance);
-		S7_SetBitAt(Buffer, 4, 0, RoboticArm::Z_AxisStandbyValue);
-		S7_SetBitAt(Buffer, 6, 0, RoboticArm::ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance);
-		S7_SetBitAt(Buffer, 8, 0, RoboticArm::ThePulseOfZ_AxisAdvanceDownInAdvance);
+		S7_SetByteAt(Buffer, 1, RoboticArm::PCState);
+		S7_SetIntAt(Buffer, 2, RoboticArm::Z_AxisDeceletationDistance);
+		S7_SetIntAt(Buffer, 4, RoboticArm::Z_AxisStandbyValue);
+		S7_SetIntAt(Buffer, 6, RoboticArm::ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance);
+		S7_SetIntAt(Buffer, 8, RoboticArm::ThePulseOfZ_AxisAdvanceDownInAdvance);
 
 		for(int j=0;j<NUMBEROFARMS;j++){
 			int StartByteOfThisArm =RoboticArm::GetConfig().CommonBytesWriting + RoboticArm::GetConfig().Padding +
@@ -241,8 +241,8 @@ int PerformGlobalWriting(){
 			S7_SetByteAt(Buffer, 1+StartByteOfThisArm, GlobalArm[j]->ManualForwardBackward);
 			S7_SetByteAt(Buffer, 2+StartByteOfThisArm, GlobalArm[j]->ManualLeftRight);
 			S7_SetByteAt(Buffer, 3+StartByteOfThisArm, GlobalArm[j]->ManualUpDown);
-			S7_SetByteAt(Buffer, 4+StartByteOfThisArm, GlobalArm[j]->CatchOrDrop);
-			S7_SetByteAt(Buffer, 5+StartByteOfThisArm, GlobalArm[j]->WhatToDoWithTheBrick);
+			S7_SetByteAt(Buffer, 4+StartByteOfThisArm, GlobalArm[j]->WhatToDoWithTheBrick);
+			S7_SetByteAt(Buffer, 5+StartByteOfThisArm, GlobalArm[j]->CatchOrDrop);
 			S7_SetIntAt(Buffer,  6+StartByteOfThisArm, GlobalArm[j]->PulseZAxis);
 			S7_SetDIntAt(Buffer, 8+StartByteOfThisArm, GlobalArm[j]->ValueOfCatchDrop);
 		}

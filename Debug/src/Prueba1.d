@@ -7,7 +7,8 @@ src/Prueba1.o: ../src/Prueba1.cpp \
  /home/baseconfig/git/ControlMachine14/src/RoboticArmInfo.h \
  /home/baseconfig/git/ControlMachine14/src/StorageInterface.h \
  /home/baseconfig/git/ControlMachine14/src/PalletAbstractionLayer/Pallet.h \
- /home/baseconfig/git/ControlMachine14/src/Algorithm.h
+ /home/baseconfig/git/ControlMachine14/src/Algorithm.h \
+ /home/baseconfig/git/ControlMachine14/src/SynchronizationPoints.h
 
 /home/baseconfig/git/ControlMachine14/src/connexion/connexionPLC.h:
 
@@ -26,3 +27,5 @@ src/Prueba1.o: ../src/Prueba1.cpp \
 /home/baseconfig/git/ControlMachine14/src/PalletAbstractionLayer/Pallet.h:
 
 /home/baseconfig/git/ControlMachine14/src/Algorithm.h:
+
+/home/baseconfig/git/ControlMachine14/src/SynchronizationPoints.h:

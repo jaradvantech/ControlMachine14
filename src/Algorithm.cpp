@@ -16,6 +16,7 @@
 #include <array>
 #include <stdlib.h> //REMOVE THIS ASAP!!!
 #include <time.h>
+#include <SynchronizationPoints.h>
 ///////////////////////////////////////////
 //The score of the pallet has to take in account:
 //-Position of the next equal brick in the pallet.
@@ -56,7 +57,7 @@
 #define _MANIPULATORWORKINGTIME 6000
 #define _ENCODERTOLERANCE 30
 
-const int ManipulatorFixedPositions[_NUMBEROFMANIPULATORS+1]={80000,5870,9783,13696,17609,21522};
+const int ManipulatorFixedPositions[_NUMBEROFMANIPULATORS+1]={80000,5870,9783,13696,17609,21522}; //RBS el tercero deberia ser entorno a 16k
 std::array<long,_NUMBEROFMANIPULATORS+1> ManipulatorReadiness={80000,80000,80000,80000,80000,80000};
 //JUST A REMINDER: BrickOnTheLine //0:Position  1: Grade And Colour coded  2: Assigned pallet  3:DNI
 std::deque<std::array<long,4>> BricksOnTheLine_List; //0 is the brick more near to the end of the line.
@@ -288,7 +289,7 @@ void * Algorithm(void *Arg) {
 		> PathAndPointsContainer;
 
 		//We start with writingNode as the root of the tree, mNode.
-
+		Synchro::DecreaseSynchronizationPointValue(0);
 		while (DoOnce) {
 			iterations++;
 			//We check if this node can hold more nodes, we check if the tree can grow.
@@ -363,9 +364,18 @@ void * Algorithm(void *Arg) {
 				for(int i=0;i<BricksOnTheLine_List.size();i++){  //for every brick
 					int AssignedManipulator = (BricksOnTheLine_List.at(i).at(2)+1)/2;
 					DesiredRoboticArm(AssignedManipulator)->CatchOrDrop=1;
+/*
 					DesiredRoboticArm(AssignedManipulator)->ValueOfCatchDrop=
 							RoboticArm::ActualValueOfTheLineEncoder +
 							ManipulatorFixedPositions[AssignedManipulator]-BricksOnTheLine_List.at(i).at(0);
+				*/
+					DesiredRoboticArm(AssignedManipulator)->ValueOfCatchDrop=
+												ManipulatorFixedPositions[AssignedManipulator]+RoboticArm::EnterTheTileStartingCodeValue;
+					std::cout << "Brick entered the line at pos: " << std::to_string(RoboticArm::EnterTheTileStartingCodeValue) << std::endl <<
+							     "Manipulator " << std::to_string(AssignedManipulator) <<
+								 " position is: " << std::to_string(ManipulatorFixedPositions[AssignedManipulator]) << std::endl <<
+								 " therefore I guess pick up position is: " << std::to_string(DesiredRoboticArm(AssignedManipulator)->ValueOfCatchDrop) << std::endl;
+
 				}
 				mNode.reset();
 				if(iterations!=0)std::cout<< "Iterations: "<< iterations << std::endl;

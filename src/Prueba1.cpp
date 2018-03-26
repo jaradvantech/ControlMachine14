@@ -20,6 +20,7 @@
 #include <PalletAbstractionLayer/Pallet.h>
 #include <boost/algorithm/string/predicate.hpp>
 #include <Algorithm.h>
+#include <SynchronizationPoints.h>
 //#include <Logs.h>
 
 TS7Client *ClientPlc14;
@@ -31,7 +32,12 @@ pthread_t DisplayServerThread;
 pthread_t RFIDClientThread;
 pthread_t PLCThread;
 pthread_t AlgorithmThread;
-////Prueba
+
+//RBS
+void AttemptReconnection(void);
+
+
+
 //------------------------------------------------------------------------------
 // SysSleep (copied from sysutils.cpp) multiplatform millisec sleep
 //------------------------------------------------------------------------------
@@ -47,7 +53,7 @@ void SysSleep(longword Delay_ms)
 #endif
 }
 
-bool Check(TS7Client *Client, int Result,char * function){
+bool Check(TS7Client *Client, int Result, const char * function){
     printf("\n");
     printf("+-----------------------------------------------------\n");
     printf("| %s\n",function);
@@ -81,19 +87,41 @@ void CliDisconnectPLC(TS7Client *Client){
 }
 
 void * PLCAdquisitionLoop(void *Arg){
+
+	Synchro::DecreaseSynchronizationPointValue(0);
+
+	//RBS
+	int ReadResult, WriteResult;
+
 	while(1){
 		//std::chrono::_V2::high_resolution_clock::time_point t1 = std::chrono::_V2::high_resolution_clock::now();
 		//Check(ClientPlc14,PerformGlobalReading(),"GLOBAL READING");
-		PerformGlobalReading();
+		ReadResult = PerformGlobalReading();
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		//Check(ClientPlc14,,"GLOBAL Writing");
-		PerformGlobalWriting();
+		WriteResult = PerformGlobalWriting();
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		//std::chrono::_V2::high_resolution_clock::time_point t2 = std::chrono::_V2::high_resolution_clock::now();
 
 		//auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
 		//cout << "Duration is: " << duration;
+
+		if((ReadResult != 0) || (WriteResult != 0))
+			AttemptReconnection();
 	}
+	return nullptr;
+}
+
+//RBS
+void AttemptReconnection(void)
+{
+	std::cout << "Could not connect to PLC, trying to reconnect..." << std::endl;
+	CliDisconnectPLC(ClientPlc14);
+
+	//Wait for a couple of seconds before reconnecting
+	sleep(2);
+
+	CliConnectPLC(ClientPlc14, InfoPlc14);
 }
 
 void init(){
@@ -109,31 +137,37 @@ void init(){
 	 //--------------------------------------------------------------------
 	 // OPEN DISPLAY COMMUNICATIONS
 	 //--------------------------------------------------------------------
-	 int Port =24601;
+	 Synchro::IncreaseSynchronizationPointValue(0);
 	 pthread_create(&DisplayServerThread, NULL, OpenServer, (void *)0);
 	 //--------------------------------------------------------------------
 	 // CONFIGURE RFID Servers
 	 //--------------------------------------------------------------------
+	 Synchro::IncreaseSynchronizationPointValue(0);
 	 StorageConfigureRFID_StartUp();
 	 pthread_create(&RFIDClientThread, NULL, RFIDLoop, (void *)0);
 	 //--------------------------------------------------------------------
 	 // CONFIGURE ROBOTIC ARMS
 	 //--------------------------------------------------------------------
-		printf("Here");
+	 Synchro::IncreaseSynchronizationPointValue(0);
 	 initGlobalArms(ClientPlc14);
 	 pthread_create(&PLCThread, NULL, PLCAdquisitionLoop, (void *)0);
 	 //--------------------------------------------------------------------
 	 // CONFIGURE PALLETS
 	 //--------------------------------------------------------------------
-
+	 while(Synchro::GetSynchronizationPointValue(0)!=0)	 {
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	 }
 
 	 initPallet(10);
-		int age;
-		cin >> age;
+	 //Wait until all previous threads are working in their loops
+	 Synchro::IncreaseSynchronizationPointValue(0);
 
 	 pthread_create(&AlgorithmThread, NULL, Algorithm, (void *)0);
 
-
+	 while(Synchro::GetSynchronizationPointValue(0)!=0)	 {
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	 }
+	 //Wait until the algorithm has entered in its loop
 }
 int main() {
 
@@ -149,16 +183,11 @@ int main() {
 
 	//}
 
-		int age;
-		cin >> age;
-		cin >> age;
-
 		 for(int i=1;i<=10;i++){
 			//DesiredPallet(i)->VirtualPallet=1;
 			//StorageFormatMemory(i);
 		 }
-			cin >> age;
-			cin >> age;
+
 		//Algorithm implementation.
 		while(1){
 

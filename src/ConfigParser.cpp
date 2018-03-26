@@ -37,7 +37,6 @@ std::vector<int> ConfigParser::GetArmPositions()
 }
 
 
-
 std::vector<std::string> ConfigParser::GetServerIPs()
 {
 

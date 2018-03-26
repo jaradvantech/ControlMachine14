@@ -60,7 +60,7 @@ class RoboticArm{
     static bool TheQueueOfPhotosensor_4;
     static bool StationInterlock_16;
     static bool WhetherOrNotPutTheTileTo_16;
-    static uint16_t EquipmentAlarmArray;
+    static int EquipmentAlarmArray;
     static short TileGrade;
     static short ChangeColor;
     static short SystemState;
@@ -73,7 +73,7 @@ class RoboticArm{
     bool DischargedTheBrickConfirm;		//?????????????????
     bool LeftStorageBinSecurity;		//0:No  1:Alarm Looking from the beginning to the end
     bool RightStorageBinSecurity;		//0:No  1:Alarm Looking from the beginning to the end
-    uint16_t AlarmArray;				//Array 0-15 bool
+    int AlarmArray;						//Array 0-15 bool
     short ManipulatorRepositionState; 	//0:Rest 1:Done 2:Alarm
     long ActualValueEncoder; 			//
 	//--------------------------------------------------------------------
@@ -84,10 +84,10 @@ class RoboticArm{
 	static bool InquiryTheTile;
 	static bool TransmissionManualDebugging;
 	static short PCState;
-	static int16_t Z_AxisDeceletationDistance;
-	static int16_t Z_AxisStandbyValue;
-	static int16_t ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance; //Yup bitches. I'm serious, in the manual had this name and I decided to keep it.
-	static int16_t ThePulseOfZ_AxisAdvanceDownInAdvance;
+	static int Z_AxisDeceletationDistance;
+	static int Z_AxisStandbyValue;
+	static int ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance; //Yup bitches. I'm serious, in the manual had this name and I decided to keep it.
+	static int ThePulseOfZ_AxisAdvanceDownInAdvance;
     //_________________________________________________________
     bool StorageBinDirection;			//0:A 1:B
 	bool ManipulatorReset;				//0:Reset 1:Done?
@@ -102,7 +102,7 @@ class RoboticArm{
 	short ManualUpDown;					//0:Stop 1:Up 2:Down
 	short CatchOrDrop;					//0:Stop 1:Catch 2:Drop
 	short WhatToDoWithTheBrick;			//0:Wait 1:Put in the Storage 2:Put in the line
-	int16_t PulseZAxis;					//High speed to low speed
+	int PulseZAxis;					//High speed to low speed
 	long ValueOfCatchDrop;				//Pulse of grab target
 	//--------------------------------------------------------------------
     RoboticArm();

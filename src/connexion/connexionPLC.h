@@ -166,7 +166,7 @@ const longword errIsoResvd_3            = 0x000E0000; // Unassigned
 const longword errIsoResvd_4            = 0x000F0000; // Unassigned
 
 struct StructInfoPlc {
-	char * PlcAddress;
+	const char * PlcAddress;
 	int  PlcRack;
 	int  PlcSlot;
 };

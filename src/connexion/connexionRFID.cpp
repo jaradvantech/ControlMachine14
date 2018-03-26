@@ -11,6 +11,7 @@
 #include <PalletAbstractionLayer/RFIDAnswerProcess.h>
 #include <PalletAbstractionLayer/RFIDPetitionProcess.h>
 #include "ConfigParser.h"
+#include <SynchronizationPoints.h>
 
 int NUMBEROFRFIDREADERS;
 std::vector<std::string> RFID_IP_ADRESS;
@@ -132,7 +133,7 @@ void * RFIDLoop(void *Arg){
 	 int RFIDServer;
 
 	 std::deque<std::string>* ListToUse;
-
+		Synchro::DecreaseSynchronizationPointValue(0);
 	 while(1){
 		 if (emergencyList.size()>0){
 			 ListToUse = &emergencyList;
