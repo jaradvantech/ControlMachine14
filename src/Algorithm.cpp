@@ -5,7 +5,7 @@
  *      Author: andres
  */
 
-
+#if 0
 
 #include "Algorithm.h"
 #include "StorageInterface.h"
@@ -117,9 +117,8 @@ int CheckForFirstMatch(int StorageNumber,int Grade, int Colour){
 	if(PositionOfMatch==0)return -1;
 
 	return NumberOfBricks-PositionOfMatch;
-	//0 means that the top of the pallet matches the input
-	//-1 means not found
-	//Any value means the number of bricks in between.
+
+
 }
 
 int CheckForSurfaceCoincidence(int StorageNumber,int Grade, int Colour){
@@ -388,3 +387,5 @@ void * Algorithm(void *Arg) {
 std::deque<std::array<long,4>> GetListOfBricksOnTheLine(){
 	return BricksOnTheLine_List;
 }
+
+#endif

@@ -31,11 +31,14 @@ void ConfigParser::SetConfigFilename(std::string mFilename)
 	this->_Filename = mFilename;
 }
 
+
+//--------------------------------------------------
+//Use this functions as template
+
 std::vector<int> ConfigParser::GetArmPositions()
 {
 	return ReadLineAndAddToVector<int>(1);
 }
-
 
 std::vector<std::string> ConfigParser::GetServerIPs()
 {
@@ -48,6 +51,37 @@ std::vector<int>ConfigParser::GetServerPorts()
 	return ReadLineAndAddToVector<int>(3);
 }
 
+std::vector<int>ConfigParser::GetManipulatorModes()
+{
+	return ReadLineAndAddToVector<int>(4);
+}
+
+int ConfigParser::GetPackagingGrade()
+{
+	return ReadLineAndAddToVector<int>(5).at(0);
+}
+
+int ConfigParser::GetPackagingColor()
+{
+	return ReadLineAndAddToVector<int>(6).at(0);
+}
+
+void ConfigParser::SetManipulatorModes(std::vector<int> ManipulatorModes)
+{
+
+}
+
+int ConfigParser::SetCurrentPackagingGrade(int PackagingGrade)
+{
+return 0;
+}
+
+int ConfigParser::SetCurrentPackagingColor(int PackagingGrade)
+{
+	return 0;
+}
+
+//--------------------------------------------------
 int ConfigParser::SaveConfig(std::vector<int> ArmPositionsVector, std::vector<std::string> RFIDIPAddresses, std::vector<int> RFIDPorts)
 {
 	/*
@@ -89,6 +123,7 @@ int ConfigParser::SaveConfig(std::vector<int> ArmPositionsVector, std::vector<st
 	}
 	return 1;
 	*/
+	return 0;
 }
 
 template<typename T> std::vector<T>

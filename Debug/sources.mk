@@ -25,5 +25,6 @@ C_DEPS :=
 SUBDIRS := \
 src \
 src/PalletAbstractionLayer \
+src/algorithms \
 src/connexion \
 

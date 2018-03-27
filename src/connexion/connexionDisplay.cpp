@@ -13,7 +13,8 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include "algorithm_v2.h"
+#include "algorithms/algorithm_v2.h"
+#include "ConfigParser.h"
 
 inline const char * const BoolToString(bool b)
 {
@@ -86,50 +87,73 @@ std::string Command_PWDA(std::string const& Buffer){
 
 	if(boost::contains(Buffer.substr(11,1), "X") == false)
 		mArm->StorageBinDirection = readBool(Buffer.substr(11,1));
+
 	if(boost::contains(Buffer.substr(12,1), "X") == false)
 		mArm->ManipulatorReset = readBool(Buffer.substr(12,1));
+
 	if(boost::contains(Buffer.substr(13,1), "X") == false)
 		mArm->StorageBinFullA = readBool(Buffer.substr(13,1));
+
 	if(boost::contains(Buffer.substr(14,1), "X") == false)
 		mArm->StorageBinFullB = readBool(Buffer.substr(14,1));
+
 	if(boost::contains(Buffer.substr(15,1), "X") == false)
 		mArm->BarCodeReadStateA = readBool(Buffer.substr(15,1));
+
 	if(boost::contains(Buffer.substr(16,1), "X") == false)
 		mArm->BarCodeReadStateB = readBool(Buffer.substr(16,1));
+
 	if(boost::contains(Buffer.substr(17,1), "X") == false)
 		mArm->ManipulatorMode = readBool(Buffer.substr(17,1));
+
 	if(boost::contains(Buffer.substr(18,1), "X") == false)
 		mArm->VacuumValve = readBool(Buffer.substr(18, 1));
+
 	if(boost::contains(Buffer.substr(20,3), "X") == false)
 		mArm->ManualForwardBackward = boost::lexical_cast<short>(Buffer.substr(20,3));
+
 	if(boost::contains(Buffer.substr(24,3), "X") == false)
 		mArm->ManualLeftRight = boost::lexical_cast<short>(Buffer.substr(24,3));
+
 	if(boost::contains(Buffer.substr(28,3), "X") == false)
 		mArm->ManualUpDown = boost::lexical_cast<short>(Buffer.substr(28,3));
+
 	if(boost::contains(Buffer.substr(32,3), "X") == false)
 		mArm->CatchOrDrop =  boost::lexical_cast<short>(Buffer.substr(32,3));
+
 	if(boost::contains(Buffer.substr(36,3), "X") == false)
 		mArm->WhatToDoWithTheBrick = boost::lexical_cast<short>(Buffer.substr(36,3));
+
 	if(boost::contains(Buffer.substr(40,6), "X") == false)
 		mArm->PulseZAxis = boost::lexical_cast<int>(Buffer.substr(40,6));
+
 	if(boost::contains(Buffer.substr(47,6), "X") == false)
 		mArm->ValueOfCatchDrop = boost::lexical_cast<long>(Buffer.substr(47,6));
+
 	if(boost::contains(Buffer.substr(54,1), "X") == false)
 		mArm->CommunicationExchange = readBool(Buffer.substr(54,1));
+
 	if(boost::contains(Buffer.substr(55,1), "X") == false)
 		mArm->TestPattern = readBool(Buffer.substr(55,1));
+
 	if(boost::contains(Buffer.substr(56,1), "X") == false)
 		mArm->InquiryTheTile = readBool(Buffer.substr(56,1));
+
 	if(boost::contains(Buffer.substr(57,1), "X") == false)
 		mArm->TransmissionManualDebugging = readBool(Buffer.substr(57,1));
+
 	if(boost::contains(Buffer.substr(59,3), "X") == false)
 		mArm->PCState = (short) boost::lexical_cast<int>(Buffer.substr(59,3));
+
 	if(boost::contains(Buffer.substr(63,6), "X") == false)
 		mArm->Z_AxisDeceletationDistance = boost::lexical_cast<int>(Buffer.substr(63,6));
+
 	if(boost::contains(Buffer.substr(70,6), "X") == false)
 		mArm->Z_AxisStandbyValue = boost::lexical_cast<int>(Buffer.substr(70,6));
+
 	if(boost::contains(Buffer.substr(77,6), "X") == false)
 		mArm->ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance = boost::lexical_cast<int>(Buffer.substr(77,6));
+
 	if(boost::contains(Buffer.substr(84,6), "X") == false)
 		mArm->ThePulseOfZ_AxisAdvanceDownInAdvance = boost::lexical_cast<int>(Buffer.substr(84,6));
 
@@ -231,16 +255,19 @@ std::string Command_RPRV(std::string const& Buffer) {
 		}
 	}
 	//Get the list of bricks on the line and add the number of bricks
-	std::deque<std::array<long,4>> mListOfBricksOnTheLine = GetListOfBricksOnTheLine();
+	std::deque<Brick> mListOfBricksOnTheLine = GetListOfBricksOnTheLine();
 	Answer+= "_";
-	Answer+= (boost::format("%02u")%(mListOfBricksOnTheLine.size())).str();
+	Answer+= (boost::format("%02u")%(mListOfBricksOnTheLine.size()/2)).str();
 	//For every brick add the
-	for(int i=1;i<=mListOfBricksOnTheLine.size();i++){
+	for(unsigned int i=0;i<mListOfBricksOnTheLine.size();i++){
+		if(mListOfBricksOnTheLine.at(i).Type!=0)
+		{
 		Answer+= "_";
-		Answer+=(boost::format("%06u")%(mListOfBricksOnTheLine.at(i-1).at(0))).str();//position
-		Answer+=char(mListOfBricksOnTheLine.at(i-1).at(1));							 //grade and colour
-		Answer+=(boost::format("%02u")%(mListOfBricksOnTheLine.at(i-1).at(2))).str();//assigned pallet
-		Answer+=(boost::format("%02u")%(mListOfBricksOnTheLine.at(i-1).at(3))).str();//dni
+		Answer+=(boost::format("%06u")%(mListOfBricksOnTheLine.at(i).Position)).str();//position
+		Answer+=char(mListOfBricksOnTheLine.at(i).Type);							 //grade and colour
+		Answer+=(boost::format("%02u")%(mListOfBricksOnTheLine.at(i).AssignedPallet)).str();//assigned pallet
+		Answer+=(boost::format("%02u")%(mListOfBricksOnTheLine.at(i).DNI)).str();//dni
+		}
 	}
 	//Common manipulator information
 	Answer+="_";
@@ -253,7 +280,33 @@ std::string Command_RPRV(std::string const& Buffer) {
 		Answer+=(boost::format("%06u")%(DesiredRoboticArm(i)->ValueOfCatchDrop)).str();
 	}
 	Answer+="\r\n";
+	std::cout <<Answer<<std::endl;
 	return Answer;
+}
+
+//ALgorithm Save Config
+std::string Command_ALSC(std::string const& Buffer) {
+	ConfigParser config("/home/baseconfig/unit14.conf");
+	std::vector<int> modes;
+	int Manipulators = 5; //ConfigParser.getManipulatorNumber();
+
+	//Update both, running program and config file
+	config.SetCurrentPackagingColor(boost::lexical_cast<int>(Buffer.substr(8,2)));
+	Algorithm_SetCurrentPackagingColor(boost::lexical_cast<int>(Buffer.substr(8,2)));
+
+	config.SetCurrentPackagingGrade(boost::lexical_cast<int>(Buffer.substr(11,2)));
+	Algorithm_SetCurrentPackagingGrade(boost::lexical_cast<int>(Buffer.substr(11,2)));
+
+	for(int i=0; i<Manipulators; i++)
+		modes.push_back(boost::lexical_cast<int>(Buffer.substr((15+i),1)));
+	config.SetManipulatorModes(modes);
+	Algorithm_SetManipulatorModes(modes);
+
+	/*
+	 * code for weights
+	 */
+
+	return Buffer;
 }
 
 bool readBool(std::string mString)

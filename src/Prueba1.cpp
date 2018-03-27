@@ -19,7 +19,7 @@
 #include <StorageInterface.h>
 #include <PalletAbstractionLayer/Pallet.h>
 #include <boost/algorithm/string/predicate.hpp>
-#include <Algorithm.h>
+#include <algorithms/algorithm_v2.h>
 #include <SynchronizationPoints.h>
 //#include <Logs.h>
 
@@ -162,7 +162,7 @@ void init(){
 	 //Wait until all previous threads are working in their loops
 	 Synchro::IncreaseSynchronizationPointValue(0);
 
-	 pthread_create(&AlgorithmThread, NULL, Algorithm, (void *)0);
+	 pthread_create(&AlgorithmThread, NULL, AlgorithmV2, (void *)0);
 
 	 while(Synchro::GetSynchronizationPointValue(0)!=0)	 {
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));

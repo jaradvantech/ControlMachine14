@@ -8,21 +8,24 @@ CPP_SRCS += \
 ../src/ConfigParser.cpp \
 ../src/Prueba1.cpp \
 ../src/RoboticArmInfo.cpp \
-../src/StorageInterface.cpp 
+../src/StorageInterface.cpp \
+../src/SynchronizationPoints.cpp 
 
 OBJS += \
 ./src/Algorithm.o \
 ./src/ConfigParser.o \
 ./src/Prueba1.o \
 ./src/RoboticArmInfo.o \
-./src/StorageInterface.o 
+./src/StorageInterface.o \
+./src/SynchronizationPoints.o 
 
 CPP_DEPS += \
 ./src/Algorithm.d \
 ./src/ConfigParser.d \
 ./src/Prueba1.d \
 ./src/RoboticArmInfo.d \
-./src/StorageInterface.d 
+./src/StorageInterface.d \
+./src/SynchronizationPoints.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
