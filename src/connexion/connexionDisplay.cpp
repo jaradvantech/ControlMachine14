@@ -280,7 +280,6 @@ std::string Command_RPRV(std::string const& Buffer) {
 		Answer+=(boost::format("%06u")%(DesiredRoboticArm(i)->ValueOfCatchDrop)).str();
 	}
 	Answer+="\r\n";
-	std::cout <<Answer<<std::endl;
 	return Answer;
 }
 
@@ -307,6 +306,24 @@ std::string Command_ALSC(std::string const& Buffer) {
 	 */
 
 	return Buffer;
+}
+
+//Check for new alarms
+std::string Command_CHAL(std::string const& Buffer) {
+	std::string Answer;
+	int Manipulators = 5; //ConfigParser.getManipulatorNumber();
+
+	Answer += "CHAL_14_";
+	Answer += (boost::format("%05u") % abs(RoboticArm::EquipmentAlarmArray)).str();
+
+	for(int i=1; i<=Manipulators; i++)
+	{
+		Answer += "_";
+		Answer += (boost::format("%05u") % abs(DesiredRoboticArm(i)->AlarmArray)).str();
+	}
+	Answer += "\r\n";
+
+	return Answer;
 }
 
 bool readBool(std::string mString)

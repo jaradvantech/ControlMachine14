@@ -303,6 +303,22 @@ void * OpenServer(void *Arg)
 							bufferWrite = "Error_RPRV\r\n";
 						}
                 	}
+                	else if (boost::contains(bufferRead,"ALSC") && ServerIsReady)
+                	{
+                		try {bufferWrite = Command_ALSC(bufferRead);}
+						catch(...){
+							std::cout << "Command_ALSC exception: bad syntax"<< std::endl;
+							bufferWrite = "Error_ALSC\r\n";
+						}
+                	}
+                	else if (boost::contains(bufferRead,"CHAL") && ServerIsReady)
+                	{
+                		try {bufferWrite = Command_CHAL(bufferRead);}
+						catch(...){
+							std::cout << "Command_CHAL exception: bad syntax"<< std::endl;
+							bufferWrite = "Error_CHAL\r\n";
+						}
+                	}
                 	else if (boost::contains(bufferRead,"PING"))
                 	{
                 		/* RBS 20/03/2018
@@ -315,18 +331,13 @@ void * OpenServer(void *Arg)
                 	    std::cout << ".";
                 	    fflush(stdout);
                 	}
-
-
                 	else
                 	{
-						bufferWrite = "Incorrect!!\r\n";
+						bufferWrite = "Error_unknown_CMD\r\n";
 					}
 
-
-
-
                 	//std::cout << "Sent back: " << bufferWrite << std::endl;
-                	//bufferWrite=bufferRead;
+
                     send(sd , bufferWrite.c_str() , strlen( bufferWrite.c_str() ) , 0 );
             		bufferWrite="";
             		std::this_thread::sleep_for(std::chrono::milliseconds(5));
@@ -334,17 +345,5 @@ void * OpenServer(void *Arg)
             }
         }
     }
-    //return 0;
 }
-/*
-std::string GetPlcInfo(){
-	std::string Answer;
-		Answer="PLC_INFO=";
-		Answer+=GlobalArm[0]->StorageBinDirection;
-		Answer+="_";
-		Answer+=GlobalArm[0]->ManipulatorReset;
-		Answer+="_";
-	return Answer;
-}
-*/
 

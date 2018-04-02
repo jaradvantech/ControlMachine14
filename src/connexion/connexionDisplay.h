@@ -28,6 +28,8 @@ std::string Command_RPRV(std::string const& Buffer);
 
 std::string Command_ALSC(std::string const& Buffer);
 
+std::string Command_CHAL(std::string const& Buffer);
+
 bool readBool(std::string mString);
 
 #endif /* CONNEXION_CONNEXIONDISPLAY_H_ */
