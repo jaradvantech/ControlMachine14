@@ -12,18 +12,27 @@
 #include <iostream>
 #include <vector>
 #include <deque>
+#include <boost/algorithm/string/predicate.hpp>
 #include <SynchronizationPoints.h>
 #include "StorageInterface.h"
 #include "RoboticArmInfo.h"
 #include "ConfigParser.h"
+#include <algorithm>
 
 
-void SetNumberOfManipulators(std::vector<std::deque<Order>>* _Manipulator_Order_List, short _NumberOfManipulators)
+void SetNumberOfManipulators(std::vector<std::deque<Order>>* _Manipulator_Order_List,
+		std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
+		std::vector<Brick>* _Manipulator_TakenBrick,
+		short _NumberOfManipulators)
 {
 	for(int i=0;i<_NumberOfManipulators;i++)
 	{
 		std::deque<Order> _ListOfOrders;
+		Brick NoBrick(1,0,0,0);
 		_Manipulator_Order_List->push_back(_ListOfOrders);
+		_Manipulator_TakenBrick->push_back(NoBrick);
+		_Pallet_LowSpeedPulse_Height_List->push_back(5000);
+		_Pallet_LowSpeedPulse_Height_List->push_back(5000);
 	}
 }
 
@@ -102,6 +111,10 @@ bool CheckPhotoSensor4(std::deque<Brick>* _BricksBeforeTheLine, std::deque<Brick
 		std::cout << "brick detected PS4" << std::endl;
 		lastBrick_Position=RoboticArm::EnterTheTileStartingCodeValue;		//Update the values for future iterations
 
+		if (Available_DNI_List->size()==0){
+			std::cout<<" No available DNIs "<< Available_DNI_List->size() <<std::endl;
+			return 0;
+		}
 
 		//Complete brick information
 		_BricksBeforeTheLine->begin()->Position = RoboticArm::ActualValueOfTheLineEncoder-RoboticArm::EnterTheTileStartingCodeValue;
@@ -126,19 +139,54 @@ bool CheckPhotoSensor4(std::deque<Brick>* _BricksBeforeTheLine, std::deque<Brick
 }
 
 
-void update_list(std::deque<Brick>* mBrickList, int mEncoderAdvance, std::deque<int>* _Available_DNI_List, const std::vector<int>& _Manipulator_Fixed_Position)
+void update_list(std::deque<Brick>* mBrickList,
+		std::vector<Brick>* _Manipulator_TakenBrick,
+		int mEncoderAdvance,
+		std::deque<int>* _Available_DNI_List,
+		const std::vector<int>& _Manipulator_Fixed_Position)
 {
 	//Update position of every brick
 	for(unsigned int i=0; i<mBrickList->size(); i++)
 	{
 		mBrickList->at(i).Position += mEncoderAdvance;
+
+
+		//Check if a brick has been taken by a manipulator,
+		//	For now, this check will be only based in the position and not yet by
+		//	static std::vector<bool> HasDischarged_Previous={0,0,0,0,0,0,0,0,0,0};
+		//	static std::vector<bool> PhotosensorOfManipulator_Previous={0,0,0,0,0,0,0,0,0,0};
+
+		//Add that brick to _Manipulator_TakenBrick
+		//remove that brick from mBrickList
+		//remove also its gap from mBrickList
+
+		if(mBrickList->at(i).Type !=0 && mBrickList->at(i).AssignedPallet!=0) //If it's a brick and therefore ot a gap
+		{
+			int IndexAssignedManipulator =(mBrickList->at(i).AssignedPallet-1) / 2;
+
+			if(mBrickList->at(i).Position > _Manipulator_Fixed_Position.at(IndexAssignedManipulator)-100 &&
+			   mBrickList->at(i).Position < _Manipulator_Fixed_Position.at(IndexAssignedManipulator)+100) //If it's in its range
+			{
+				//Add that brick to _Manipulator_TakenBrick
+				//remove that brick from mBrickList
+				//remove also its gap from mBrickList
+
+				_Manipulator_TakenBrick->at(IndexAssignedManipulator) = mBrickList->at(i);
+				mBrickList->erase(mBrickList->begin()+i);
+				mBrickList->erase(mBrickList->begin()+i);
+			}
+		}
 	}
 
 	//Check if it's out of the line
 	if(mBrickList->size()>0 && mBrickList->at(0).Position>=_Manipulator_Fixed_Position.back()+500){
 		std::cout << "Brick abandons the line because its position is "<< mBrickList->begin()->Position << std::endl;
-		_Available_DNI_List->push_back(mBrickList->begin()->DNI);
-		mBrickList->pop_front();
+		int DNItoReturn = mBrickList->begin()->DNI;
+		if(DNItoReturn>0){
+			_Available_DNI_List->push_back(DNItoReturn);
+			mBrickList->pop_front();
+			mBrickList->pop_front();
+		}
 	}
 }
 
@@ -152,11 +200,61 @@ void update_order_list(std::vector<std::deque<Order>>* _Manipulator_Order_List, 
 			_Manipulator_Order_List->at(i).at(j).When -= _EncoderAdvance; //decrease when it's going to happen. Will happen when it reaches 0
 		}
 
-		//Check if it's outdated
-		if(_Manipulator_Order_List->at(i).size()>0 && _Manipulator_Order_List->at(i).begin()->When<=0){
-			std::cout << "Order expired, probably executed at manipulator "<< i << std::endl;
+		//Check if it's outdated TODO: Clear constant
+
+		//if((_Manipulator_Order_List->at(i).size()>0 && _Manipulator_Order_List->at(i).begin()->When<=-35000)||
+		if(_Manipulator_Order_List->at(i).size()>0 && DesiredRoboticArm(i+1)->ManipulatorStatePosition==1 &&
+				 _Manipulator_Order_List->at(i).begin()->When<=-6000)//
+		{
+				DesiredRoboticArm(i+1)->WhatToDoWithTheBrick = 0;
+				DesiredRoboticArm(i+1)->CatchOrDrop = 0;
+				DesiredRoboticArm(i+1)->PulseZAxis = 0;
+
+			std::cout << "Order expired, probably executed at manipulator "<< i+1 << std::endl;
 			_Manipulator_Order_List->at(i).pop_front();
 		}
+	}
+}
+
+void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
+		std::vector<Brick> *_Manipulator_TakenBrick,
+		std::deque<int>* _Available_DNI_List)
+{
+	static std::vector<bool> HasDischarged_Previous={0,0,0,0,0,0,0,0,0,0};
+	static std::vector<bool> PhotosensorOfManipulator_Previous={0,0,0,0,0,0,0,0,0,0};
+	for(int i=0; i< _Pallet_LowSpeedPulse_Height_List->size();i++)
+	{
+		int ArmIndex=(i/2)+1; //001 101
+
+		if(DesiredRoboticArm(ArmIndex)->CatchOrDrop==1 && DesiredRoboticArm(ArmIndex)->HasDischarged == 1 &&
+				HasDischarged_Previous.at(i)==0)
+		{
+			_Pallet_LowSpeedPulse_Height_List->at(i)= DesiredRoboticArm(ArmIndex)->ActualValueEncoder - RoboticArm::Z_AxisDeceletationDistance;
+			std::cout<< "Updated height value to "<< _Pallet_LowSpeedPulse_Height_List->at(i) <<std::endl;
+			//We can suppose that if the height increases is because a brick has been added to the pallet
+			std::cout<< "We are going to use the arm "<< ArmIndex << " to put a brick " <<
+					_Manipulator_TakenBrick->at(ArmIndex-1).Type << " at pallet " <<
+					_Manipulator_TakenBrick->at(ArmIndex-1).AssignedPallet << std::endl;
+			StorageAddBrick(_Manipulator_TakenBrick->at(ArmIndex-1).AssignedPallet,
+				_Manipulator_TakenBrick->at(ArmIndex-1).Type >> 4,
+				_Manipulator_TakenBrick->at(ArmIndex-1).Type & 15);
+			Brick NoBrick(1,0,0,0);
+			_Available_DNI_List->push_back(_Manipulator_TakenBrick->at(ArmIndex-1).DNI);
+			_Manipulator_TakenBrick->at(ArmIndex-1)=NoBrick;
+		}
+		else if(DesiredRoboticArm(ArmIndex)->CatchOrDrop == 2 && DesiredRoboticArm(ArmIndex)->PhotosensorOfManipulator == 1 &&
+				PhotosensorOfManipulator_Previous.at(i)==0)
+		{
+			PhotosensorOfManipulator_Previous.at(i)=1;
+			_Pallet_LowSpeedPulse_Height_List->at(i)= DesiredRoboticArm(ArmIndex)->ActualValueEncoder - RoboticArm::Z_AxisDeceletationDistance;
+			std::cout<< "Updated height value to "<< _Pallet_LowSpeedPulse_Height_List->at(i) <<std::endl;
+			PhotosensorOfManipulator_Previous.at(i) = DesiredRoboticArm(ArmIndex)->PhotosensorOfManipulator;
+		}
+
+		HasDischarged_Previous.at((ArmIndex*2)-2) = DesiredRoboticArm(ArmIndex)->HasDischarged;
+		HasDischarged_Previous.at((ArmIndex*2)-1) = DesiredRoboticArm(ArmIndex)->HasDischarged;
+		PhotosensorOfManipulator_Previous.at((ArmIndex*2)-2) = DesiredRoboticArm(ArmIndex)->PhotosensorOfManipulator;
+		PhotosensorOfManipulator_Previous.at((ArmIndex*2)-1) = DesiredRoboticArm(ArmIndex)->PhotosensorOfManipulator;
 	}
 }
 
@@ -189,10 +287,9 @@ int CheckForFirstMatch(int StorageNumber,int Grade, int Colour)
 	return NumberOfBricks-PositionOfMatch;
 }
 
-int CheckQuantityContained(int StorageNumber, int Grade, int Colour)
+int CheckQuantityContained(int StorageNumber, int BrickRaw)
 {
 	int NumberOfBricks=StorageGetNumberOfBricks(StorageNumber);
-	int BrickRaw=(Colour << 4) + Grade;
 	int matches=0;
 
 	for(int i=0; i<NumberOfBricks; i++)
@@ -202,93 +299,251 @@ int CheckQuantityContained(int StorageNumber, int Grade, int Colour)
 	return matches;
 }
 
-void Choose_Best_Pallet(Brick* _BrickToClassify,const std::vector<std::deque<Order>>& _Manipulator_Order_List ,const std::vector<int>& Manipulator_Fixed_Position)
+int CheckInputScore(int NumberOfPallet, int TypeOfTheBrick , int _RawCurrentPackagingBrick)
+{
+	//When checking the Input Score we have to take in account :
+	//-TOP at the pallet matches our brick
+	//-Total ammount of bricks
+	//-Percentage of equal in the pallet
+	//-Relative position to the beginning of the line
+
+	//---------------------------------------------------------
+	int POINTS_OF_TOP_matches_our_brick;
+
+	if(TypeOfTheBrick != StorageGetRaw(NumberOfPallet, StorageGetNumberOfBricks(NumberOfPallet))
+	&& _RawCurrentPackagingBrick != StorageGetRaw(NumberOfPallet, StorageGetNumberOfBricks(NumberOfPallet)))
+	{//If our brick does not match the top, but the packing type is different from the top, just bad points
+		POINTS_OF_TOP_matches_our_brick=30;
+	}
+	else if(TypeOfTheBrick != StorageGetRaw(NumberOfPallet, StorageGetNumberOfBricks(NumberOfPallet))
+		 && _RawCurrentPackagingBrick == StorageGetRaw(NumberOfPallet, StorageGetNumberOfBricks(NumberOfPallet)))
+	{//If our brick does not match the top, but the packing type is equeal to the top, very bad points
+		POINTS_OF_TOP_matches_our_brick=100;
+
+	}
+	else if(TypeOfTheBrick == StorageGetRaw(NumberOfPallet, StorageGetNumberOfBricks(NumberOfPallet)))
+	{//If our brick matches the top, regardless packing type, good points
+		POINTS_OF_TOP_matches_our_brick=5;
+	}
+
+	//---------------------------------------------------------
+	//---------------------------------------------------------
+	int POINTS_OF_Total_ammount=StorageGetNumberOfBricks(NumberOfPallet);
+
+	//---------------------------------------------------------
+	//---------------------------------------------------------
+
+	int POINTS_OF_Percentaje_of_equal_in_the_pallet=1;
+	//TODO: uncomment this
+	//POINTS_OF_Percentaje_of_equal_in_the_pallet=100-100*
+	//	((float)CheckQuantityContained(NumberOfPallet, _BrickToClassify.Type))
+	//						/
+	//	((float)StorageGetNumberOfBricks(NumberOfPallet)));
+	//---------------------------------------------------------
+	//---------------------------------------------------------
+	int POINTS_OF_Relative_position=(NumberOfPallet+1)/2;
+
+	return POINTS_OF_TOP_matches_our_brick * 1
+		 + POINTS_OF_Percentaje_of_equal_in_the_pallet * 1
+		 + POINTS_OF_Total_ammount * 1
+		 + POINTS_OF_Relative_position * 1;
+}
+
+void Choose_Best_Pallet(Brick* _BrickToClassify,
+						const std::vector<std::deque<Order>>& _Manipulator_Order_List,
+						const std::vector<int>& _Manipulator_Fixed_Position,
+						std::vector<int> _Manipulator_Modes,
+						int _RawCurrentPackagingBrick)
 {
 	//The best pallet has to be one that will be free for the brick when the brick arrives to that manipulator.
 
 	//So first we have to check if the manipulator is going to be free.
 
-	std::vector<int>ListOfAvailableManipulators;
-	ListOfAvailableManipulators.reserve(10);
+	std::vector<int>ListOfPoints={10000,10000,10000,10000,10000,10000,10000,10000,10000,10000};
 
 	for(unsigned int i=0;i<_Manipulator_Order_List.size();i++) //Check for every manipulator
 	{
-		bool ManipulatorWillBeReady = true; //Let's agree that unless noted otherwhise the manipulator will be ready
-		for(unsigned int j=0;j<_Manipulator_Order_List.at(i).size();j++) //And for every order
+		//bool ManipulatorWillBeReady = true; //Let's agree that unless noted otherwise the manipulator will be ready
+		//CONDITION 1: Manipulator is enabled as input (0=in, 1=in/out, 2=out)
+		if(_Manipulator_Modes[i] == 2) //2 is output only
 		{
-			//----------------------------------------------------------------------
-			//CONDITION 1: Manipulator unavailable if it's before the brick.
-			if(_BrickToClassify->Position>Manipulator_Fixed_Position.at(i))
+			//ManipulatorWillBeReady = false;
+		}
+		else{
+			for(unsigned int j=0;j<_Manipulator_Order_List.at(i).size();j++) //And for every order
 			{
-				ManipulatorWillBeReady = false;
-				break; //pretty clear
+				//----------------------------------------------------------------------
+
+				//CONDITION 2: Manipulator unavailable if it's before the brick.
+				if(_BrickToClassify->Position>_Manipulator_Fixed_Position.at(i))
+				{
+					//ManipulatorWillBeReady = false;
+					break; //pretty clear
+				}
+
+				//Once the action has started, we have to add the constant K that is the encoder units that will advance until the manipulator is ready again.
+
+				//CONDITION 3: Manipulator will be still busy because of previous order
+				//B2: new order,   B1: order already placed,  M: manipulator
+				//
+				//-----------B2------------B1------M----------------------------------------
+				//               <----K---> There must be K between an order that is already placed and the new order.
+				//
+				//
+				//-----------------B2------------B1M----------------------------------------
+				//                     <----K---> As we had this security distance, there is no problem.
+				//
+				if(_Manipulator_Order_List.at(i).at(j).When + 25000 > _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position
+				&& _Manipulator_Order_List.at(i).at(j).When < _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position)
+				{
+					//ManipulatorWillBeReady = false;
+					//TODO:EXCEPTION TO 3: it does not matter if it will be busy if it's an output operation, as we will cancel that output operation
+
+					break; //pretty clear
+				}
+
+
+				//CONDITION 4:The pick down order must fit between other pick down orders without disrupt
+				//If there are two orders and we want to place an order in between, we only have to do it
+				//if all the orders can succeed.
+
+				//B2: new order,   B1: order already placed,  M: manipulator
+				//
+				//-----------B1------------B2------M----------------------------------------
+				//               <----K---> There must be K between the order that we want to place and the new order.
+				//
+				//
+				//-----------------B1------------B2M----------------------------------------
+				//                     <----K---> As we had this security distance, there is no problem.
+				//
+
+				if(_Manipulator_Order_List.at(i).at(j).When > _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position
+				&& _Manipulator_Order_List.at(i).at(j).When - 25000 < _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position )
+				{
+					//ManipulatorWillBeReady = false;
+
+					//TODO:EXCEPTION TO 4: it does not matter if it will be busy if it's an output operation, as we will cancel that output operation
+					break; //pretty clear
+				}
+
+				//Otherwise, no problem at all.
+				//------------------------------------------------------------------------
 			}
-
-			//_Manipulator_Order_List.at(i).at(j).When; //This tells us how many encoder units until the action starts.
-			//Once the action has started, we have to add the constant K that is the encoder units that will advance until the manipulator is ready again.
-
-			//CONDITION 2: Manipulator still busy because of previous order
-
-			if(_Manipulator_Order_List.at(i).at(j).When + 3000 > Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position
-			&& _Manipulator_Order_List.at(i).at(j).When < Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position)
+			//If after checking all the orders of a manipulator
+			//the manipulator is free, check the points
+			for(int j=0;j<2;j++) //check both sides
 			{
-				ManipulatorWillBeReady = false;
-				break; //pretty clear
+				if(true) //If the pallet exists and it's not full
+				{
+						ListOfPoints.at(i*2+j) = CheckInputScore(i*2+j+1, _BrickToClassify->Type, _RawCurrentPackagingBrick);
+				}
 			}
-
-
-			//CONDITION 3:The pick down order must fit between other pick down orders without disrupt
-			//If there are two orders and we want to place an order in between, we only have to do it
-			//if all the orders can success.
-			if(_Manipulator_Order_List.at(i).at(j).When > Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position
-			&& _Manipulator_Order_List.at(i).at(j).When - 3000 < Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position )
-			{
-				ManipulatorWillBeReady = false;
-				break; //pretty clear
-			}
-
-			//Otherwise, no problem at all.
-			//------------------------------------------------------------------------
 		}
 	}
-	_BrickToClassify->AssignedPallet = 5;
+	//TODO:Check to clear order in case of an output.
+
+	//Check minimum score TO CHANGE FOR STD::Minimum_at(vector)
+	int PalletWithMinimumScore=0;
+	for(int i=0;i<10;i++)
+	{
+		if(ListOfPoints[i]<ListOfPoints[PalletWithMinimumScore]) PalletWithMinimumScore=i;
+	}
+	//std::cout << "The points assigned are " << ListOfPoints.at(PalletWithMinimumScore) << " goes to pallet:"<< PalletWithMinimumScore+1 << std::endl;
+	PalletWithMinimumScore++;//To translate from index to actual pallet
+
+
+	static int last;
+	static int last2;
+	static int last3;
+	srand(time(NULL));
+	int Random;
+
+	while(Random==last || Random==last2 || Random==last3 || Random==0)
+	{
+		Random=(rand()%5)+1; //12345
+	}
+	last3=last2;
+	last2=last;
+	last=Random;
+
+	std::cout << "Random mode, goes to "<< (Random*2)-1 << std::endl;
+	_BrickToClassify->AssignedPallet = (Random*2)-1;
 }
+
+
+
 
 void AddOrder(const Brick& mBrick, std::vector<std::deque<Order>>* _ManipulatorOrderList, const std::vector<int>& _Manipulator_Fixed_Position)
 {
 	//What stands for what order 1=catch and pick down 0=retrieve from the storage and put on the line
 	//Where is at which side, 0=left 1=right
 
-	int mWho = (mBrick.AssignedPallet-1)/2;	//Who is which manipulator. From 1 to NMANIPULATORS
+	int mWho = (mBrick.AssignedPallet-1)/2;	//Who is which manipulator. From 0 to NMANIPULATORS-1
 
 	Order OrderToPlace(0,0,0);
-	OrderToPlace.What = mBrick.Type!=0;//If has a Type, must be picked down. If it's a hole, must retrieve.
-	OrderToPlace.Where = mBrick.AssignedPallet%2; //0=left 1=right
+	OrderToPlace.What = mBrick.Type==0;//If has a Type, must be picked down, what = 0. If it's a hole, must retrieve. what = 1
+	OrderToPlace.Where = mBrick.AssignedPallet%2 == 1; //0=left 1=right
 	OrderToPlace.When = _Manipulator_Fixed_Position.at(mWho)-mBrick.Position; //When is the distance in encoder units that is left to reach the assigned manipulator
 
 	//Here we have the order. But where to place it?
 	//Orders must be ordered by its position.
 
 	unsigned int i=0;
-	while(i<_ManipulatorOrderList->at(mWho).size() && _ManipulatorOrderList->at(mWho).at(i).When > OrderToPlace.When){
+	while(i<_ManipulatorOrderList->at(mWho).size() && _ManipulatorOrderList->at(mWho).at(i).When < OrderToPlace.When){
 				i++;
 	}
-	_ManipulatorOrderList->at(mWho).insert(	_ManipulatorOrderList->at(mWho).begin()+i,OrderToPlace);
+	_ManipulatorOrderList->at(mWho).insert(_ManipulatorOrderList->at(mWho).begin()+i,OrderToPlace);
 }
 
-void ProcessOrdersToPLC(const std::vector<std::deque<Order>>& _ManipulatorOrderList)
+void ProcessOrdersToPLC(const std::vector<std::deque<Order>>& _ManipulatorOrderList, const std::vector<int>& _Pallet_LowSpeedPulse_Height_List)
 {
 	for(unsigned int i=0;i<_ManipulatorOrderList.size();i++)
 	{
-		if(_ManipulatorOrderList.at(i).size()>0)
+		if(_ManipulatorOrderList.at(i).size()>0 &&
+				(
+				(_ManipulatorOrderList.at(i).begin()->What==false  && _ManipulatorOrderList.at(i).begin()->When<2000)
+				||
+				(_ManipulatorOrderList.at(i).begin()->What==true && _ManipulatorOrderList.at(i).begin()->When<12000)
+				)
+
+		)
 		{
-			DesiredRoboticArm(i+1)->StorageBinDirection = _ManipulatorOrderList.at(i).begin()->Where;
-			DesiredRoboticArm(i+1)->CatchOrDrop = _ManipulatorOrderList.at(i).begin()->What+1;
-			DesiredRoboticArm(i+1)->ValueOfCatchDrop = RoboticArm::ActualValueOfTheLineEncoder + _ManipulatorOrderList.at(i).begin()->When;
+			//WHAT TO DO WITH THE BRICK
+
+			if(_ManipulatorOrderList.at(i).begin()->Where){
+				DesiredRoboticArm(i+1)->WhatToDoWithTheBrick = 1; //right side
+			}
+			else
+			{
+				DesiredRoboticArm(i+1)->WhatToDoWithTheBrick = 2;	//left side
+			}
+
+			//CATH OR DROP
+
+			if(_ManipulatorOrderList.at(i).begin()->What==false) DesiredRoboticArm(i+1)->CatchOrDrop=1;
+			else DesiredRoboticArm(i+1)->CatchOrDrop=2;
+
+			//VALUE OF CATH OR DROP
+
+			if(RoboticArm::ActualValueOfTheLineEncoder + _ManipulatorOrderList.at(i).begin()->When <100000)
+			{
+				DesiredRoboticArm(i+1)->ValueOfCatchDrop = RoboticArm::ActualValueOfTheLineEncoder + _ManipulatorOrderList.at(i).begin()->When;
+			}
+			else
+			{
+				DesiredRoboticArm(i+1)->ValueOfCatchDrop = RoboticArm::ActualValueOfTheLineEncoder + _ManipulatorOrderList.at(i).begin()->When - 100000;
+			}
+
+			//THE PULSE OF Z AXIS
+			//DesiredRoboticArm(i+1)->PulseZAxis=_Pallet_LowSpeedPulse_Height_List.at(i*2+(DesiredRoboticArm(i+1)->WhatToDoWithTheBrick-1));
+			DesiredRoboticArm(i+1)->PulseZAxis=_Pallet_LowSpeedPulse_Height_List.at(i*2+(DesiredRoboticArm(i+1)->WhatToDoWithTheBrick-1));//0
+
 		}
 		else
 		{
-			DesiredRoboticArm(i+1)->CatchOrDrop = 0;
+				DesiredRoboticArm(i+1)->WhatToDoWithTheBrick = 0;
+				DesiredRoboticArm(i+1)->CatchOrDrop = 0;
+				DesiredRoboticArm(i+1)->ValueOfCatchDrop = 0;
 		}
 	}
 }
@@ -301,8 +556,11 @@ std::vector<std::deque<Order>> Manipulator_Order_List;  //Has the list of orders
 std::deque<Brick> Bricks_Before_The_Line;				//List with the bricks between the photosensor 1 and the photosensor 4
 std::deque<Brick> Bricks_On_The_Line;					//List with the bricks between the photosensor 4 and the end of the line.
 
+std::vector<Brick> Bricks_Ready_For_Output;
 std::vector<int> Manipulator_Fixed_Position;
 std::vector<int> Manipulator_Modes;
+std::vector<int> Pallet_LowSpeedPulse_Height_List;
+std::vector<Brick> Manipulator_TakenBrick;
 
 int CurrentPackagingColor, CurrentPackagingGrade;
 
@@ -326,6 +584,65 @@ void Algorithm_SetManipulatorModes(std::vector<int> mModes){
 	Manipulator_Modes=mModes;
 }
 
+
+void CheckForBricksAtTheTop(std::vector<Brick>* _Bricks_Ready_For_Output, int _RawCurrentPackagingBrick)
+{
+	/*
+	for(int i=10;i>0;i--)//for every manipulator
+	{
+		//_Bricks_Ready_For_Output:
+		//	it's 0	when it does not match the top
+		//	it's -1 when it has been assigned a gap
+		//	it's 1	when it matches the top but it has not been assigned a gap
+		bool MatchingTop = (StorageGetRaw(i, StorageGetNumberOfBricks(i)) == _RawCurrentPackagingBrick);
+		if(MatchingTop == 0) //check for not matching top
+		{
+			_Bricks_Ready_For_Output->at(i)=0;
+		} 
+		else if(MatchingTop && _Bricks_Ready_For_Output->at(i) !=-1) //If the top matches and it has not been assigned yet
+		{
+			//Assign the brick to a gap.
+			
+			//There must be
+
+
+			
+			
+			
+		}
+	}
+	*/
+}
+
+void FindASpotForOutputBricks()
+{
+
+}
+
+
+void RFIDSubroutine()
+{
+	//Asks for the RFID tags.
+	for(int i=1;i<=10;i++)
+	{
+		StorageReadUID(i); 			//First read the UID of the pallet.
+		if(StorageGetStoredUIDChangedFlag(i) && StorageGetStoredUIDChangedCount(i)>5)
+		{  			//Check if there has been any pallet change
+		    StorageClearStoredUIDChangedFlag(i);
+			if(!boost::equals(StorageGetStoredUID(i),"0000000000000000"))
+			{	//If the change is to another pallet, read it.
+				StorageReadAllMemory(i);
+				//cout<< "This simulates a memory Read" << endl;
+			}
+			else
+			{						 									//If the change is to no pallet, clear the memory.
+				StorageCleanPalletMemory(i);
+			}
+		}
+	}
+}
+
+
 //-----------------------------------------------------------------------//
 void * AlgorithmV2(void *Arg)
 {
@@ -337,19 +654,23 @@ void * AlgorithmV2(void *Arg)
 	CurrentPackagingGrade = config.GetPackagingGrade();
 	Manipulator_Fixed_Position = config.GetArmPositions();
 	Manipulator_Modes = config.GetManipulatorModes();
-	SetNumberOfManipulators(&Manipulator_Order_List, Manipulator_Fixed_Position.size());
+	SetNumberOfManipulators(&Manipulator_Order_List, &Pallet_LowSpeedPulse_Height_List, &Manipulator_TakenBrick, Manipulator_Fixed_Position.size());
 	FillDNIs(&Available_DNI_List);
 
 
 	Synchro::DecreaseSynchronizationPointValue(0);
 	while(1)
 	{
+
+		int RawCurrentPackagingBrick = (CurrentPackagingColor << 4) + CurrentPackagingGrade;
+		//RFIDSubroutine();  WHAT THE FUCK!! THIS IS LEAKING MEMORY!!!
+
 		//std::cout<< "inside the algorithm loop"<<std::endl;
 		//UPDATE ENCODER VALUES
 		int EncoderAdvance = Calculate_Advance(&PreviousValueOfTheLineEncoder);
 		update_order_list(&Manipulator_Order_List, EncoderAdvance);
-		update_list(&Bricks_On_The_Line, EncoderAdvance, &Available_DNI_List, Manipulator_Fixed_Position);
-
+	    update_list(&Bricks_On_The_Line, &Manipulator_TakenBrick, EncoderAdvance, &Available_DNI_List, Manipulator_Fixed_Position);
+		update_PalletHeight(&Pallet_LowSpeedPulse_Height_List, &Manipulator_TakenBrick, &Available_DNI_List);
 		//CHECK FOR INPUT
 
 		CheckPhotoSensor1(&Bricks_Before_The_Line); //Check for brick on photosensor 1 to store the grade
@@ -357,30 +678,48 @@ void * AlgorithmV2(void *Arg)
 		if(NewBrickDetected) //New brick detected!
 		{
 			//if brick should go through
-			int RawCurrentPackagingBrick = (CurrentPackagingColor << 4) + CurrentPackagingGrade;
 			Brick* BrickToWorkWith = &(Bricks_On_The_Line.at(Bricks_On_The_Line.size()-2));//Remember, back is going to be a hole and (back - 1) the actual brick
 
 			if(RawCurrentPackagingBrick==BrickToWorkWith->Type)
 			{
+
 				if(RoboticArm::WhetherOrNotPutTheTileTo_16) //If the path is not blocked, go freely
 				{
 					BrickToWorkWith->AssignedPallet=-1;//Because why not? -1 could mean go freely
 				}
 				else
 				{
-					Choose_Best_Pallet(BrickToWorkWith, Manipulator_Order_List, Manipulator_Fixed_Position); //BrickToWorkWith is a pointer, take care
+					Choose_Best_Pallet(BrickToWorkWith, Manipulator_Order_List, Manipulator_Fixed_Position, Manipulator_Modes, RawCurrentPackagingBrick); //BrickToWorkWith is a pointer, take care
 					AddOrder(*BrickToWorkWith, &Manipulator_Order_List, Manipulator_Fixed_Position);
 				}
+
 			}
 			else
 			{
-				Choose_Best_Pallet(BrickToWorkWith, Manipulator_Order_List, Manipulator_Fixed_Position); //BrickToWorkWith is a pointer, take care
+				Choose_Best_Pallet(BrickToWorkWith, Manipulator_Order_List, Manipulator_Fixed_Position, Manipulator_Modes, RawCurrentPackagingBrick); //BrickToWorkWith is a pointer, take care
 			}
 		}
+
 		//CHECK FOR OUTPUT
+		//The output is:
+		//Check that the output operation is allowed
+		if(RoboticArm::WhetherOrNotPutTheTileTo_16)
+		{
+			
+			//Draft()
+			//Es tan simple como si hay una baldosa en el top de un palet del mismo tipo que lo que se esta empaquetando, se ponga en el primer hueco
+			//CheckForBricksAtTheTop();//Will search at all the pallets looking for bricks that match the packing type and have not been assigned
+			//This function will operate a vector, of 10 elements. it will write a 0 if it does not match the packing, a 1 if it does and has not been assigned yet.
+			//It can write 0 at any time, it can write 1 only if there was not a -1 before.
+			//FindASpotForOutputBricks(); //Will check a spot for the pallets that have a 1. Once assigned a brick it will write -1;
+			//Will check absolutely every damn gap that happens in the line
+			//This function will place an order
+		}
+
+
 
 
 		//Give to the PLC the updates of the Order Line.
-		ProcessOrdersToPLC(Manipulator_Order_List);
+		ProcessOrdersToPLC(Manipulator_Order_List, Pallet_LowSpeedPulse_Height_List);
 	}
 }

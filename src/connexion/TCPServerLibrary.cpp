@@ -244,6 +244,11 @@ void * OpenServer(void *Arg)
 
                     //set the string terminating NULL byte on the end
                 	bufferRead[valread]= '\0';
+
+
+                	//TODO process message list
+
+
                     previous_response_time[i]=std::chrono::system_clock::now();
                 	bool ServerIsReady = true;
                 	//TODO RBS, replace contains by substring(0,4)
@@ -300,7 +305,7 @@ void * OpenServer(void *Arg)
                 		try {bufferWrite = Command_RPRV(bufferRead);}
 						catch(...){
 							std::cout << "Command_RPRV exception: bad syntax"<< std::endl;
-							bufferWrite = "Error_RPRV\r\n";
+							std::cout << bufferRead << std::endl;
 						}
                 	}
                 	else if (boost::contains(bufferRead,"ALSC") && ServerIsReady)

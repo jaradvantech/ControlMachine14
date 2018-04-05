@@ -13,14 +13,14 @@ RoboticArm *GlobalArm[NUMBEROFARMS];
 RoboticArmConfigInfo RoboticArm::_ConfigInfo;
 //-------------------------------------------------
 bool RoboticArm::CommunicationExchange;
-bool RoboticArm::TestPattern;
+bool RoboticArm::TestPattern=1;
 bool RoboticArm::InquiryTheTile;
 bool RoboticArm::TransmissionManualDebugging;
-short RoboticArm::PCState;
-int RoboticArm::Z_AxisDeceletationDistance;
-int RoboticArm::Z_AxisStandbyValue;
-int RoboticArm::ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance; //Yup bitches. I'm serious, in the manual had this name and I decided to keep it.
-int RoboticArm::ThePulseOfZ_AxisAdvanceDownInAdvance;
+short RoboticArm::PCState=1;
+int RoboticArm::Z_AxisDeceletationDistance=1200;
+int RoboticArm::Z_AxisStandbyValue=150;
+int RoboticArm::ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance=300; //Yup bitches. I'm serious, in the manual had this name and I decided to keep it.
+int RoboticArm::ThePulseOfZ_AxisAdvanceDownInAdvance=6500;
 //_________________________________________________________
 bool RoboticArm::TheQueueOfPhotosensor_1;
 bool RoboticArm::TheQueueOfPhotosensor_2;
@@ -51,7 +51,7 @@ RoboticArm::RoboticArm(){
 	//--------------------------------------------------------------------
     // DATA TO BE SENT TO THE PLC
 	//--------------------------------------------------------------------
-    StorageBinDirection=0;			//0:A 1:B
+    StorageBinDirection=0;			//0:A 1:B Not used anymore
 	ManipulatorReset=0;				//0:Reset 1:Done?
 	StorageBinFullA=1;				//0:Yes 1:No
 	StorageBinFullB=1;				//0:Yes 1:No
@@ -62,9 +62,9 @@ RoboticArm::RoboticArm(){
     ManualForwardBackward=0;		//0:Stop 1:Forward 2:Backward
 	ManualLeftRight=0;				//0:Stop 1:Left 2:Right
 	ManualUpDown=0;					//0:Stop 1:Up 2:Down
+	WhatToDoWithTheBrick=0;			//0:Wait 1:Right Side 2:Left side
 	CatchOrDrop=0;					//0:Stop 1:Catch 2:Drop
-	WhatToDoWithTheBrick=0;			//0:Wait 1:Put in the Storage 2:Put in the line
-	PulseZAxis=0;					//High speed to low speed
+	PulseZAxis=5000;					//High speed to low speed
 	ValueOfCatchDrop=0;				//Pulse of grab target
 	//--------------------------------------------------------------------
 

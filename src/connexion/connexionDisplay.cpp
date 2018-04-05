@@ -259,7 +259,9 @@ std::string Command_RPRV(std::string const& Buffer) {
 	Answer+= "_";
 	Answer+= (boost::format("%02u")%(mListOfBricksOnTheLine.size()/2)).str();
 	//For every brick add the
-	for(unsigned int i=0;i<mListOfBricksOnTheLine.size();i++){
+	//std::cout << Answer<<"\n" << std::endl;
+	for(unsigned int i=0; i<mListOfBricksOnTheLine.size(); i+=2){
+		//std::cout << i << std::endl;
 		if(mListOfBricksOnTheLine.at(i).Type!=0)
 		{
 		Answer+= "_";
@@ -267,6 +269,7 @@ std::string Command_RPRV(std::string const& Buffer) {
 		Answer+=char(mListOfBricksOnTheLine.at(i).Type);							 //grade and colour
 		Answer+=(boost::format("%02u")%(mListOfBricksOnTheLine.at(i).AssignedPallet)).str();//assigned pallet
 		Answer+=(boost::format("%02u")%(mListOfBricksOnTheLine.at(i).DNI)).str();//dni
+			//std::cout << Answer << std::endl;
 		}
 	}
 	//Common manipulator information

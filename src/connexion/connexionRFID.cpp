@@ -24,20 +24,24 @@ std::deque<std::string> emergencyList;
 //Functions to perform the normal working, external layer.
 //////////////////////////////////////////
 
-void RFIDReaders_Configure(){
+void RFIDReaders_Configure()
+{
 	 //added by RBS on March 19th
 	 ConfigParser config("/home/baseconfig/unit14.conf");
 	 RFID_PORT = config.GetServerPorts();
 	 RFID_IP_ADRESS = config.GetServerIPs();
 	 NUMBEROFRFIDREADERS = RFID_IP_ADRESS.size();
 
-	 for(int i=0;i<NUMBEROFRFIDREADERS;i++){
+	 for(int i=0;i<NUMBEROFRFIDREADERS;i++)
+	 {
 		RFIDManager.push_back(new RFIDReader());
 	}
 }
-void RFIDReaders_Start(){
+void RFIDReaders_Start()
+{
 	emergencyList.clear(); //Clear emergency list
-	for(int i=0;i<NUMBEROFRFIDREADERS;i++){
+	for(int i=0;i<NUMBEROFRFIDREADERS;i++)
+	{
 		RFIDManager[i]->InitializeClient();
 	}
 
@@ -50,7 +54,8 @@ void RFIDReaders_Start(){
 	}
 }
 
-bool RFIDReader_isConnected(int RFIDServer){
+bool RFIDReader_isConnected(int RFIDServer)
+{
 	return RFIDManager[RFIDServer]->isConnected();
 }
 
@@ -158,7 +163,7 @@ void * RFIDLoop(void *Arg){
 					 throw std::runtime_error("Message Error");
 				 }
 				 ListToUse->pop_front();	//when the answer is processed, we just pop out the actual message
-				 //std::cout << "Message poped" << std::endl;
+
 				 } else{throw std::runtime_error("Error on send");}//throw exception maybe?
 			 }
 		 } catch( ... ){

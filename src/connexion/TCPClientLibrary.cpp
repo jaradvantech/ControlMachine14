@@ -25,6 +25,7 @@ bool TCPClient::setup(std::string address , int port)
       			printf("| Could not create socket\n");
     		}
         }
+
   	if(inet_addr(address.c_str()) == -1)
   	{
     		struct hostent *he;

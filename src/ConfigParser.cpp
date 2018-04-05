@@ -68,7 +68,7 @@ int ConfigParser::GetPackagingColor()
 
 void ConfigParser::SetManipulatorModes(std::vector<int> ManipulatorModes)
 {
-
+	//TODO RBS
 }
 
 int ConfigParser::SetCurrentPackagingGrade(int PackagingGrade)

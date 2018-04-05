@@ -18,9 +18,9 @@
 #include <RoboticArmInfo.h>
 #include <StorageInterface.h>
 #include <PalletAbstractionLayer/Pallet.h>
-#include <boost/algorithm/string/predicate.hpp>
 #include <algorithms/algorithm_v2.h>
 #include <SynchronizationPoints.h>
+#include <boost/algorithm/string/predicate.hpp>
 //#include <Logs.h>
 
 TS7Client *ClientPlc14;
@@ -189,25 +189,31 @@ int main() {
 		 }
 
 		//Algorithm implementation.
+
 		while(1){
 
-			for(int i=1;i<=10;i++){
+			//cout<< "MAIN PROGRAM END CYCLE" << endl;
+			//Asks for the RFID tags.
+			for(int i=1;i<=10;i++)
+			{
 				StorageReadUID(i); 			//First read the UID of the pallet.
-				if(StorageGetStoredUIDChangedFlag(i) && StorageGetStoredUIDChangedCount(i)>5){  			//Check if there has been any pallet change
+				if(StorageGetStoredUIDChangedFlag(i) && StorageGetStoredUIDChangedCount(i)>5)
+				{  			//Check if there has been any pallet change
 				    StorageClearStoredUIDChangedFlag(i);
-					if(!boost::equals(StorageGetStoredUID(i),"0000000000000000")){	//If the change is to another pallet, read it.
+					if(!boost::equals(StorageGetStoredUID(i),"0000000000000000"))
+					{	//If the change is to another pallet, read it.
 						StorageReadAllMemory(i);
 						//cout<< "This simulates a memory Read" << endl;
-					}else{						 									//If the change is to no pallet, clear the memory.
+					}
+					else
+					{						 									//If the change is to no pallet, clear the memory.
 						StorageCleanPalletMemory(i);
 					}
 				}
 			}
 
-			//cout<< "MAIN PROGRAM END CYCLE" << endl;
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
-
 	//}
 	exit(0);
 	return 0;

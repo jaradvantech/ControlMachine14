@@ -89,7 +89,7 @@ class RoboticArm{
 	static int ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance; //Yup bitches. I'm serious, in the manual had this name and I decided to keep it.
 	static int ThePulseOfZ_AxisAdvanceDownInAdvance;
     //_________________________________________________________
-    bool StorageBinDirection;			//0:A 1:B
+    bool StorageBinDirection;			//0:A 1:B NOT USED
 	bool ManipulatorReset;				//0:Reset 1:Done?
 	bool StorageBinFullA;				//0:Yes 1:No
 	bool StorageBinFullB;				//0:Yes 1:No
@@ -100,8 +100,8 @@ class RoboticArm{
     short ManualForwardBackward;		//0:Stop 1:Forward 2:Backward
 	short ManualLeftRight;				//0:Stop 1:Left 2:Right
 	short ManualUpDown;					//0:Stop 1:Up 2:Down
+	short WhatToDoWithTheBrick;			//0:Idle 1:Right side 2:Left Side
 	short CatchOrDrop;					//0:Stop 1:Catch 2:Drop
-	short WhatToDoWithTheBrick;			//0:Wait 1:Put in the Storage 2:Put in the line
 	int PulseZAxis;					//High speed to low speed
 	long ValueOfCatchDrop;				//Pulse of grab target
 	//--------------------------------------------------------------------

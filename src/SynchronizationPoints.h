@@ -17,10 +17,10 @@ private:
 	static std::vector<int> SynchronizationPoints_List;
 	static std::mutex SynchronizationPoints_mutex;
 public:
-	static int  GetSynchronizationPointValue(int IndexOfSynchronizationPoint);
+	static int  GetSynchronizationPointValue(unsigned int IndexOfSynchronizationPoint);
 	static int  GetSynchronizationPointNextFreeIndex();
-	static void IncreaseSynchronizationPointValue(int IndexOfSynchronizationPoint);
-	static void DecreaseSynchronizationPointValue(int IndexOfSynchronizationPoint);
+	static void IncreaseSynchronizationPointValue(unsigned int IndexOfSynchronizationPoint);
+	static void DecreaseSynchronizationPointValue(unsigned int IndexOfSynchronizationPoint);
 };
 
 

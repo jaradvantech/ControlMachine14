@@ -207,11 +207,11 @@ int AnswerOfDeleteBrick(std::string Answer, int RFIDServer){
 }
 
 int AnswerOfEditBrick(std::string Answer, int RFIDServer){
-
+	return 0;
 }
 
 int AnswerOfInsertBrick(std::string Answer, int RFIDServer){
-
+	return 0;
 }
 
 int processAnswer(std::string Answer, int RFIDServer){
