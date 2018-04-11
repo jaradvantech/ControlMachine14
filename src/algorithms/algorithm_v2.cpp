@@ -22,6 +22,7 @@
 
 void SetNumberOfManipulators(std::vector<std::deque<Order>>* _Manipulator_Order_List,
 		std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
+		std::vector<int>* _Bricks_Ready_For_Output,
 		std::vector<Brick>* _Manipulator_TakenBrick,
 		short _NumberOfManipulators)
 {
@@ -33,6 +34,8 @@ void SetNumberOfManipulators(std::vector<std::deque<Order>>* _Manipulator_Order_
 		_Manipulator_TakenBrick->push_back(NoBrick);
 		_Pallet_LowSpeedPulse_Height_List->push_back(5000);
 		_Pallet_LowSpeedPulse_Height_List->push_back(5000);
+		_Bricks_Ready_For_Output->push_back(0);
+		_Bricks_Ready_For_Output->push_back(0);
 	}
 }
 
@@ -87,7 +90,10 @@ int Calculate_Advance(long* PreviousValueOfTheLineEncoder)
 void CheckPhotoSensor1(std::deque<Brick>* _BricksBeforeTheLine){
 	static bool BrickOnTheQueueDetected_Trigger = false;
 	int TileGrade = RoboticArm::TileGrade;
-	if(TileGrade !=0 && RoboticArm::TheQueueOfPhotosensor_1 && BrickOnTheQueueDetected_Trigger==false)
+	if(RoboticArm::PCState==3){
+	//Do nothing, manual mode
+	}
+	else if(TileGrade !=0 && RoboticArm::TheQueueOfPhotosensor_1 && BrickOnTheQueueDetected_Trigger==false)
 	{ //We have a new brick on the photosensor 1
 		BrickOnTheQueueDetected_Trigger=true;
 
@@ -107,7 +113,14 @@ void CheckPhotoSensor1(std::deque<Brick>* _BricksBeforeTheLine){
 bool CheckPhotoSensor4(std::deque<Brick>* _BricksBeforeTheLine, std::deque<Brick>* _BricksOnTheLine, std::deque<int>* Available_DNI_List)
 {
 	static int lastBrick_Position=RoboticArm::EnterTheTileStartingCodeValue;
-	if(RoboticArm::EnterTheTileStartingCodeValue !=lastBrick_Position){ //We have a new brick on the photosensor 4
+	static bool BrickOnTheLineDetected_Trigger = false;
+	if(RoboticArm::PCState==3)
+	{
+	//Do nothing, manual mode
+	}
+	else if(RoboticArm::TheQueueOfPhotosensor_4 && RoboticArm::EnterTheTileStartingCodeValue !=lastBrick_Position
+	&& 	_BricksBeforeTheLine->size()>0)
+	{ //We have a new brick on the photosensor 4
 		std::cout << "brick detected PS4" << std::endl;
 		lastBrick_Position=RoboticArm::EnterTheTileStartingCodeValue;		//Update the values for future iterations
 
@@ -160,17 +173,26 @@ void update_list(std::deque<Brick>* mBrickList,
 		//remove that brick from mBrickList
 		//remove also its gap from mBrickList
 
-		if(mBrickList->at(i).Type !=0 && mBrickList->at(i).AssignedPallet!=0) //If it's a brick and therefore ot a gap
+		if(mBrickList->at(i).Type !=0 && mBrickList->at(i).AssignedPallet!=0) //If it's a brick and therefore not a gap
 		{
 			int IndexAssignedManipulator =(mBrickList->at(i).AssignedPallet-1) / 2;
 
 			if(mBrickList->at(i).Position > _Manipulator_Fixed_Position.at(IndexAssignedManipulator)-100 &&
-			   mBrickList->at(i).Position < _Manipulator_Fixed_Position.at(IndexAssignedManipulator)+100) //If it's in its range
+			   mBrickList->at(i).Position < _Manipulator_Fixed_Position.at(IndexAssignedManipulator)+100 &&
+			   DesiredRoboticArm(IndexAssignedManipulator+1)->CatchOrDrop==1 // &&
+			   //DesiredRoboticArm(IndexAssignedManipulator+1)->PhotosensorOfManipulator == 1
+			   ) //If it's in its range
 			{
 				//Add that brick to _Manipulator_TakenBrick
 				//remove that brick from mBrickList
 				//remove also its gap from mBrickList
+				if(_Manipulator_TakenBrick->at(IndexAssignedManipulator).DNI!=0)
+				{
+					std::cout << "DNI That was going to be leaked returned successfully" << std::endl;
+					int DNItoReturn = _Manipulator_TakenBrick->at(IndexAssignedManipulator).DNI;
+					_Available_DNI_List->push_back(DNItoReturn);
 
+				}
 				_Manipulator_TakenBrick->at(IndexAssignedManipulator) = mBrickList->at(i);
 				mBrickList->erase(mBrickList->begin()+i);
 				mBrickList->erase(mBrickList->begin()+i);
@@ -179,14 +201,13 @@ void update_list(std::deque<Brick>* mBrickList,
 	}
 
 	//Check if it's out of the line
-	if(mBrickList->size()>0 && mBrickList->at(0).Position>=_Manipulator_Fixed_Position.back()+500){
+	if(mBrickList->size()>0 && mBrickList->at(0).Position>=_Manipulator_Fixed_Position.back()+1500){
 		std::cout << "Brick abandons the line because its position is "<< mBrickList->begin()->Position << std::endl;
 		int DNItoReturn = mBrickList->begin()->DNI;
 		if(DNItoReturn>0){
 			_Available_DNI_List->push_back(DNItoReturn);
-			mBrickList->pop_front();
-			mBrickList->pop_front();
 		}
+		mBrickList->pop_front();
 	}
 }
 
@@ -227,7 +248,7 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 		int ArmIndex=(i/2)+1; //001 101
 
 		if(DesiredRoboticArm(ArmIndex)->CatchOrDrop==1 && DesiredRoboticArm(ArmIndex)->HasDischarged == 1 &&
-				HasDischarged_Previous.at(i)==0)
+				HasDischarged_Previous.at(i)==0 && _Manipulator_TakenBrick->at(ArmIndex-1).DNI!=0)
 		{
 			_Pallet_LowSpeedPulse_Height_List->at(i)= DesiredRoboticArm(ArmIndex)->ActualValueEncoder - RoboticArm::Z_AxisDeceletationDistance;
 			std::cout<< "Updated height value to "<< _Pallet_LowSpeedPulse_Height_List->at(i) <<std::endl;
@@ -455,19 +476,23 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 	static int last;
 	static int last2;
 	static int last3;
+	static int last4;
 	srand(time(NULL));
 	int Random;
 
-	while(Random==last || Random==last2 || Random==last3 || Random==0)
+	while(Random==last || Random==last2 || Random==last3 || Random==last4)
 	{
-		Random=(rand()%5)+1; //12345
+		Random=(rand()%5); //01234
 	}
+
+	last4=last3;
 	last3=last2;
 	last2=last;
 	last=Random;
-
-	std::cout << "Random mode, goes to "<< (Random*2)-1 << std::endl;
-	_BrickToClassify->AssignedPallet = (Random*2)-1;
+	Random*=2;//02468
+	Random+=rand()%2+1;//12345678910
+	std::cout << "Random mode, goes to "<< Random << std::endl;
+	_BrickToClassify->AssignedPallet = Random;
 }
 
 
@@ -556,8 +581,12 @@ std::vector<std::deque<Order>> Manipulator_Order_List;  //Has the list of orders
 std::deque<Brick> Bricks_Before_The_Line;				//List with the bricks between the photosensor 1 and the photosensor 4
 std::deque<Brick> Bricks_On_The_Line;					//List with the bricks between the photosensor 4 and the end of the line.
 
-std::vector<Brick> Bricks_Ready_For_Output;
+std::vector<int> Bricks_Ready_For_Output;
 std::vector<int> Manipulator_Fixed_Position;
+void Algorithm_SetManipulatorFixedPosition(std::vector<int> mManipulator_Fixed_Position)
+{
+	Manipulator_Fixed_Position = mManipulator_Fixed_Position;
+}
 std::vector<int> Manipulator_Modes;
 std::vector<int> Pallet_LowSpeedPulse_Height_List;
 std::vector<Brick> Manipulator_TakenBrick;
@@ -571,11 +600,16 @@ long PreviousValueOfTheLineEncoder=RoboticArm::ActualValueOfTheLineEncoder;
 std::deque<Brick> GetListOfBricksOnTheLine(void){
 	return Bricks_On_The_Line;
 }
+std::vector<Brick> GetListOfBricksTakenByManipulators(void){
+	return Manipulator_TakenBrick;
+}
 void Algorithm_SetCurrentPackagingColor(int PackagingColor){
 	CurrentPackagingColor=PackagingColor;
+	std::cout << "Setting current packaging color to " << CurrentPackagingColor << std::endl;
 }
 void Algorithm_SetCurrentPackagingGrade(int PackagingGrade){
 	CurrentPackagingGrade=PackagingGrade;
+	std::cout << "Setting current packaging type to " << CurrentPackagingGrade << std::endl;
 }
 void Algorithm_SetManipulatorOperationTime(int mManipulatorOperationTime){
 	ManipulatorOperationTime=mManipulatorOperationTime;
@@ -585,16 +619,16 @@ void Algorithm_SetManipulatorModes(std::vector<int> mModes){
 }
 
 
-void CheckForBricksAtTheTop(std::vector<Brick>* _Bricks_Ready_For_Output, int _RawCurrentPackagingBrick)
+void CheckForBricksAtTheTop(std::vector<int>* _Bricks_Ready_For_Output, int _RawCurrentPackagingBrick)
 {
-	/*
-	for(int i=10;i>0;i--)//for every manipulator
+
+	for(int i=9; i>=0; i--)//for every pallet
 	{
 		//_Bricks_Ready_For_Output:
 		//	it's 0	when it does not match the top
 		//	it's -1 when it has been assigned a gap
 		//	it's 1	when it matches the top but it has not been assigned a gap
-		bool MatchingTop = (StorageGetRaw(i, StorageGetNumberOfBricks(i)) == _RawCurrentPackagingBrick);
+		bool MatchingTop = (StorageGetRaw(i+1, StorageGetNumberOfBricks(i+1)) == _RawCurrentPackagingBrick);
 		if(MatchingTop == 0) //check for not matching top
 		{
 			_Bricks_Ready_For_Output->at(i)=0;
@@ -602,21 +636,94 @@ void CheckForBricksAtTheTop(std::vector<Brick>* _Bricks_Ready_For_Output, int _R
 		else if(MatchingTop && _Bricks_Ready_For_Output->at(i) !=-1) //If the top matches and it has not been assigned yet
 		{
 			//Assign the brick to a gap.
-			
-			//There must be
-
-
-			
-			
-			
+			_Bricks_Ready_For_Output->at(i) =1;
 		}
 	}
-	*/
+
 }
 
-void FindASpotForOutputBricks()
+void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
+								std::vector<int>* _Bricks_Ready_For_Output,
+								const std::vector<int>& _Manipulator_Fixed_Position,
+								std::vector<std::deque<Order>>* _ManipulatorOrderList)
 {
+	int K = 3000; //RBS debug only, TODO improve
+	int E = 1000;
 
+	for(unsigned int i=0; i<_Bricks_Ready_For_Output->size(); i++)
+	{
+		//If a gap is required for this pallet
+		if(_Bricks_Ready_For_Output->at(i) == 1)
+		{
+			int destinationManipulator = (i/2);
+
+			//start checking from front to back
+			for(unsigned int j=0; j<Bricks_On_The_Line->size(); j++)  //Rewrite with for to avoid break
+			{
+				Brick mBrick = Bricks_On_The_Line->at(j);
+
+				//If the selected item is a gap, and it is unassigned, and its far enough
+				//and the order could fit between the existing orders without disrupt
+				//and the manipulator won't be busy:
+				if (
+					mBrick.Type == 0 &&
+					mBrick.AssignedPallet == 0 &&
+					mBrick.Position < (Manipulator_Fixed_Position.at(destinationManipulator)-K) &&
+							(
+							(j==Bricks_On_The_Line->size()-1  && mBrick.Position>K) // If the gap is at the first position, it just checks the space form the beginning of the line
+							||
+							(j<Bricks_On_The_Line->size()-1  && (mBrick.Position - Bricks_On_The_Line->at(j+1).Position) > K) // If the  gap is somewhere else, check the distance between the gap and the next one
+							)
+					// &&
+					// && comprobar lista
+					//manipulador de salida
+					)
+				{
+
+					std::cout << "Spot found!!, at index " << j << std::endl;
+					_Bricks_Ready_For_Output->at(i) = -1;
+
+					//Insert two items just before that place, so the middle spot can be assigned for the operation
+					//while maintaining the brick-spot principle (Note: second spot (spot2) must be thin in order to save space)
+
+					//Before:
+					//   j+1        j        j-1                  0
+					//---------+---------+---------+---------+---------+
+					//  Brick  |   SPOT  |  Brick  |   ...   |  FRONT  |
+					//---------+---------+---------+---------+---------+
+
+					//Before:
+					//	j+2	 	  	j+1          j         j-1                  0
+					//-----------------------+---------+---------+---------+---------+
+					//Brick  |  AssignedSpot |   SPOT  |  Brick  |   ...   |  FRONT  |
+					//-----------------------+---------+---------+---------+---------+
+
+					//After:
+					//   j+3       j+2         j+1         j      j-1                  0
+					//---------+---------+--------------+-----+---------+---------+---------+
+					//  Brick  | newSPOT | AssignedSpot |SPOT |  Brick  |   ...   |  FRONT  |
+					//---------+---------+--------------+-----+---------+---------+---------+
+
+
+					int assignedSpotPosition = Bricks_On_The_Line->at(j).Position + 10; //Very thin gap
+					int newSpotPosition = assignedSpotPosition + E; //situated behind Assigned spot
+
+					//Add assigned spot behind SPOT
+					Brick AssignedSpot(0, assignedSpotPosition, 0, 0);
+					Bricks_On_The_Line->insert(Bricks_On_The_Line->begin()+j+1, AssignedSpot);
+					//AsignedSpot becomes j+1, SPOT2 is j
+
+					//Add new spot behind AssignedSpot
+					Brick newSpot(0, newSpotPosition, 0, 0);
+					Bricks_On_The_Line->insert(Bricks_On_The_Line->begin()+j+2, newSpot);
+
+					//The assigned spot is now at j+1
+					AddOrder(Bricks_On_The_Line->at(j+1), _ManipulatorOrderList, _Manipulator_Fixed_Position);
+					break;
+				}
+			}
+		}
+	}
 }
 
 
@@ -642,6 +749,20 @@ void RFIDSubroutine()
 	}
 }
 
+std::vector<int> GetIndexesOfBricksOnLine(std::deque<Brick> Bricks_On_The_Line)
+{
+	std::vector<int> IndexesOfBricks;
+	for(int i=0; i<Bricks_On_The_Line.size(); i++)
+	{
+		//If item i on the line is not a gap
+		if(Bricks_On_The_Line.at(i).Type != 0)
+		{
+			IndexesOfBricks.push_back(i);
+		}
+	}
+
+	return IndexesOfBricks;
+}
 
 //-----------------------------------------------------------------------//
 void * AlgorithmV2(void *Arg)
@@ -654,7 +775,11 @@ void * AlgorithmV2(void *Arg)
 	CurrentPackagingGrade = config.GetPackagingGrade();
 	Manipulator_Fixed_Position = config.GetArmPositions();
 	Manipulator_Modes = config.GetManipulatorModes();
-	SetNumberOfManipulators(&Manipulator_Order_List, &Pallet_LowSpeedPulse_Height_List, &Manipulator_TakenBrick, Manipulator_Fixed_Position.size());
+	SetNumberOfManipulators(&Manipulator_Order_List,
+			&Pallet_LowSpeedPulse_Height_List,
+			&Bricks_Ready_For_Output,
+			&Manipulator_TakenBrick,
+			Manipulator_Fixed_Position.size());
 	FillDNIs(&Available_DNI_List);
 
 
@@ -697,21 +822,28 @@ void * AlgorithmV2(void *Arg)
 			else
 			{
 				Choose_Best_Pallet(BrickToWorkWith, Manipulator_Order_List, Manipulator_Fixed_Position, Manipulator_Modes, RawCurrentPackagingBrick); //BrickToWorkWith is a pointer, take care
+				AddOrder(*BrickToWorkWith, &Manipulator_Order_List, Manipulator_Fixed_Position);
 			}
 		}
 
 		//CHECK FOR OUTPUT
 		//The output is:
 		//Check that the output operation is allowed
-		if(RoboticArm::WhetherOrNotPutTheTileTo_16)
+		if(RoboticArm::WhetherOrNotPutTheTileTo_16 || true)
 		{
-			
 			//Draft()
 			//Es tan simple como si hay una baldosa en el top de un palet del mismo tipo que lo que se esta empaquetando, se ponga en el primer hueco
-			//CheckForBricksAtTheTop();//Will search at all the pallets looking for bricks that match the packing type and have not been assigned
+
+			CheckForBricksAtTheTop(&Bricks_Ready_For_Output, RawCurrentPackagingBrick);
+
+			//Will search at all the pallets looking for bricks that match the packing type and have not been assigned
 			//This function will operate a vector, of 10 elements. it will write a 0 if it does not match the packing, a 1 if it does and has not been assigned yet.
 			//It can write 0 at any time, it can write 1 only if there was not a -1 before.
-			//FindASpotForOutputBricks(); //Will check a spot for the pallets that have a 1. Once assigned a brick it will write -1;
+
+			FindASpotForOutputBricks(&Bricks_On_The_Line,
+										&Bricks_Ready_For_Output,
+										Manipulator_Fixed_Position,
+										&Manipulator_Order_List); //Will check a spot for the pallets that have a 1. Once assigned a brick it will write -1;
 			//Will check absolutely every damn gap that happens in the line
 			//This function will place an order
 		}

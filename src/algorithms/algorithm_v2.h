@@ -55,6 +55,8 @@ int  CheckQuantityContained(int, int, int);
 
 std::deque<Brick> GetListOfBricksOnTheLine(void);
 
+std::vector<Brick> GetListOfBricksTakenByManipulators(void);
+
 void Algorithm_SetCurrentPackagingColor(int);
 
 void Algorithm_SetCurrentPackagingGrade(int);
@@ -62,6 +64,10 @@ void Algorithm_SetCurrentPackagingGrade(int);
 void Algorithm_SetManipulatorOperationTime(int);
 
 void Algorithm_SetManipulatorModes(std::vector<int>);
+
+void Algorithm_SetManipulatorFixedPosition(std::vector<int> mManipulator_Fixed_Position);
+
+std::vector<int> GetIndexesOfBricksOnLine(std::deque<Brick> Bricks_On_The_Line);
 
 void * AlgorithmV2(void *Arg);
 

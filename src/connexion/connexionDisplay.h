@@ -10,6 +10,8 @@
 #ifndef CONNEXION_CONNEXIONDISPLAY_H_
 #define CONNEXION_CONNEXIONDISPLAY_H_
 
+std::string ProcessCommand(std::string const& bufferRead, bool ServerIsReady);
+/*
 std::string Command_PGSI(std::string const& Buffer);
 
 std::string Command_PWDA(std::string const& Buffer);
@@ -29,7 +31,7 @@ std::string Command_RPRV(std::string const& Buffer);
 std::string Command_ALSC(std::string const& Buffer);
 
 std::string Command_CHAL(std::string const& Buffer);
-
+*/
 bool readBool(std::string mString);
 
 #endif /* CONNEXION_CONNEXIONDISPLAY_H_ */

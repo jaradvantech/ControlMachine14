@@ -218,6 +218,20 @@ int main() {
 	exit(0);
 	return 0;
 }
+//TODO:
+/*
+C++
 
+	-Check input algorithm
+	-Do output algorithm
+	-Check reconnections and connections when the C++ program starts first
+
+
+Android
+	-Add motor control for tablet
+	-Add support for SCAP
+	-Add support for lateral movement
+	-
+*/
 
 

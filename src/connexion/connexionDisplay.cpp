@@ -160,7 +160,8 @@ std::string Command_PWDA(std::string const& Buffer){
 	return Buffer;
 }
 
-std::string Command_RGMV(std::string const& Buffer) {
+std::string Command_RGMV(std::string const& Buffer)
+{
 	std::string Answer;
 	int mPalletNumber = boost::lexical_cast<int>(Buffer.substr(5, 2)) + 1;
 	//StorageReadAllMemory(mPalletNumber);
@@ -168,7 +169,8 @@ std::string Command_RGMV(std::string const& Buffer) {
 	Answer += Buffer.substr(5, 2); //mPalletNumber
 	Answer += "_";
 
-	for (int i = 0; i <= StorageGetNumberOfBricks(mPalletNumber); i++) {
+	for (int i = 0; i <= StorageGetNumberOfBricks(mPalletNumber); i++)
+	{
 
 		Answer += char(StorageGetRaw(mPalletNumber, i));
 	}
@@ -177,7 +179,8 @@ std::string Command_RGMV(std::string const& Buffer) {
 	return Answer;
 }
 
-std::string Command_RFMV(std::string const& Buffer) {
+std::string Command_RFMV(std::string const& Buffer)
+{
 	std::string Answer;
 
 	int mPalletNumber = boost::lexical_cast<int>(Buffer.substr(5, 2)) + 1;
@@ -190,7 +193,8 @@ std::string Command_RFMV(std::string const& Buffer) {
 	return Answer;
 }
 
-std::string Command_RAMV(std::string const& Buffer) {
+std::string Command_RAMV(std::string const& Buffer)
+{
 
 	std::string Answer;
 
@@ -211,7 +215,8 @@ std::string Command_RAMV(std::string const& Buffer) {
 
 }
 
-std::string Command_RDMV(std::string const& Buffer) {
+std::string Command_RDMV(std::string const& Buffer)
+{
 	std::string Answer;
 
 	int mPalletNumber = boost::lexical_cast<int>(Buffer.substr(5, 2)) + 1;
@@ -228,13 +233,15 @@ std::string Command_RDMV(std::string const& Buffer) {
 	return Answer;
 }
 
-std::string Command_RGUV(std::string const& Buffer) {
+std::string Command_RGUV(std::string const& Buffer)
+{
 	std::string Answer;
 
 	return Answer;
 }
 
-std::string Command_RPRV(std::string const& Buffer) {
+std::string Command_RPRV(std::string const& Buffer)
+{
 	std::string Answer;
 	//Get the number of pallets from the command
 	int mNumberOfPallets = boost::lexical_cast<int>(Buffer.substr(5, 2));
@@ -248,46 +255,60 @@ std::string Command_RPRV(std::string const& Buffer) {
 		 * Be careful with this char(), if it is 0, the string will be terminated and everything will crash.
 		 */
 		Answer+=char(StorageGetRaw(i,0));
-		if(StorageGetNumberOfBricks(i)>0){
+		if(StorageGetNumberOfBricks(i)>0)
+		{
 			Answer+=char(StorageGetRaw(i,StorageGetNumberOfBricks(i)));
-		}else{
+		}else
+		{
 			Answer+=char(1);
 		}
 	}
 	//Get the list of bricks on the line and add the number of bricks
 	std::deque<Brick> mListOfBricksOnTheLine = GetListOfBricksOnTheLine();
 	Answer+= "_";
-	Answer+= (boost::format("%02u")%(mListOfBricksOnTheLine.size()/2)).str();
-	//For every brick add the
-	//std::cout << Answer<<"\n" << std::endl;
-	for(unsigned int i=0; i<mListOfBricksOnTheLine.size(); i+=2){
+
+	//RBS get list of bricks on line and iterate for every brick
+	std::vector<int> BricksOnLine = GetIndexesOfBricksOnLine(mListOfBricksOnTheLine);
+	Answer+= (boost::format("%02u")%(BricksOnLine.size())).str();
+	for(unsigned int i=0; i<BricksOnLine.size(); i++)
+	{
 		//std::cout << i << std::endl;
-		if(mListOfBricksOnTheLine.at(i).Type!=0)
+		if(mListOfBricksOnTheLine.at(BricksOnLine.at(i)).Type!=0)
 		{
 		Answer+= "_";
-		Answer+=(boost::format("%06u")%(mListOfBricksOnTheLine.at(i).Position)).str();//position
-		Answer+=char(mListOfBricksOnTheLine.at(i).Type);							 //grade and colour
-		Answer+=(boost::format("%02u")%(mListOfBricksOnTheLine.at(i).AssignedPallet)).str();//assigned pallet
-		Answer+=(boost::format("%02u")%(mListOfBricksOnTheLine.at(i).DNI)).str();//dni
+		Answer+=(boost::format("%06u")%(mListOfBricksOnTheLine.at(BricksOnLine.at(i)).Position)).str();//position
+		Answer+=char(mListOfBricksOnTheLine.at(BricksOnLine.at(i)).Type);							 //grade and colour
+		Answer+=(boost::format("%02u")%(mListOfBricksOnTheLine.at(BricksOnLine.at(i)).AssignedPallet)).str();//assigned pallet
+		Answer+=(boost::format("%02u")%(mListOfBricksOnTheLine.at(BricksOnLine.at(i)).DNI)).str();//dni
 			//std::cout << Answer << std::endl;
 		}
 	}
+
+	//For every manipulator
+	std::vector<Brick> mListOfBricksTakenByManipulators = GetListOfBricksTakenByManipulators();
+
+	for(int i=0; i<mListOfBricksTakenByManipulators.size(); i++)
+	{
+		Answer+="_";
+		Answer+=(boost::format("%06u")%(DesiredRoboticArm(i+1)->ActualValueEncoder)).str();
+		Answer+=(boost::format("%06u")%(DesiredRoboticArm(i+1)->ValueOfCatchDrop)).str();
+		Answer+=(boost::format("%06u")%(mListOfBricksTakenByManipulators.at(i).Position)).str();
+		Answer+=char(mListOfBricksTakenByManipulators.at(i).Type);
+		Answer+=(boost::format("%02u")%(mListOfBricksTakenByManipulators.at(i).AssignedPallet)).str();
+		Answer+=(boost::format("%02u")%(mListOfBricksTakenByManipulators.at(i).DNI)).str();
+	}
+
 	//Common manipulator information
 	Answer+="_";
 	Answer+=(boost::format("%06u")%(RoboticArm::ActualValueOfTheLineEncoder)).str();
 
-	//For every manipulator
-	for(int i=1;i<=mNumberOfPallets/2;i++){
-		Answer+="_";
-		Answer+=(boost::format("%06u")%(DesiredRoboticArm(i)->ActualValueEncoder)).str();
-		Answer+=(boost::format("%06u")%(DesiredRoboticArm(i)->ValueOfCatchDrop)).str();
-	}
 	Answer+="\r\n";
 	return Answer;
 }
 
 //ALgorithm Save Config
-std::string Command_ALSC(std::string const& Buffer) {
+std::string Command_ALSC(std::string Buffer)
+{
 	ConfigParser config("/home/baseconfig/unit14.conf");
 	std::vector<int> modes;
 	int Manipulators = 5; //ConfigParser.getManipulatorNumber();
@@ -307,8 +328,10 @@ std::string Command_ALSC(std::string const& Buffer) {
 	/*
 	 * code for weights
 	 */
+	std::string Answer=Buffer;
+	Answer+="\n";
 
-	return Buffer;
+	return Answer;
 }
 
 //Check for new alarms
@@ -329,6 +352,30 @@ std::string Command_CHAL(std::string const& Buffer) {
 	return Answer;
 }
 
+std::string Command_SCAP(std::string const& Buffer) {
+	std::string Answer;
+
+	ConfigParser config("/home/baseconfig/unit14.conf");
+	//SCAP
+	//_
+	//05_000000_000000_000000_000000_000000\r\n
+
+	int NumberOfArms = boost::lexical_cast<int>(Buffer.substr(5, 2));
+	std::vector<int> ArmPositions;
+
+	for(int i=0;i<NumberOfArms;i++)
+	{
+		ArmPositions.push_back(boost::lexical_cast<int>(Buffer.substr(8+i*7, 6)));
+	}
+	Algorithm_SetManipulatorFixedPosition(ArmPositions);
+	config.SetArmPositions(ArmPositions);
+	Answer = "SCAP\r\n";
+
+	return Answer;
+}
+
+
+
 bool readBool(std::string mString)
 {
 	if(mString=="0" || mString=="00")
@@ -336,3 +383,110 @@ bool readBool(std::string mString)
 	else
 		return true;
 }
+
+std::string ProcessCommand(std::string const& bufferRead, bool ServerIsReady)
+{
+std::string bufferWrite;
+	//TODO RBS, replace contains by substring(0,4)
+	if (boost::contains(bufferRead, "PGSI") && ServerIsReady)
+	{
+		try {bufferWrite = Command_PGSI(bufferRead);}
+		catch(...){
+			std::cout << "Command_PGSI exception: bad syntax"<< std::endl;
+			bufferWrite = "Error_PGSI\r\n";
+		}
+	}
+	else if (boost::contains(bufferRead,"PWDA") && ServerIsReady)
+	{
+		try {bufferWrite = Command_PWDA(bufferRead);}
+		catch(...){
+			std::cout << "Command_PWDA exception: bad syntax"<< std::endl;
+			bufferWrite = "Error_PWDA\r\n";
+		}
+	}
+	else if (boost::contains(bufferRead,"RGMV") && ServerIsReady)
+	{
+		try {bufferWrite = Command_RGMV(bufferRead);}
+		catch(...){
+			std::cout << "Command_RGMV exception: bad syntax"<< std::endl;
+			bufferWrite = "Error_RGMV\r\n";
+		}
+	}
+	else if (boost::contains(bufferRead,"RFMV") && ServerIsReady)
+	{
+		try {bufferWrite = Command_RFMV(bufferRead);}
+		catch(...){
+			std::cout << "Command_RFMV exception: bad syntax"<< std::endl;
+			bufferWrite = "Error_RFMV\r\n";
+		}
+	}
+	else if (boost::contains(bufferRead,"RAMV") && ServerIsReady)
+	{
+		try {bufferWrite = Command_RAMV(bufferRead);}
+		catch(...){
+			std::cout << "Command_RAMV exception: bad syntax"<< std::endl;
+			bufferWrite = "Error_RAMV\r\n";
+		}
+	}
+	else if (boost::contains(bufferRead,"RDMV") && ServerIsReady)
+	{
+		try {bufferWrite = Command_RDMV(bufferRead);}
+		catch(...){
+			std::cout << "Command_RDMV exception: bad syntax"<< std::endl;
+			bufferWrite = "Error_RDMV\r\n";
+		}
+	}
+	else if (boost::contains(bufferRead,"RPRV") && ServerIsReady)
+	{
+		try {bufferWrite = Command_RPRV(bufferRead);}
+		catch(...){
+			std::cout << "Command_RPRV exception: bad syntax"<< std::endl;
+			std::cout << bufferRead << std::endl;
+		}
+	}
+	else if (boost::contains(bufferRead,"ALSC") && ServerIsReady)
+	{
+		try {bufferWrite = Command_ALSC(bufferRead);}
+		catch(...){
+			std::cout << "Command_ALSC exception: bad syntax"<< std::endl;
+			bufferWrite = "Error_ALSC\r\n";
+		}
+	}
+	else if (boost::contains(bufferRead,"CHAL") && ServerIsReady)
+	{
+		try {bufferWrite = Command_CHAL(bufferRead);}
+		catch(...){
+			std::cout << "Command_CHAL exception: bad syntax"<< std::endl;
+			bufferWrite = "Error_CHAL\r\n";
+		}
+	}
+	else if (boost::contains(bufferRead,"SCAP") && ServerIsReady)
+	{
+		try {bufferWrite = Command_SCAP(bufferRead);}
+		catch(...){
+			std::cout << "Command_SCAP exception: bad syntax"<< std::endl;
+			bufferWrite = "Error_SCAP\r\n";
+		}
+	}
+	else if (boost::contains(bufferRead,"PING"))
+	{
+		/* RBS 20/03/2018
+		 * Used to test connection. If this fails, the display app
+		 * will try reestablishing the communication.
+		 */
+
+		bufferWrite = "PING_PLC14_echo_reply\r\n";
+
+		std::cout << ".";
+		fflush(stdout);
+	}
+	else
+	{
+		bufferWrite = "Error_unknown_CMD\r\n";
+	}
+
+	return bufferWrite;
+}
+
+
+

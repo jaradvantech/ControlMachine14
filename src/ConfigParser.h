@@ -15,20 +15,29 @@ class ConfigParser {
 		ConfigParser();
 		ConfigParser(std::string);
 		void SetConfigFilename(std::string);
+
 		std::vector<int> GetArmPositions();
+		void SetArmPositions(std::vector<int> ArmPositions);
+
 		std::vector<int> GetServerPorts();
+		void SetServerPorts(std::vector<int> ServerPorts);
+
 		std::vector<std::string> GetServerIPs();
-		std::vector<int>GetManipulatorModes();
+		void SetServerIPs(std::vector<std::string> ServerIPs);
+
+		std::vector<int> GetManipulatorModes();
+		void SetManipulatorModes(std::vector<int> ManipulatorModes);
+
+
 		int GetPackagingGrade();
 		int GetPackagingColor();
-		void SetManipulatorModes(std::vector<int>);
 		int SetCurrentPackagingGrade(int);
 		int SetCurrentPackagingColor(int);
-		int SaveConfig(std::vector<int> ArmPositionsVector, std::vector<std::string> RFIDIPAddresses, std::vector<int> RFIDPorts);
 
 	private:
 		std::string _Filename;
 		template<typename T> std::vector<T>		ReadLineAndAddToVector(int line);
+		template<typename T> void 				ReadVectorAndAddToTheFile(std::vector<T> VectorToAdd,int line);
 
 };
 

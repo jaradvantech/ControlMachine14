@@ -40,21 +40,45 @@ std::vector<int> ConfigParser::GetArmPositions()
 	return ReadLineAndAddToVector<int>(1);
 }
 
+void ConfigParser::SetArmPositions(std::vector<int> ArmPositions)
+{
+	ReadVectorAndAddToTheFile(ArmPositions,1);
+}
+
+
 std::vector<std::string> ConfigParser::GetServerIPs()
 {
 
 	return ReadLineAndAddToVector<std::string>(2);
 }
 
+void ConfigParser::SetServerIPs(std::vector<std::string> ServerIPs)
+{
+	ReadVectorAndAddToTheFile(ServerIPs,2);
+}
+
+
 std::vector<int>ConfigParser::GetServerPorts()
 {
 	return ReadLineAndAddToVector<int>(3);
 }
 
+void ConfigParser::SetServerPorts(std::vector<int> ServerPorts)
+{
+	ReadVectorAndAddToTheFile(ServerPorts,3);
+}
+
+
 std::vector<int>ConfigParser::GetManipulatorModes()
 {
 	return ReadLineAndAddToVector<int>(4);
 }
+
+void ConfigParser::SetManipulatorModes(std::vector<int> ManipulatorModes)
+{
+	ReadVectorAndAddToTheFile(ManipulatorModes,4);
+}
+
 
 int ConfigParser::GetPackagingGrade()
 {
@@ -66,68 +90,20 @@ int ConfigParser::GetPackagingColor()
 	return ReadLineAndAddToVector<int>(6).at(0);
 }
 
-void ConfigParser::SetManipulatorModes(std::vector<int> ManipulatorModes)
-{
-	//TODO RBS
-}
-
 int ConfigParser::SetCurrentPackagingGrade(int PackagingGrade)
 {
-return 0;
+	return 0;
 }
 
-int ConfigParser::SetCurrentPackagingColor(int PackagingGrade)
+int ConfigParser::SetCurrentPackagingColor(int PackagingColor)
 {
 	return 0;
 }
 
 //--------------------------------------------------
-int ConfigParser::SaveConfig(std::vector<int> ArmPositionsVector, std::vector<std::string> RFIDIPAddresses, std::vector<int> RFIDPorts)
-{
-	/*
-	//save types:
 
-	//Get the old configuration
-	//Prepare the old configuration in an easy to iterate way
-	std::vector<boost::spirit::hold_any> OldVectorsToOperate;
-	OldVectorsToOperate.push_back(GetArmPositions());
-	OldVectorsToOperate.push_back(GetServerIPs());
-	OldVectorsToOperate.push_back(GetServerPorts());
-
-	//Prepare the new configuration in an easy to iterate way
-	std::vector<boost::any>  NewVectorsToOperate;
-	NewVectorsToOperate.push_back(ArmPositionsVector);
-	NewVectorsToOperate.push_back(RFIDIPAddresses);
-	NewVectorsToOperate.push_back(RFIDPorts);
-
-
-	//Prepare the new configuration in an easy to iterate way
-
-	std::ofstream OutputStream(_Filename);
-	if(OutputStream.is_open())
-	{
-		//loop through all what we have to write
-		for(uint i=0;i<NewVectorsToOperate.size()-1;i++){//For every vector to operate
-			for(uint j=0;j<boost::any_cast<std::vector<boost::any>>(NewVectorsToOperate[i]).size()-1;j++){//For every item in the vector to operate
-				OutputStream<<boost::any_cast<std::vector<boost::spirit::hold_any>>(NewVectorsToOperate[i])[j] << ",";
-			}
-			OutputStream<<",\n";
-		}
-		OutputStream<<"\n";
-		OutputStream.close();
-	}
-	else
-	{
-		std::cout << "Error: can't write file " << _Filename << std::endl;
-		return 0;
-	}
-	return 1;
-	*/
-	return 0;
-}
-
-template<typename T> std::vector<T>
-ConfigParser::ReadLineAndAddToVector(int line)
+template<typename T>
+std::vector<T> ConfigParser::ReadLineAndAddToVector(int line)
 {
 	std::ifstream InputStream(_Filename);
 	std::vector<T> VectorToReturn;
@@ -157,3 +133,50 @@ ConfigParser::ReadLineAndAddToVector(int line)
 		std::cout << "Can't access config file " << _Filename << std::endl;
 	return VectorToReturn;
 }
+
+template<typename T>
+void ConfigParser::ReadVectorAndAddToTheFile(std::vector<T> VectorToAdd,int line)
+{
+	//Read the whole original file
+	//Form a string with all the lines from 0 to the line that we want to write
+	//Append our line
+	//Append to the string the lines from the next line till end
+	//Overwrite the file
+	std::ifstream InputStream(_Filename);
+	std::string Line;
+	std::string totalText;
+	if(InputStream.is_open())
+	{
+		for(int i=1; i<line; i++)
+		{
+			std::getline(InputStream, Line);
+			totalText+=Line;
+			totalText+="\n";
+		}
+		std::getline(InputStream, Line);
+		for(int i=0;i<VectorToAdd.size();i++)
+		{
+			totalText+=boost::lexical_cast<std::string>(VectorToAdd.at(i));
+			totalText+=",";
+		}
+		totalText+=",";
+		totalText+="\n";
+
+		int i=line;
+		while(std::getline(InputStream, Line))
+		{
+			totalText+=Line;
+			totalText+="\n";
+			i++;
+		}
+		InputStream.close();
+	}
+
+	std::ofstream OutputStream(_Filename);
+	if(OutputStream.is_open())
+	{
+		OutputStream<<totalText;
+		OutputStream.close();
+	}
+}
+

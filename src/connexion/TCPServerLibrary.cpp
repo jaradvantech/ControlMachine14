@@ -72,6 +72,7 @@ void * OpenServer(void *Arg)
         client_socket[i] = 0;
     }
 
+
     //create a master socket
     if( (master_socket = socket(AF_INET , SOCK_STREAM , 0)) == 0)
     {
@@ -241,105 +242,22 @@ void * OpenServer(void *Arg)
                 //Echo back the message that came in
                 else
                 {
-
+                	bool ServerIsReady = true;
                     //set the string terminating NULL byte on the end
                 	bufferRead[valread]= '\0';
-
+                	//Update the response time for timeout purposes
+                    previous_response_time[i]=std::chrono::system_clock::now();
 
                 	//TODO process message list
 
+                	//The buffer can be filled with more than one message, and that's an issue
+                    //Make a list
+                	std::string bufferRead_Line;
+                	std::stringstream BufferToParse(bufferRead);
 
-                    previous_response_time[i]=std::chrono::system_clock::now();
-                	bool ServerIsReady = true;
-                	//TODO RBS, replace contains by substring(0,4)
-                	if (boost::contains(bufferRead, "PGSI") && ServerIsReady)
-                	{
-						try {bufferWrite = Command_PGSI(bufferRead);}
-						catch(...){
-							std::cout << "Command_PGSI exception: bad syntax"<< std::endl;
-							bufferWrite = "Error_PGSI\r\n";
-						}
-					}
-                	else if (boost::contains(bufferRead,"PWDA") && ServerIsReady)
-                	{
-                		try {bufferWrite = Command_PWDA(bufferRead);}
-						catch(...){
-							std::cout << "Command_PWDA exception: bad syntax"<< std::endl;
-							bufferWrite = "Error_PWDA\r\n";
-						}
-					}
-                	else if (boost::contains(bufferRead,"RGMV") && ServerIsReady)
-                	{
-                		try {bufferWrite = Command_RGMV(bufferRead);}
-						catch(...){
-							std::cout << "Command_RGMV exception: bad syntax"<< std::endl;
-							bufferWrite = "Error_RGMV\r\n";
-						}
-					}
-                	else if (boost::contains(bufferRead,"RFMV") && ServerIsReady)
-                	{
-                		try {bufferWrite = Command_RFMV(bufferRead);}
-						catch(...){
-							std::cout << "Command_RFMV exception: bad syntax"<< std::endl;
-							bufferWrite = "Error_RFMV\r\n";
-						}
+                	while(std::getline(BufferToParse, bufferRead_Line)){
+                		if(bufferRead_Line.size()>3) bufferWrite = ProcessCommand(bufferRead_Line, ServerIsReady);
                 	}
-                	else if (boost::contains(bufferRead,"RAMV") && ServerIsReady)
-                	{
-                		try {bufferWrite = Command_RAMV(bufferRead);}
-						catch(...){
-							std::cout << "Command_RAMV exception: bad syntax"<< std::endl;
-							bufferWrite = "Error_RAMV\r\n";
-						}
-                	}
-                	else if (boost::contains(bufferRead,"RDMV") && ServerIsReady)
-                	{
-                		try {bufferWrite = Command_RDMV(bufferRead);}
-						catch(...){
-							std::cout << "Command_RDMV exception: bad syntax"<< std::endl;
-							bufferWrite = "Error_RDMV\r\n";
-						}
-                	}
-                	else if (boost::contains(bufferRead,"RPRV") && ServerIsReady)
-                	{
-                		try {bufferWrite = Command_RPRV(bufferRead);}
-						catch(...){
-							std::cout << "Command_RPRV exception: bad syntax"<< std::endl;
-							std::cout << bufferRead << std::endl;
-						}
-                	}
-                	else if (boost::contains(bufferRead,"ALSC") && ServerIsReady)
-                	{
-                		try {bufferWrite = Command_ALSC(bufferRead);}
-						catch(...){
-							std::cout << "Command_ALSC exception: bad syntax"<< std::endl;
-							bufferWrite = "Error_ALSC\r\n";
-						}
-                	}
-                	else if (boost::contains(bufferRead,"CHAL") && ServerIsReady)
-                	{
-                		try {bufferWrite = Command_CHAL(bufferRead);}
-						catch(...){
-							std::cout << "Command_CHAL exception: bad syntax"<< std::endl;
-							bufferWrite = "Error_CHAL\r\n";
-						}
-                	}
-                	else if (boost::contains(bufferRead,"PING"))
-                	{
-                		/* RBS 20/03/2018
-                		 * Used to test connection. If this fails, the display app
-                		 * will try reestablishing the communication.
-                		 */
-
-                	    bufferWrite = "PING_PLC14_echo_reply\r\n";
-
-                	    std::cout << ".";
-                	    fflush(stdout);
-                	}
-                	else
-                	{
-						bufferWrite = "Error_unknown_CMD\r\n";
-					}
 
                 	//std::cout << "Sent back: " << bufferWrite << std::endl;
 

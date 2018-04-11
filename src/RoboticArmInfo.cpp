@@ -219,7 +219,7 @@ int PerformGlobalWriting(){
 		S7_SetBitAt(Buffer, 0, 0, RoboticArm::CommunicationExchange);
 		S7_SetBitAt(Buffer, 0, 1, RoboticArm::TestPattern);
 		S7_SetBitAt(Buffer, 0, 2, RoboticArm::InquiryTheTile);
-		S7_SetBitAt(Buffer, 0, 4, RoboticArm::TransmissionManualDebugging);
+		S7_SetBitAt(Buffer, 0, 3, RoboticArm::TransmissionManualDebugging);
 		S7_SetByteAt(Buffer, 1, RoboticArm::PCState);
 		S7_SetIntAt(Buffer, 2, RoboticArm::Z_AxisDeceletationDistance);
 		S7_SetIntAt(Buffer, 4, RoboticArm::Z_AxisStandbyValue);
