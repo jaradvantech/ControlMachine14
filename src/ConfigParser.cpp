@@ -42,7 +42,7 @@ std::vector<int> ConfigParser::GetArmPositions()
 
 void ConfigParser::SetArmPositions(std::vector<int> ArmPositions)
 {
-	ReadVectorAndAddToTheFile(ArmPositions,1);
+	ReadVectorAndAddToTheFile<int>(ArmPositions,1);
 }
 
 
@@ -54,7 +54,7 @@ std::vector<std::string> ConfigParser::GetServerIPs()
 
 void ConfigParser::SetServerIPs(std::vector<std::string> ServerIPs)
 {
-	ReadVectorAndAddToTheFile(ServerIPs,2);
+	ReadVectorAndAddToTheFile<std::string>(ServerIPs,2);
 }
 
 
@@ -65,7 +65,7 @@ std::vector<int>ConfigParser::GetServerPorts()
 
 void ConfigParser::SetServerPorts(std::vector<int> ServerPorts)
 {
-	ReadVectorAndAddToTheFile(ServerPorts,3);
+	ReadVectorAndAddToTheFile<int>(ServerPorts,3);
 }
 
 
@@ -76,7 +76,7 @@ std::vector<int>ConfigParser::GetManipulatorModes()
 
 void ConfigParser::SetManipulatorModes(std::vector<int> ManipulatorModes)
 {
-	ReadVectorAndAddToTheFile(ManipulatorModes,4);
+	ReadVectorAndAddToTheFile<int>(ManipulatorModes,4);
 }
 
 
@@ -90,14 +90,16 @@ int ConfigParser::GetPackagingColor()
 	return ReadLineAndAddToVector<int>(6).at(0);
 }
 
-int ConfigParser::SetCurrentPackagingGrade(int PackagingGrade)
+void ConfigParser::SetCurrentPackagingGrade(int PackagingGrade)
 {
-	return 0;
+	std::vector<int> TempVector={PackagingGrade};
+	ReadVectorAndAddToTheFile<int>(TempVector,5);
 }
 
-int ConfigParser::SetCurrentPackagingColor(int PackagingColor)
+void ConfigParser::SetCurrentPackagingColor(int PackagingColor)
 {
-	return 0;
+	std::vector<int> TempVector={PackagingColor};
+	ReadVectorAndAddToTheFile<int>(TempVector,6);
 }
 
 //--------------------------------------------------
@@ -154,7 +156,7 @@ void ConfigParser::ReadVectorAndAddToTheFile(std::vector<T> VectorToAdd,int line
 			totalText+="\n";
 		}
 		std::getline(InputStream, Line);
-		for(int i=0;i<VectorToAdd.size();i++)
+		for(unsigned int i=0;i<VectorToAdd.size();i++)
 		{
 			totalText+=boost::lexical_cast<std::string>(VectorToAdd.at(i));
 			totalText+=",";

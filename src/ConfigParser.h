@@ -31,8 +31,8 @@ class ConfigParser {
 
 		int GetPackagingGrade();
 		int GetPackagingColor();
-		int SetCurrentPackagingGrade(int);
-		int SetCurrentPackagingColor(int);
+		void SetCurrentPackagingGrade(int);
+		void SetCurrentPackagingColor(int);
 
 	private:
 		std::string _Filename;

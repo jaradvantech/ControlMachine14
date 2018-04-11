@@ -27,7 +27,7 @@ std::deque<std::string> emergencyList;
 void RFIDReaders_Configure()
 {
 	 //added by RBS on March 19th
-	 ConfigParser config("/home/baseconfig/unit14.conf");
+	 ConfigParser config("/etc/unit14/unit14.conf");
 	 RFID_PORT = config.GetServerPorts();
 	 RFID_IP_ADRESS = config.GetServerIPs();
 	 NUMBEROFRFIDREADERS = RFID_IP_ADRESS.size();

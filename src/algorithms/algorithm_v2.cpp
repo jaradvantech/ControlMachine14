@@ -2,7 +2,7 @@
  * algorithm_v2.cpp
  *
  *  Created on: Mar 26, 2018
- *      Author: baseconfig
+ *      Author: RBS
  */
 
 
@@ -628,7 +628,22 @@ void CheckForBricksAtTheTop(std::vector<int>* _Bricks_Ready_For_Output, int _Raw
 		//	it's 0	when it does not match the top
 		//	it's -1 when it has been assigned a gap
 		//	it's 1	when it matches the top but it has not been assigned a gap
-		bool MatchingTop = (StorageGetRaw(i+1, StorageGetNumberOfBricks(i+1)) == _RawCurrentPackagingBrick);
+		/*
+		std::cout<< "The top at the pallet " << i+1
+				 << " is of type " << StorageGetRaw(i+1, StorageGetNumberOfBricks(i+1))
+				 << " And the pallet has "
+				 << StorageGetNumberOfBricks(i+1)
+				 <<" Bricks"
+				 << std::endl;
+
+
+		std::cout<< _RawCurrentPackagingBrick << std::endl;
+		std::cout<< std::endl;
+		 */
+		bool MatchingTop=false;
+		if(StorageGetNumberOfBricks(i+1)>0)
+			MatchingTop= (StorageGetRaw(i+1, StorageGetNumberOfBricks(i+1)) == _RawCurrentPackagingBrick);
+
 		if(MatchingTop == 0) //check for not matching top
 		{
 			_Bricks_Ready_For_Output->at(i)=0;
@@ -637,25 +652,28 @@ void CheckForBricksAtTheTop(std::vector<int>* _Bricks_Ready_For_Output, int _Raw
 		{
 			//Assign the brick to a gap.
 			_Bricks_Ready_For_Output->at(i) =1;
+			std::cout<< "Brick at pallet " << i+1
+					 << "matches the packing type and has not been assigned a manipulator for take out yet" <<std::endl;
 		}
 	}
-
 }
 
 void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 								std::vector<int>* _Bricks_Ready_For_Output,
 								const std::vector<int>& _Manipulator_Fixed_Position,
-								std::vector<std::deque<Order>>* _ManipulatorOrderList)
+								std::vector<std::deque<Order>>* _ManipulatorOrderList,
+								const std::vector<int>& _Manipulator_Modes)
 {
 	int K = 3000; //RBS debug only, TODO improve
 	int E = 1000;
 
 	for(unsigned int i=0; i<_Bricks_Ready_For_Output->size(); i++)
 	{
-		//If a gap is required for this pallet
-		if(_Bricks_Ready_For_Output->at(i) == 1)
+		int destinationManipulator = (i/2);
+
+		//If a gap is required for this pallet and its manipulator is enabled as output (2) or in/out (1)
+		if(_Bricks_Ready_For_Output->at(i) == 1 && (_Manipulator_Modes.at(destinationManipulator) != 0))
 		{
-			int destinationManipulator = (i/2);
 
 			//start checking from front to back
 			for(unsigned int j=0; j<Bricks_On_The_Line->size(); j++)  //Rewrite with for to avoid break
@@ -679,12 +697,8 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 					//manipulador de salida
 					)
 				{
-
-					std::cout << "Spot found!!, at index " << j << std::endl;
-					_Bricks_Ready_For_Output->at(i) = -1;
-
 					//Insert two items just before that place, so the middle spot can be assigned for the operation
-					//while maintaining the brick-spot principle (Note: second spot (spot2) must be thin in order to save space)
+					//while maintaining the brick-spot principle (Note: second spot must be thin in order to save space)
 
 					//Before:
 					//   j+1        j        j-1                  0
@@ -692,11 +706,10 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 					//  Brick  |   SPOT  |  Brick  |   ...   |  FRONT  |
 					//---------+---------+---------+---------+---------+
 
-					//Before:
 					//	j+2	 	  	j+1          j         j-1                  0
-					//-----------------------+---------+---------+---------+---------+
+					//-------+---------------+---------+---------+---------+---------+
 					//Brick  |  AssignedSpot |   SPOT  |  Brick  |   ...   |  FRONT  |
-					//-----------------------+---------+---------+---------+---------+
+					//-------+---------------+---------+---------+---------+---------+
 
 					//After:
 					//   j+3       j+2         j+1         j      j-1                  0
@@ -704,12 +717,14 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 					//  Brick  | newSPOT | AssignedSpot |SPOT |  Brick  |   ...   |  FRONT  |
 					//---------+---------+--------------+-----+---------+---------+---------+
 
-
+					std::cout << "Spot found!!, at index " << j << std::endl;
+					_Bricks_Ready_For_Output->at(i) = -1;
+					std::cout << "Spot found!!, for the 'brick' with index " << j << " Assigned to Manipulator " << destinationManipulator  <<  std::endl;
 					int assignedSpotPosition = Bricks_On_The_Line->at(j).Position + 10; //Very thin gap
 					int newSpotPosition = assignedSpotPosition + E; //situated behind Assigned spot
 
 					//Add assigned spot behind SPOT
-					Brick AssignedSpot(0, assignedSpotPosition, 0, 0);
+					Brick AssignedSpot(0, assignedSpotPosition, i+1, 0);
 					Bricks_On_The_Line->insert(Bricks_On_The_Line->begin()+j+1, AssignedSpot);
 					//AsignedSpot becomes j+1, SPOT2 is j
 
@@ -752,7 +767,7 @@ void RFIDSubroutine()
 std::vector<int> GetIndexesOfBricksOnLine(std::deque<Brick> Bricks_On_The_Line)
 {
 	std::vector<int> IndexesOfBricks;
-	for(int i=0; i<Bricks_On_The_Line.size(); i++)
+	for(unsigned int i=0; i<Bricks_On_The_Line.size(); i++)
 	{
 		//If item i on the line is not a gap
 		if(Bricks_On_The_Line.at(i).Type != 0)
@@ -770,7 +785,7 @@ void * AlgorithmV2(void *Arg)
 
 
 	/*Load configuration from file*******************/
-	ConfigParser config("/home/baseconfig/unit14.conf");
+	ConfigParser config("/etc/unit14/unit14.conf");
 	CurrentPackagingColor = config.GetPackagingColor();
 	CurrentPackagingGrade = config.GetPackagingGrade();
 	Manipulator_Fixed_Position = config.GetArmPositions();
@@ -783,11 +798,11 @@ void * AlgorithmV2(void *Arg)
 	FillDNIs(&Available_DNI_List);
 
 
+
 	Synchro::DecreaseSynchronizationPointValue(0);
 	while(1)
 	{
-
-		int RawCurrentPackagingBrick = (CurrentPackagingColor << 4) + CurrentPackagingGrade;
+		int RawCurrentPackagingBrick = (CurrentPackagingGrade << 4) + CurrentPackagingColor;
 		//RFIDSubroutine();  WHAT THE FUCK!! THIS IS LEAKING MEMORY!!!
 
 		//std::cout<< "inside the algorithm loop"<<std::endl;
@@ -843,7 +858,8 @@ void * AlgorithmV2(void *Arg)
 			FindASpotForOutputBricks(&Bricks_On_The_Line,
 										&Bricks_Ready_For_Output,
 										Manipulator_Fixed_Position,
-										&Manipulator_Order_List); //Will check a spot for the pallets that have a 1. Once assigned a brick it will write -1;
+										&Manipulator_Order_List,
+										Manipulator_Modes); //Will check a spot for the pallets that have a 1. Once assigned a brick it will write -1;
 			//Will check absolutely every damn gap that happens in the line
 			//This function will place an order
 		}

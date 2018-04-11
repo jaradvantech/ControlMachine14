@@ -85,6 +85,8 @@ std::string Command_PWDA(std::string const& Buffer){
 	int mArmNumber = boost::lexical_cast<int>(Buffer.substr(8,2));
 	RoboticArm* mArm = DesiredRoboticArm(mArmNumber);
 
+	std::cout << Buffer << std::endl;
+
 	if(boost::contains(Buffer.substr(11,1), "X") == false)
 		mArm->StorageBinDirection = readBool(Buffer.substr(11,1));
 
@@ -309,7 +311,7 @@ std::string Command_RPRV(std::string const& Buffer)
 //ALgorithm Save Config
 std::string Command_ALSC(std::string Buffer)
 {
-	ConfigParser config("/home/baseconfig/unit14.conf");
+	ConfigParser config("/etc/unit14/unit14.conf");
 	std::vector<int> modes;
 	int Manipulators = 5; //ConfigParser.getManipulatorNumber();
 
@@ -317,8 +319,8 @@ std::string Command_ALSC(std::string Buffer)
 	config.SetCurrentPackagingColor(boost::lexical_cast<int>(Buffer.substr(8,2)));
 	Algorithm_SetCurrentPackagingColor(boost::lexical_cast<int>(Buffer.substr(8,2)));
 
-	config.SetCurrentPackagingGrade(boost::lexical_cast<int>(Buffer.substr(11,2)));
-	Algorithm_SetCurrentPackagingGrade(boost::lexical_cast<int>(Buffer.substr(11,2)));
+	config.SetCurrentPackagingGrade(boost::lexical_cast<int>(Buffer.substr(11,3)));
+	Algorithm_SetCurrentPackagingGrade(boost::lexical_cast<int>(Buffer.substr(11,3)));
 
 	for(int i=0; i<Manipulators; i++)
 		modes.push_back(boost::lexical_cast<int>(Buffer.substr((15+i),1)));
@@ -334,6 +336,24 @@ std::string Command_ALSC(std::string Buffer)
 	return Answer;
 }
 
+//ALgorithm Get Config
+std::string Command_ALGC(std::string Buffer)
+{
+	ConfigParser config("/etc/unit14/unit14.conf");
+	std::vector<int> modes;
+	int Manipulators = 5; //ConfigParser.getManipulatorNumber();
+
+	std::string Answer = "ALGC_14_";
+	Answer += config.GetPackagingGrade();
+	Answer += "_";
+	Answer += config.GetPackagingColor();
+	Answer += "_";
+
+	for(int i=0; i<Manipulators; i++)
+		Answer += "_"; //(whatever)
+
+	return Answer;
+}
 //Check for new alarms
 std::string Command_CHAL(std::string const& Buffer) {
 	std::string Answer;
@@ -355,7 +375,7 @@ std::string Command_CHAL(std::string const& Buffer) {
 std::string Command_SCAP(std::string const& Buffer) {
 	std::string Answer;
 
-	ConfigParser config("/home/baseconfig/unit14.conf");
+	ConfigParser config("/etc/unit14/unit14.conf");
 	//SCAP
 	//_
 	//05_000000_000000_000000_000000_000000\r\n
