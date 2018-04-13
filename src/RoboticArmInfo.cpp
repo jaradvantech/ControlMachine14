@@ -64,7 +64,7 @@ RoboticArm::RoboticArm(){
 	ManualUpDown=0;					//0:Stop 1:Up 2:Down
 	WhatToDoWithTheBrick=0;			//0:Wait 1:Right Side 2:Left side
 	CatchOrDrop=0;					//0:Stop 1:Catch 2:Drop
-	PulseZAxis=5000;					//High speed to low speed
+	PulseZAxis=5000;				//High speed to low speed
 	ValueOfCatchDrop=0;				//Pulse of grab target
 	//--------------------------------------------------------------------
 

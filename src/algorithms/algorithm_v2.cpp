@@ -19,6 +19,15 @@
 #include "ConfigParser.h"
 #include <algorithm>
 
+#define MODE_INPUT  0
+#define MODE_INOUT  1
+#define MODE_OUTPUT	2
+#define MODE_DISABLED 3
+//WARNING, GLOBAL VARIABLES HERE
+	int K = 2500; //RBS debug only, TODO improve
+	int E = 1200;
+
+
 
 void SetNumberOfManipulators(std::vector<std::deque<Order>>* _Manipulator_Order_List,
 		std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
@@ -89,26 +98,55 @@ int Calculate_Advance(long* PreviousValueOfTheLineEncoder)
 
 void CheckPhotoSensor1(std::deque<Brick>* _BricksBeforeTheLine){
 	static bool BrickOnTheQueueDetected_Trigger = false;
-	int TileGrade = RoboticArm::TileGrade;
+
 	if(RoboticArm::PCState==3){
 	//Do nothing, manual mode
 	}
-	else if(TileGrade !=0 && RoboticArm::TheQueueOfPhotosensor_1 && BrickOnTheQueueDetected_Trigger==false)
+	else if(RoboticArm::TheQueueOfPhotosensor_1 && BrickOnTheQueueDetected_Trigger==false)
 	{ //We have a new brick on the photosensor 1
 		BrickOnTheQueueDetected_Trigger=true;
 
-		Brick BrickOnTheLine(TileGrade+16,0, 0,0); //
+		Brick BrickOnTheLine(0, 0, 0, 0); //
 
 		_BricksBeforeTheLine->push_back(BrickOnTheLine);
-		std::cout << "Brick of the type "<< BrickOnTheLine.Type << " enters the line" << std::endl;
+		//std::cout << "Brick of the type "<< BrickOnTheLine.Type << " enters the line" << std::endl;
 		std::cout << "brick detected PS1" << std::endl;
-	}else if(TileGrade ==0 && RoboticArm::TheQueueOfPhotosensor_1){
-		std::cout << "Why the fuck is this even showing?  PS1 acting weird" << std::endl;
-		BrickOnTheQueueDetected_Trigger=false;
 	}else if(RoboticArm::TheQueueOfPhotosensor_1==false){
 		BrickOnTheQueueDetected_Trigger=false;
 	}
+
+	//When the brick enters the PhotoSensor1 it doesn't need to have a type instantly assigned.
+	//as long as it has one before entering the photosensor 4 we are cool.
+	//and if it doesn't, it will get one by default.
+
+	//The purpose of this function is that the grading button is pressed right after the brick has entered
+	//the photosensor.
+	//So, if the grading color changes, the nearest brick to PS1 will change its type accordingly
+
+	//As a side effect, if no button is pressed, the new bricks will have a type equal to LastType
+	//And by default, the type is 17.
+
+
+	//CONSTANTLY CHECK THE ACTUAL TYPE
+
+	static int LastType=1;
+	if(RoboticArm::TileGrade !=LastType && RoboticArm::TileGrade !=0)
+	{
+		LastType = RoboticArm::TileGrade;
+	}
+	//MODIFY THE LAST BRICK OF _BricksBeforeTheLine
+	if(RoboticArm::PCState==3)
+	{
+		//Do nothing, manual mode
+	}
+	else if(LastType != 0 && _BricksBeforeTheLine->size() > 0)
+	{
+		_BricksBeforeTheLine->at(_BricksBeforeTheLine->size()-1).Type=LastType+16;
+	}
 }
+
+
+
 
 bool CheckPhotoSensor4(std::deque<Brick>* _BricksBeforeTheLine, std::deque<Brick>* _BricksOnTheLine, std::deque<int>* Available_DNI_List)
 {
@@ -132,8 +170,13 @@ bool CheckPhotoSensor4(std::deque<Brick>* _BricksBeforeTheLine, std::deque<Brick
 		//Complete brick information
 		_BricksBeforeTheLine->begin()->Position = RoboticArm::ActualValueOfTheLineEncoder-RoboticArm::EnterTheTileStartingCodeValue;
 		_BricksBeforeTheLine->begin()->DNI = Available_DNI_List->front();
+
+		//_BricksBeforeTheLine->begin()->Type=17;
+		/////////////////////////////////////
+
 		std::cout<<" DNI to assign"<< Available_DNI_List->front() <<std::endl;
 		std::cout<<"Assigned DNI "<< _BricksBeforeTheLine->begin()->DNI <<std::endl;
+		std::cout<<"Type of the brick " << _BricksBeforeTheLine->begin()->Type << std::endl;
 		_BricksBeforeTheLine->begin()->AssignedPallet=0;
 		//Add the hole that goes after this brick
 		Brick Gap(0,0,0,0);
@@ -266,6 +309,10 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 		else if(DesiredRoboticArm(ArmIndex)->CatchOrDrop == 2 && DesiredRoboticArm(ArmIndex)->PhotosensorOfManipulator == 1 &&
 				PhotosensorOfManipulator_Previous.at(i)==0)
 		{
+			//Add Brick to the manipulator Taken Brick.
+			//int pallet
+			//StorageDeleteBrick(,StorageNumberOfBrick){
+
 			PhotosensorOfManipulator_Previous.at(i)=1;
 			_Pallet_LowSpeedPulse_Height_List->at(i)= DesiredRoboticArm(ArmIndex)->ActualValueEncoder - RoboticArm::Z_AxisDeceletationDistance;
 			std::cout<< "Updated height value to "<< _Pallet_LowSpeedPulse_Height_List->at(i) <<std::endl;
@@ -374,7 +421,8 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 						const std::vector<std::deque<Order>>& _Manipulator_Order_List,
 						const std::vector<int>& _Manipulator_Fixed_Position,
 						std::vector<int> _Manipulator_Modes,
-						int _RawCurrentPackagingBrick)
+						int _RawCurrentPackagingBrick,
+						int _forced_pallet)
 {
 	//The best pallet has to be one that will be free for the brick when the brick arrives to that manipulator.
 
@@ -385,8 +433,8 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 	for(unsigned int i=0;i<_Manipulator_Order_List.size();i++) //Check for every manipulator
 	{
 		//bool ManipulatorWillBeReady = true; //Let's agree that unless noted otherwise the manipulator will be ready
-		//CONDITION 1: Manipulator is enabled as input (0=in, 1=in/out, 2=out)
-		if(_Manipulator_Modes[i] == 2) //2 is output only
+		//CONDITION 1: Manipulator is enabled as input (0=in, 1=in/out, 2=out, 3=disabled)
+		if(_Manipulator_Modes[i] == MODE_OUTPUT || _Manipulator_Modes[i] == MODE_DISABLED)
 		{
 			//ManipulatorWillBeReady = false;
 		}
@@ -414,7 +462,7 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 				//-----------------B2------------B1M----------------------------------------
 				//                     <----K---> As we had this security distance, there is no problem.
 				//
-				if(_Manipulator_Order_List.at(i).at(j).When + 25000 > _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position
+				if(_Manipulator_Order_List.at(i).at(j).When + K > _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position
 				&& _Manipulator_Order_List.at(i).at(j).When < _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position)
 				{
 					//ManipulatorWillBeReady = false;
@@ -439,7 +487,7 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 				//
 
 				if(_Manipulator_Order_List.at(i).at(j).When > _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position
-				&& _Manipulator_Order_List.at(i).at(j).When - 25000 < _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position )
+				&& _Manipulator_Order_List.at(i).at(j).When - K < _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position )
 				{
 					//ManipulatorWillBeReady = false;
 
@@ -492,7 +540,11 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 	Random*=2;//02468
 	Random+=rand()%2+1;//12345678910
 	std::cout << "Random mode, goes to "<< Random << std::endl;
-	_BrickToClassify->AssignedPallet = Random;
+
+
+
+	if(_forced_pallet !=0)	_BrickToClassify->AssignedPallet = _forced_pallet;
+	else					_BrickToClassify->AssignedPallet = Random;
 }
 
 
@@ -595,29 +647,71 @@ int CurrentPackagingColor, CurrentPackagingGrade;
 
 int ManipulatorOperationTime;
 long PreviousValueOfTheLineEncoder=RoboticArm::ActualValueOfTheLineEncoder;
+
+bool Enable_WhetherOrNotPutTheTileTo_16 = true;
+bool force_input = false;
+bool force_output = false;
+int	forced_pallet=0;
 //-----------------------------------------------------------------------//
 //Getters and setters for other functions
-std::deque<Brick> GetListOfBricksOnTheLine(void){
+
+void set_enable_WhetherOrNotPutTheTileTo_16(bool set_to)
+{
+	Enable_WhetherOrNotPutTheTileTo_16 = set_to;
+}
+
+void set_force_input(bool set_to)
+{
+	force_input = set_to;
+}
+void set_force_output(bool set_to)
+{
+	force_output = set_to;
+}
+
+void set_forced_pallet(int set_to)
+{
+	forced_pallet = set_to;
+}
+
+void set_order(Brick brick)
+{
+
+	AddOrder(brick, &Manipulator_Order_List, Manipulator_Fixed_Position);
+	//orced_pallet = set_to;
+}
+
+std::deque<Brick> GetListOfBricksOnTheLine(void)
+{
 	return Bricks_On_The_Line;
 }
-std::vector<Brick> GetListOfBricksTakenByManipulators(void){
+
+std::vector<Brick> GetListOfBricksTakenByManipulators(void)
+{
 	return Manipulator_TakenBrick;
 }
-void Algorithm_SetCurrentPackagingColor(int PackagingColor){
+
+void Algorithm_SetCurrentPackagingColor(int PackagingColor)
+{
 	CurrentPackagingColor=PackagingColor;
 	std::cout << "Setting current packaging color to " << CurrentPackagingColor << std::endl;
 }
-void Algorithm_SetCurrentPackagingGrade(int PackagingGrade){
+
+void Algorithm_SetCurrentPackagingGrade(int PackagingGrade)
+{
 	CurrentPackagingGrade=PackagingGrade;
 	std::cout << "Setting current packaging type to " << CurrentPackagingGrade << std::endl;
 }
-void Algorithm_SetManipulatorOperationTime(int mManipulatorOperationTime){
+
+void Algorithm_SetManipulatorOperationTime(int mManipulatorOperationTime)
+{
 	ManipulatorOperationTime=mManipulatorOperationTime;
 }
-void Algorithm_SetManipulatorModes(std::vector<int> mModes){
+
+void Algorithm_SetManipulatorModes(std::vector<int> mModes)
+{
 	Manipulator_Modes=mModes;
 }
-
 
 void CheckForBricksAtTheTop(std::vector<int>* _Bricks_Ready_For_Output, int _RawCurrentPackagingBrick)
 {
@@ -652,8 +746,8 @@ void CheckForBricksAtTheTop(std::vector<int>* _Bricks_Ready_For_Output, int _Raw
 		{
 			//Assign the brick to a gap.
 			_Bricks_Ready_For_Output->at(i) =1;
-			std::cout<< "Brick at pallet " << i+1
-					 << "matches the packing type and has not been assigned a manipulator for take out yet" <<std::endl;
+			//std::cout<< "Brick at pallet " << i+1
+			//		 << "matches the packing type and has not been assigned a manipulator for take out yet" <<std::endl;
 		}
 	}
 }
@@ -664,42 +758,88 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 								std::vector<std::deque<Order>>* _ManipulatorOrderList,
 								const std::vector<int>& _Manipulator_Modes)
 {
-	int K = 3000; //RBS debug only, TODO improve
-	int E = 1000;
-
-	for(unsigned int i=0; i<_Bricks_Ready_For_Output->size(); i++)
+	//for(unsigned int i=0; i<_Bricks_Ready_For_Output->size(); i++) //For all the pallets
+	int i=_Bricks_Ready_For_Output->size();
+	while(i-->0)
 	{
-		int destinationManipulator = (i/2);
-
+		int destinationManipulator = (i/2); 
 		//If a gap is required for this pallet and its manipulator is enabled as output (2) or in/out (1)
-		if(_Bricks_Ready_For_Output->at(i) == 1 && (_Manipulator_Modes.at(destinationManipulator) != 0))
+		if	(
+				_Bricks_Ready_For_Output->at(i) == 1 &&
+				(_Manipulator_Modes.at(destinationManipulator) == MODE_INOUT ||
+				_Manipulator_Modes.at(destinationManipulator) == MODE_OUTPUT)
+			)
 		{
-
+			//std::cout<< "Confirmation that: Brick at pallet " << i+1
+			//					 << "matches the packing type and has not been assigned a manipulator for take out yet" <<std::endl;
 			//start checking from front to back
 			for(unsigned int j=0; j<Bricks_On_The_Line->size(); j++)  //Rewrite with for to avoid break
 			{
 				Brick mBrick = Bricks_On_The_Line->at(j);
-
-				//If the selected item is a gap, and it is unassigned, and its far enough
+				bool usableGap=true;
+				//If the selected item is a gap, and it is unassigned,
+				//and its far enough that if we place now the order it will be able to do it
 				//and the order could fit between the existing orders without disrupt
 				//and the manipulator won't be busy:
-				if (
-					mBrick.Type == 0 &&
-					mBrick.AssignedPallet == 0 &&
-					mBrick.Position < (Manipulator_Fixed_Position.at(destinationManipulator)-K) &&
-							(
-							(j==Bricks_On_The_Line->size()-1  && mBrick.Position>K) // If the gap is at the first position, it just checks the space form the beginning of the line
-							||
-							(j<Bricks_On_The_Line->size()-1  && (mBrick.Position - Bricks_On_The_Line->at(j+1).Position) > K) // If the  gap is somewhere else, check the distance between the gap and the next one
-							)
-					// &&
-					// && comprobar lista
-					//manipulador de salida
-					)
+				
+				//OR
+				//std::cout<< "Confirmation that: Brick at pallet " << i+1
+				//								 << "matches the packing type and has not been assigned a manipulator for take out yet" <<std::endl;
+				//CONDITION 1: It must be an empty gap for this manipulator
+				//
+				if(mBrick.AssignedPallet > destinationManipulator || mBrick.Type !=0)
 				{
-					//Insert two items just before that place, so the middle spot can be assigned for the operation
-					//while maintaining the brick-spot principle (Note: second spot must be thin in order to save space)
+					usableGap=false;
+					std::cout<< "It's problem of condition 1"<<std::endl;
+				}
+				//CONDITION 2: The manipulator has to have enough time to use that gap
+				//
+				else if(mBrick.Position > (Manipulator_Fixed_Position.at(destinationManipulator)-K))
+				{
+					usableGap=false;
+					std::cout<< "It's problem of condition 2"<<std::endl;
+				}
+				//CONDITION 3: If the gap is at the last position, has to have enough space to allocate the brick
+				else if(j==Bricks_On_The_Line->size()-1  && mBrick.Position<E)
+				{
+					usableGap=false;
+					std::cout<< "It's problem of condition 3"<<std::endl;
+				}
+				//CONDITION 4: Similar to 3,If the gap is between two orders, has to have enough space to allocate the brick
+				else if(j<Bricks_On_The_Line->size()-1  && (Bricks_On_The_Line->at(j+1).Position - mBrick.Position) < E)
+				{
+					usableGap=false;
+					std::cout<< "It's problem of condition 4"<<std::endl;
+				}
+				std::cout<< "We've got quite far already"<<std::endl;
 
+				
+				//CONDITIONS THAT DEPEND ON PREVIOUS ORDERS
+				for(unsigned int k =0; k<_ManipulatorOrderList->at(destinationManipulator).size();k++)
+				{
+					//CONDITION 5: The manipulator shouldn't be busy when the gap arrives
+					if(_ManipulatorOrderList->at(destinationManipulator).at(k).When + K > _Manipulator_Fixed_Position.at(destinationManipulator) - mBrick.Position
+					&& _ManipulatorOrderList->at(destinationManipulator).at(k).When < _Manipulator_Fixed_Position.at(destinationManipulator) - mBrick.Position)
+					{
+						usableGap=false;
+						std::cout<< "It's problem of condition 5"<<std::endl;
+						break;
+					}
+					//CONDITION 6: The manipulator shouldn't disturb other orders
+					if(_ManipulatorOrderList->at(destinationManipulator).at(k).When > _Manipulator_Fixed_Position.at(destinationManipulator) - mBrick.Position
+					&& _ManipulatorOrderList->at(destinationManipulator).at(k).When - K < _Manipulator_Fixed_Position.at(destinationManipulator) - mBrick.Position)
+					{
+						usableGap=false;
+						std::cout<< "It's problem of condition 6"<<std::endl;
+						break;
+					}
+				}
+
+				std::cout<< "it might be that there is not a problem at all"<<std::endl;
+
+					//If you have made it so far it's because there is no problem to place an order at that gap
+				if(usableGap==true)
+				{
 					//Before:
 					//   j+1        j        j-1                  0
 					//---------+---------+---------+---------+---------+
@@ -717,11 +857,14 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 					//  Brick  | newSPOT | AssignedSpot |SPOT |  Brick  |   ...   |  FRONT  |
 					//---------+---------+--------------+-----+---------+---------+---------+
 
-					std::cout << "Spot found!!, at index " << j << std::endl;
 					_Bricks_Ready_For_Output->at(i) = -1;
 					std::cout << "Spot found!!, for the 'brick' with index " << j << " Assigned to Manipulator " << destinationManipulator  <<  std::endl;
-					int assignedSpotPosition = Bricks_On_The_Line->at(j).Position + 10; //Very thin gap
-					int newSpotPosition = assignedSpotPosition + E; //situated behind Assigned spot
+
+					//Insert two items just before that place, so the middle spot can be assigned for the operation
+					//while maintaining the brick-spot principle (Note: second spot must be thin in order to save space)
+
+					int assignedSpotPosition = Bricks_On_The_Line->at(j).Position - 10; //Very thin gap
+					int newSpotPosition = assignedSpotPosition - E; //situated behind Assigned spot
 
 					//Add assigned spot behind SPOT
 					Brick AssignedSpot(0, assignedSpotPosition, i+1, 0);
@@ -733,14 +876,16 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 					Bricks_On_The_Line->insert(Bricks_On_The_Line->begin()+j+2, newSpot);
 
 					//The assigned spot is now at j+1
-					AddOrder(Bricks_On_The_Line->at(j+1), _ManipulatorOrderList, _Manipulator_Fixed_Position);
+
+					Brick GapToUse = Bricks_On_The_Line->at(j+1);
+					GapToUse.Position = GapToUse.Position-E/2; //Small adjustment that is needed -.-
+					AddOrder(GapToUse, _ManipulatorOrderList, _Manipulator_Fixed_Position);
 					break;
 				}
 			}
 		}
 	}
 }
-
 
 void RFIDSubroutine()
 {
@@ -803,7 +948,7 @@ void * AlgorithmV2(void *Arg)
 	while(1)
 	{
 		int RawCurrentPackagingBrick = (CurrentPackagingGrade << 4) + CurrentPackagingColor;
-		//RFIDSubroutine();  WHAT THE FUCK!! THIS IS LEAKING MEMORY!!!
+		//RFIDSubroutine();  WHAT THE FUCK!! THIS IS LEAKING MEMORY!!! JAGM: not really, just filling the stack too fast. Could be avoided by launching this in a different thread with a slower rate. As seen in main loop
 
 		//std::cout<< "inside the algorithm loop"<<std::endl;
 		//UPDATE ENCODER VALUES
@@ -823,20 +968,20 @@ void * AlgorithmV2(void *Arg)
 			if(RawCurrentPackagingBrick==BrickToWorkWith->Type)
 			{
 
-				if(RoboticArm::WhetherOrNotPutTheTileTo_16) //If the path is not blocked, go freely
+				//if((RoboticArm::WhetherOrNotPutTheTileTo_16 && Enable_WhetherOrNotPutTheTileTo_16) || !force_input) //If the path is not blocked, go freely
+				if(RoboticArm::WhetherOrNotPutTheTileTo_16)
 				{
-					BrickToWorkWith->AssignedPallet=-1;//Because why not? -1 could mean go freely
+					BrickToWorkWith->AssignedPallet=-3;//Because why not? -1 could mean go freely
 				}
 				else
 				{
-					Choose_Best_Pallet(BrickToWorkWith, Manipulator_Order_List, Manipulator_Fixed_Position, Manipulator_Modes, RawCurrentPackagingBrick); //BrickToWorkWith is a pointer, take care
+					Choose_Best_Pallet(BrickToWorkWith, Manipulator_Order_List, Manipulator_Fixed_Position, Manipulator_Modes, RawCurrentPackagingBrick, forced_pallet); //BrickToWorkWith is a pointer, take care
 					AddOrder(*BrickToWorkWith, &Manipulator_Order_List, Manipulator_Fixed_Position);
 				}
-
 			}
 			else
 			{
-				Choose_Best_Pallet(BrickToWorkWith, Manipulator_Order_List, Manipulator_Fixed_Position, Manipulator_Modes, RawCurrentPackagingBrick); //BrickToWorkWith is a pointer, take care
+				Choose_Best_Pallet(BrickToWorkWith, Manipulator_Order_List, Manipulator_Fixed_Position, Manipulator_Modes, RawCurrentPackagingBrick, forced_pallet); //BrickToWorkWith is a pointer, take care
 				AddOrder(*BrickToWorkWith, &Manipulator_Order_List, Manipulator_Fixed_Position);
 			}
 		}
@@ -844,6 +989,7 @@ void * AlgorithmV2(void *Arg)
 		//CHECK FOR OUTPUT
 		//The output is:
 		//Check that the output operation is allowed
+		//if((RoboticArm::WhetherOrNotPutTheTileTo_16 && Enable_WhetherOrNotPutTheTileTo_16)  || force_output)
 		if(RoboticArm::WhetherOrNotPutTheTileTo_16 || true)
 		{
 			//Draft()
@@ -863,10 +1009,6 @@ void * AlgorithmV2(void *Arg)
 			//Will check absolutely every damn gap that happens in the line
 			//This function will place an order
 		}
-
-
-
-
 		//Give to the PLC the updates of the Order Line.
 		ProcessOrdersToPLC(Manipulator_Order_List, Pallet_LowSpeedPulse_Height_List);
 	}

@@ -34,6 +34,16 @@ class Order
 		bool What;
 };
 
+void set_enable_WhetherOrNotPutTheTileTo_16(bool);
+
+void set_force_input(bool);
+
+void set_force_output(bool);
+
+void set_forced_pallet(int set_to);
+
+void set_order(Brick brick);
+
 //void CancelOrder(std::deque<Brick>*, std::vector<std::deque<Order>> *);
 
 //void CancelOrder(Brick *, std::vector<std::deque<Order>> *);

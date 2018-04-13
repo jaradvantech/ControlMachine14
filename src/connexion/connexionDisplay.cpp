@@ -2,7 +2,7 @@
  * connexionDisplay.cpp
  *
  *  Created on: Dec 22, 2017
- *      Author: Jose Andres Grau Martinez
+ *      Author: Jose Andres Grau Martinez and FanFan <3 e___e
  */
 
 
@@ -81,7 +81,8 @@ std::string Command_PGSI(std::string const& Buffer)
  * RBS; PLC Write DAta
  * Values marked as 'X' won't be changed
  */
-std::string Command_PWDA(std::string const& Buffer){
+std::string Command_PWDA(std::string const& Buffer)
+{
 	int mArmNumber = boost::lexical_cast<int>(Buffer.substr(8,2));
 	RoboticArm* mArm = DesiredRoboticArm(mArmNumber);
 
@@ -355,7 +356,8 @@ std::string Command_ALGC(std::string Buffer)
 	return Answer;
 }
 //Check for new alarms
-std::string Command_CHAL(std::string const& Buffer) {
+std::string Command_CHAL(std::string const& Buffer)
+{
 	std::string Answer;
 	int Manipulators = 5; //ConfigParser.getManipulatorNumber();
 
@@ -372,7 +374,8 @@ std::string Command_CHAL(std::string const& Buffer) {
 	return Answer;
 }
 
-std::string Command_SCAP(std::string const& Buffer) {
+std::string Command_SCAP(std::string const& Buffer)
+{
 	std::string Answer;
 
 	ConfigParser config("/etc/unit14/unit14.conf");
@@ -394,6 +397,68 @@ std::string Command_SCAP(std::string const& Buffer) {
 	return Answer;
 }
 
+/*
+ * RBS: Write Advanced Debug Information
+ */
+std::string Command_WADI(std::string const& Buffer)
+{
+	if(Buffer.substr(5,1) == "1")
+	{
+		//WhetherOrNotPutTheTileTo is enabled
+		set_enable_WhetherOrNotPutTheTileTo_16(true);
+
+	}
+	else
+	{
+		//WhetherOrNotPutTheTileTo is disabled
+		set_enable_WhetherOrNotPutTheTileTo_16(false);
+
+		//wheterornot16 disabled, force output
+		if(Buffer.substr(6,1) == "1")
+			set_force_output(true);
+		else
+			set_force_output(false);
+
+		//wheterornot16 disabled, force input
+		if(Buffer.substr(7,1) == "1")
+			set_force_input(true);
+		else
+			set_force_input(false);
+	}
+
+	return "WADI\r\n";
+}
+
+/*
+ * RBS PLace ORder
+ */
+std::string Command_PLRD(std::string const& Buffer)
+{
+
+
+
+	int type = boost::lexical_cast<int>(Buffer.substr(5, 6));  //type
+	int position = boost::lexical_cast<int>(Buffer.substr(12, 6)); //position (as a brick, it's relative to PS4)
+	int pallet = boost::lexical_cast<int>(Buffer.substr(19, 6));//pallet
+
+	Brick brick(type,position,pallet,0);//DNI is meaningless here
+	set_order(brick);
+	return "PLRD\r\n";
+}
+
+/*
+ * RBS FOrce To Pallet...
+ */
+std::string Command_FOTP(std::string const& Buffer)
+{
+	int destination_pallet = boost::lexical_cast<int>(Buffer.substr(5, 2));
+
+	set_forced_pallet(destination_pallet);
+
+	std::cout << "forced to: " << destination_pallet << std::endl;
+
+	return "FOTP\r\n";
+}
 
 
 bool readBool(std::string mString)
@@ -406,8 +471,8 @@ bool readBool(std::string mString)
 
 std::string ProcessCommand(std::string const& bufferRead, bool ServerIsReady)
 {
-std::string bufferWrite;
-	//TODO RBS, replace contains by substring(0,4)
+	std::string bufferWrite;
+	//TODO RBS, replace contains by substring(0,4) and be more specific when catching exceptions .-.
 	if (boost::contains(bufferRead, "PGSI") && ServerIsReady)
 	{
 		try {bufferWrite = Command_PGSI(bufferRead);}
@@ -486,6 +551,30 @@ std::string bufferWrite;
 		catch(...){
 			std::cout << "Command_SCAP exception: bad syntax"<< std::endl;
 			bufferWrite = "Error_SCAP\r\n";
+		}
+	}
+	else if (boost::contains(bufferRead,"WADI") && ServerIsReady)
+	{
+		try {bufferWrite = Command_WADI(bufferRead);}
+		catch(...){
+			std::cout << "Command_WADI exception: bad syntax"<< std::endl;
+			bufferWrite = "Error_WADI\r\n";
+		}
+	}
+	else if (boost::contains(bufferRead,"PLRD") && ServerIsReady)
+	{
+		try {bufferWrite = Command_PLRD(bufferRead);}
+		catch(...){
+			std::cout << "Command_PLRD exception: bad syntax"<< std::endl;
+			bufferWrite = "Error_PLRD\r\n";
+		}
+	}
+	else if (boost::contains(bufferRead,"FOTP") && ServerIsReady)
+	{
+		try {bufferWrite = Command_FOTP(bufferRead);}
+		catch(...){
+			std::cout << "Command_FOTP exception: bad syntax"<< std::endl;
+			bufferWrite = "Error_FOTP\r\n";
 		}
 	}
 	else if (boost::contains(bufferRead,"PING"))

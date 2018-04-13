@@ -155,6 +155,7 @@ void * RFIDLoop(void *Arg){
 				 Message=Message.substr(1); //Removes the RFIDServer to get the message that is going to be parsed.
 
 				 //Send Command has to be blocking because how the servers work.
+				 if(RFIDManager[RFIDServer]->isConnected() != true)throw std::runtime_error("Server disconnected");
 				 if(RFIDManager[RFIDServer]->SendCommand(Message)){ //Send Message
 					 Answer=RFIDManager[RFIDServer]->ReadAnswer();   //Wait here until an answer is red.
 					 if(Answer=="") throw std::runtime_error("Empty Answer");
