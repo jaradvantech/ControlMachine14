@@ -336,11 +336,14 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 						)
 				{//Discharged the brick in place
 					_ListOfBricksOnLine->at(j).Type=_Manipulator_TakenBrick->at(ArmIndex-1).Type;
+					_ListOfBricksOnLine->at(j).AssignedPallet=7;
 					_ListOfBricksOnLine->at(j).DNI=_Manipulator_TakenBrick->at(ArmIndex-1).DNI;
 					Brick Empty(1,0,0,0);
 					_Manipulator_TakenBrick->at(ArmIndex-1)=Empty;
 					std::cout<< "Brick discharged: DNI Assigned " << _ListOfBricksOnLine->at(j).DNI << ". Arm " << ArmIndex << std::endl;
 					std::cout<< "Brick discharged in the correct place" << _ListOfBricksOnLine->at(j).Position << ". Arm " << ArmIndex << std::endl;
+
+					set_order(_ListOfBricksOnLine->at(j));
 				}
 			}
 		}
@@ -826,7 +829,7 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 				}
 				//how do we know if it's usable?
 				//By checking the orders. We need an spot of K between orders
-				if(_ManipulatorOrderList->at(destinationManipulator).size()==0) Spot = Bricks_On_The_Line->at(j).Position-10;
+				if(_ManipulatorOrderList->at(destinationManipulator).size()==0) Spot = Bricks_On_The_Line->at(j).Position-100;
 				for(unsigned int k = 0; k < _ManipulatorOrderList->at(destinationManipulator).size();k++) //For all the orders of this manipulator
 				{
 
@@ -890,8 +893,7 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 					//Insert two items just after that place, so the middle spot can be assigned for the operation
 					//while maintaining the brick-spot principle (Note: second spot must be as thin as possible in order to save space)
 
-
-					int assignedSpotPosition = Spot;//Bricks_On_The_Line->at(j).Position - UnusedGap; //Unused gap
+					int assignedSpotPosition = Spot;//It has already a security margin seted up lines ago
 					int newSpotPosition = assignedSpotPosition - E; //situated behind Assigned spot
 
 					//Add assigned spot behind SPOT
@@ -904,10 +906,11 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 					Bricks_On_The_Line->insert(Bricks_On_The_Line->begin()+j+2, newSpot);
 
 					//The assigned spot is now at j+1
-
 					Brick GapToUse = Bricks_On_The_Line->at(j+1);
-					GapToUse.Position = GapToUse.Position-E/2; //Small adjustment that is needed -.-
-					std::cout << "The 'brick' with index " << j << " is expected to be retreived at  " << _Manipulator_Fixed_Position.at(destinationManipulator)+E/2 <<  std::endl;
+					//GapToUse.Position = GapToUse.Position; //Small adjustment that is needed -.- OR MAYBE NOT???
+					std::cout << "The 'gap' with index " << j << " is expected to be retreived at  " << _Manipulator_Fixed_Position.at(destinationManipulator) <<  std::endl;
+					std::cout << "The 'gap' with index " << j << " currently is at  " << Bricks_On_The_Line->at(j+1).Position <<  std::endl;
+					std::cout << "The 'gap' with index " << j << " is of size " << Bricks_On_The_Line->at(j+1).Position - Bricks_On_The_Line->at(j+2).Position  <<  std::endl;
 					AddOrder(GapToUse, _ManipulatorOrderList, _Manipulator_Fixed_Position);
 					break;
 				}
@@ -1036,6 +1039,8 @@ void * AlgorithmV2(void *Arg)
 										Manipulator_Fixed_Position,
 										&Manipulator_Order_List,
 										Manipulator_Modes); //Will check a spot for the pallets that have a 1. Once assigned a brick it will write -1;
+
+
 			//Will check absolutely every damn gap that happens in the line
 			//This function will place an order
 		}
