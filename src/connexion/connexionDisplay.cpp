@@ -2,7 +2,7 @@
  * connexionDisplay.cpp
  *
  *  Created on: Dec 22, 2017
- *      Author: Jose Andres Grau Martinez and FanFan <3 e___e
+ *      Author: Jose Andres Grau Martinez
  */
 
 
