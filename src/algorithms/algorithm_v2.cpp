@@ -65,7 +65,7 @@ void Cancel_Order(int index, std::vector<std::deque<Order>>* Manipulator_Order_L
 }
 
 //------------------------BRICK CLASS ----------------------------------------
-short Brick::size = 0; //former E
+short Brick::size = 0; //former E  FUCK IT, IT WAS THIS!!!! JAGM
 Brick::Brick(short argType, int argPosition, short argAssignedPallet, short argDNI)
 {
 	Type = argType;
@@ -180,7 +180,7 @@ bool CheckPhotoSensor4(std::deque<Brick>* _BricksBeforeTheLine, std::deque<Brick
 		_BricksBeforeTheLine->begin()->AssignedPallet=0;
 		//Add the hole that goes after this brick
 		Brick Gap(0,0,0,0);
-		Gap.Position = _BricksBeforeTheLine->front().Position - Brick::size - Brick::size/10; //Security margin of 1/10 of the size of the brick
+		Gap.Position = _BricksBeforeTheLine->front().Position - E - E/10; //Security margin of 1/10 of the size of the brick
 		Gap.Type = 0; //It has no brick because it's a gap -.-
 
 		//Add brick to the line
@@ -336,14 +336,14 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 						)
 				{//Discharged the brick in place
 					_ListOfBricksOnLine->at(j).Type=_Manipulator_TakenBrick->at(ArmIndex-1).Type;
-					_ListOfBricksOnLine->at(j).AssignedPallet=7;
+					//_ListOfBricksOnLine->at(j).AssignedPallet=7;
 					_ListOfBricksOnLine->at(j).DNI=_Manipulator_TakenBrick->at(ArmIndex-1).DNI;
 					Brick Empty(1,0,0,0);
 					_Manipulator_TakenBrick->at(ArmIndex-1)=Empty;
 					std::cout<< "Brick discharged: DNI Assigned " << _ListOfBricksOnLine->at(j).DNI << ". Arm " << ArmIndex << std::endl;
 					std::cout<< "Brick discharged in the correct place" << _ListOfBricksOnLine->at(j).Position << ". Arm " << ArmIndex << std::endl;
 
-					set_order(_ListOfBricksOnLine->at(j));
+					//set_order(_ListOfBricksOnLine->at(j));
 				}
 			}
 		}
@@ -815,7 +815,7 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 				//Check when it's usable
 
 				//CONDITION 1: It must be an empty gap for this manipulator
-				if(mBrick.AssignedPallet > destinationManipulator || mBrick.Type !=0)
+				if(mBrick.Type !=0) //We could add more things here. But it's better to keep it simple.
 				{
 					usableGap=false;
 					std::cout << "Brick index " << j << " It's problem of condition 1" << std::endl;
@@ -865,7 +865,7 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 							break;
 						}else Spot=0;
 					}
-				}
+				}				
 				std::cout<< "We've got quite far already"<< usableGap <<std::endl;
 					//If you have made it so far it's because there is no problem to place an order at that gap
 				if(usableGap==true && Spot>=E)
@@ -908,6 +908,12 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 					//The assigned spot is now at j+1
 					Brick GapToUse = Bricks_On_The_Line->at(j+1);
 					//GapToUse.Position = GapToUse.Position; //Small adjustment that is needed -.- OR MAYBE NOT???
+							
+					//The brick that now is at the position j-1.pos. Has a gap behind that starts at the position j.pos.
+					//This means, that the brick has a size (security margin included) of  j-1.pos - j.pos
+					//
+					
+					
 					std::cout << "The 'gap' with index " << j << " is expected to be retreived at  " << _Manipulator_Fixed_Position.at(destinationManipulator) <<  std::endl;
 					std::cout << "The 'gap' with index " << j << " currently is at  " << Bricks_On_The_Line->at(j+1).Position <<  std::endl;
 					std::cout << "The 'gap' with index " << j << " is of size " << Bricks_On_The_Line->at(j+1).Position - Bricks_On_The_Line->at(j+2).Position  <<  std::endl;
