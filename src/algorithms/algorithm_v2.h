@@ -33,51 +33,56 @@ class Order
 		bool Where;
 		bool What;
 };
+namespace Algorithm {
+	namespace Set {
+		void enable_WhetherOrNotPutTheTileTo_16(bool set_to);
+		void force_input(bool set_to);
+		void force_output(bool set_to);
+		void forced_pallet(int set_to);
+		void order(Brick brick);
+		void CurrentPackagingColor(int PackagingColor);
+		void CurrentPackagingGrade(int PackagingGrade);
+		void ManipulatorOperationTime(int mManipulatorOperationTime);
+		void ManipulatorModes(std::vector<int> mModes);
+		void ManipulatorFixedPosition(std::vector<int> mManipulator_Fixed_Position);
+	}
+	namespace Get{
 
-void set_enable_WhetherOrNotPutTheTileTo_16(bool);
+		std::deque<int> Available_DNI_List();
+		std::vector<std::deque<Order>> Manipulator_Order_List();
+		std::deque<Brick> Bricks_Before_The_Line();
+		std::deque<Brick> Bricks_On_The_Line();
 
-void set_force_input(bool);
+		std::vector<int> Bricks_Ready_For_Output();
+		std::vector<int> Manipulator_Fixed_Position();
+		std::vector<int> Manipulator_Modes();
+		std::vector<int> Pallet_LowSpeedPulse_Height_List();
+		std::vector<Brick> Manipulator_TakenBrick();
+		std::vector<int> IndexesOfBricksOnLine(std::deque<Brick> Bricks_On_The_Line);
 
-void set_force_output(bool);
+	}
 
-void set_forced_pallet(int set_to);
 
-void set_order(Brick brick);
+	/*It shouldn't be needed anymore*/
 
 //void CancelOrder(std::deque<Brick>*, std::vector<std::deque<Order>> *);
 
 //void CancelOrder(Brick *, std::vector<std::deque<Order>> *);
 
-void CancelOrder(int, std::vector<std::deque<Order>> *);
+//void CancelOrder(int, std::vector<std::deque<Order>> *);
 
-void SetNumberOfManipulators(short);
+//int  ConvertToAbsolute(int);
 
-int  ConvertToAbsolute(int);
+//void FillDINs(std::deque<int>*);
 
-void FillDINs(std::deque<int>*);
+//int  CheckForSurfaceCoincidence(int, int, int);
 
-int  CheckForSurfaceCoincidence(int, int, int);
+//int  CheckForFirstMatch(int, int, int);
 
-int  CheckForFirstMatch(int, int, int);
-
-int  CheckQuantityContained(int, int, int);
+//int  CheckQuantityContained(int, int, int);
 
 
-std::deque<Brick> GetListOfBricksOnTheLine(void);
-
-std::vector<Brick> GetListOfBricksTakenByManipulators(void);
-
-void Algorithm_SetCurrentPackagingColor(int);
-
-void Algorithm_SetCurrentPackagingGrade(int);
-
-void Algorithm_SetManipulatorOperationTime(int);
-
-void Algorithm_SetManipulatorModes(std::vector<int>);
-
-void Algorithm_SetManipulatorFixedPosition(std::vector<int> mManipulator_Fixed_Position);
-
-std::vector<int> GetIndexesOfBricksOnLine(std::deque<Brick> Bricks_On_The_Line);
+}
 
 void * AlgorithmV2(void *Arg);
 

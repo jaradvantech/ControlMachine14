@@ -13,7 +13,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include "algorithms/algorithm_v2.h"
+#include <algorithms/algorithm_v2.h>
 #include "ConfigParser.h"
 
 inline const char * const BoolToString(bool b)
@@ -267,11 +267,11 @@ std::string Command_RPRV(std::string const& Buffer)
 		}
 	}
 	//Get the list of bricks on the line and add the number of bricks
-	std::deque<Brick> mListOfBricksOnTheLine = GetListOfBricksOnTheLine();
+	std::deque<Brick> mListOfBricksOnTheLine = Algorithm::Get::Bricks_Before_The_Line();
 	Answer+= "_";
 
 	//RBS get list of bricks on line and iterate for every brick
-	std::vector<int> BricksOnLine = GetIndexesOfBricksOnLine(mListOfBricksOnTheLine);
+	std::vector<int> BricksOnLine = Algorithm::Get::IndexesOfBricksOnLine(mListOfBricksOnTheLine);
 	Answer+= (boost::format("%02u")%(BricksOnLine.size())).str();
 	for(unsigned int i=0; i<BricksOnLine.size(); i++)
 	{
@@ -288,7 +288,7 @@ std::string Command_RPRV(std::string const& Buffer)
 	}
 
 	//For every manipulator
-	std::vector<Brick> mListOfBricksTakenByManipulators = GetListOfBricksTakenByManipulators();
+	std::vector<Brick> mListOfBricksTakenByManipulators = Algorithm::Get::Manipulator_TakenBrick();
 
 	for(int i=0; i<mListOfBricksTakenByManipulators.size(); i++)
 	{
@@ -318,15 +318,15 @@ std::string Command_ALSC(std::string Buffer)
 
 	//Update both, running program and config file
 	config.SetCurrentPackagingColor(boost::lexical_cast<int>(Buffer.substr(8,2)));
-	Algorithm_SetCurrentPackagingColor(boost::lexical_cast<int>(Buffer.substr(8,2)));
+	Algorithm::Set::CurrentPackagingColor(boost::lexical_cast<int>(Buffer.substr(8,2)));
 
 	config.SetCurrentPackagingGrade(boost::lexical_cast<int>(Buffer.substr(11,3)));
-	Algorithm_SetCurrentPackagingGrade(boost::lexical_cast<int>(Buffer.substr(11,3)));
+	Algorithm::Set::CurrentPackagingGrade(boost::lexical_cast<int>(Buffer.substr(11,3)));
 
 	for(int i=0; i<Manipulators; i++)
 		modes.push_back(boost::lexical_cast<int>(Buffer.substr((15+i),1)));
 	config.SetManipulatorModes(modes);
-	Algorithm_SetManipulatorModes(modes);
+	Algorithm::Set::ManipulatorModes(modes);
 
 	/*
 	 * code for weights
@@ -390,7 +390,7 @@ std::string Command_SCAP(std::string const& Buffer)
 	{
 		ArmPositions.push_back(boost::lexical_cast<int>(Buffer.substr(8+i*7, 6)));
 	}
-	Algorithm_SetManipulatorFixedPosition(ArmPositions);
+	Algorithm::Set::ManipulatorFixedPosition(ArmPositions);
 	config.SetArmPositions(ArmPositions);
 	Answer = "SCAP\r\n";
 
@@ -405,25 +405,25 @@ std::string Command_WADI(std::string const& Buffer)
 	if(Buffer.substr(5,1) == "1")
 	{
 		//WhetherOrNotPutTheTileTo is enabled
-		set_enable_WhetherOrNotPutTheTileTo_16(true);
+		Algorithm::Set::enable_WhetherOrNotPutTheTileTo_16(true);
 
 	}
 	else
 	{
 		//WhetherOrNotPutTheTileTo is disabled
-		set_enable_WhetherOrNotPutTheTileTo_16(false);
+		Algorithm::Set::enable_WhetherOrNotPutTheTileTo_16(false);
 
 		//wheterornot16 disabled, force output
 		if(Buffer.substr(6,1) == "1")
-			set_force_output(true);
+			Algorithm::Set::force_output(true);
 		else
-			set_force_output(false);
+			Algorithm::Set::force_output(false);
 
 		//wheterornot16 disabled, force input
 		if(Buffer.substr(7,1) == "1")
-			set_force_input(true);
+			Algorithm::Set::force_input(true);
 		else
-			set_force_input(false);
+			Algorithm::Set::force_input(false);
 	}
 
 	return "WADI\r\n";
@@ -442,7 +442,7 @@ std::string Command_PLRD(std::string const& Buffer)
 	int pallet = boost::lexical_cast<int>(Buffer.substr(19, 6));//pallet
 
 	Brick brick(type,position,pallet,0);//DNI is meaningless here
-	set_order(brick);
+	Algorithm::Set::order(brick);
 	return "PLRD\r\n";
 }
 
@@ -453,7 +453,7 @@ std::string Command_FOTP(std::string const& Buffer)
 {
 	int destination_pallet = boost::lexical_cast<int>(Buffer.substr(5, 2));
 
-	set_forced_pallet(destination_pallet);
+	Algorithm::Set::forced_pallet(destination_pallet);
 
 	std::cout << "forced to: " << destination_pallet << std::endl;
 

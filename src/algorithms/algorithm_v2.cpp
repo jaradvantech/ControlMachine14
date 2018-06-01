@@ -656,91 +656,91 @@ void ProcessOrdersToPLC(const std::vector<std::deque<Order>>& _ManipulatorOrderL
 
 //-----------------------------------------------------------------------//
 //Variables to be used at void * AlgorithmV2(void *Arg) AND ONLY THERE!!!//
-std::deque<int> Available_DNI_List;						//Has the DNI list, these ids are used
+namespace Algorithm {
+	std::deque<int> Available_DNI_List;						//Has the DNI list, these ids are used
 
-std::vector<std::deque<Order>> Manipulator_Order_List;  //Has the list of orders, the vector holds a list with orders of each manipulator
-std::deque<Brick> Bricks_Before_The_Line;				//List with the bricks between the photosensor 1 and the photosensor 4
-std::deque<Brick> Bricks_On_The_Line;					//List with the bricks between the photosensor 4 and the end of the line.
+	std::vector<std::deque<Order>> Manipulator_Order_List;  //Has the list of orders, the vector holds a list with orders of each manipulator
+	std::deque<Brick> Bricks_Before_The_Line;				//List with the bricks between the photosensor 1 and the photosensor 4
+	std::deque<Brick> Bricks_On_The_Line;					//List with the bricks between the photosensor 4 and the end of the line.
 
-std::vector<int> Bricks_Ready_For_Output;
-std::vector<int> Manipulator_Fixed_Position;
-void Algorithm_SetManipulatorFixedPosition(std::vector<int> mManipulator_Fixed_Position)
-{
-	Manipulator_Fixed_Position = mManipulator_Fixed_Position;
+	std::vector<int> Bricks_Ready_For_Output;
+	std::vector<int> Manipulator_Fixed_Position;
+	std::vector<int> Manipulator_Modes;
+	std::vector<int> Pallet_LowSpeedPulse_Height_List;
+	std::vector<Brick> Manipulator_TakenBrick;
+
+	int CurrentPackagingColor, CurrentPackagingGrade;
+
+	int ManipulatorOperationTime;
+	long PreviousValueOfTheLineEncoder=RoboticArm::ActualValueOfTheLineEncoder;
+
+	bool Enable_WhetherOrNotPutTheTileTo_16 = true;
+	bool force_input = false;
+	bool force_output = false;
+	int	forced_pallet=0;
 }
-std::vector<int> Manipulator_Modes;
-std::vector<int> Pallet_LowSpeedPulse_Height_List;
-std::vector<Brick> Manipulator_TakenBrick;
 
-int CurrentPackagingColor, CurrentPackagingGrade;
 
-int ManipulatorOperationTime;
-long PreviousValueOfTheLineEncoder=RoboticArm::ActualValueOfTheLineEncoder;
-
-bool Enable_WhetherOrNotPutTheTileTo_16 = true;
-bool force_input = false;
-bool force_output = false;
-int	forced_pallet=0;
 //-----------------------------------------------------------------------//
 //Getters and setters for other functions
 
-void set_enable_WhetherOrNotPutTheTileTo_16(bool set_to)
-{
-	Enable_WhetherOrNotPutTheTileTo_16 = set_to;
-}
 
-void set_force_input(bool set_to)
-{
-	force_input = set_to;
-}
-void set_force_output(bool set_to)
-{
-	force_output = set_to;
-}
+	void Algorithm::Set::enable_WhetherOrNotPutTheTileTo_16(bool set_to){	Algorithm::Enable_WhetherOrNotPutTheTileTo_16 = set_to;}
+	void Algorithm::Set::force_input(bool set_to){ Algorithm::force_input = set_to; }
+	void Algorithm::Set::force_output(bool set_to){ Algorithm::force_output = set_to; }
+	void Algorithm::Set::forced_pallet(int set_to){ Algorithm::forced_pallet = set_to; }
+	void Algorithm::Set::order(Brick brick){
+		AddOrder(brick, &Algorithm::Manipulator_Order_List, Algorithm::Manipulator_Fixed_Position);
+	}
+	void Algorithm::Set::CurrentPackagingColor(int PackagingColor)
+	{
+		Algorithm::CurrentPackagingColor=PackagingColor;
+		std::cout << "Setting current packaging color to " << Algorithm::CurrentPackagingColor << std::endl;
+	}
+	void Algorithm::Set::CurrentPackagingGrade(int PackagingGrade)
+	{
+		Algorithm::CurrentPackagingGrade=PackagingGrade;
+		std::cout << "Setting current packaging type to " << Algorithm::CurrentPackagingGrade << std::endl;
+	}
+	void Algorithm::Set::ManipulatorOperationTime(int mManipulatorOperationTime)
+	{
+		Algorithm::ManipulatorOperationTime=mManipulatorOperationTime;
+	}
+	void Algorithm::Set::ManipulatorModes(std::vector<int> mModes)
+	{
+		Algorithm::Manipulator_Modes=mModes;
+	}
+	void Algorithm::Set::ManipulatorFixedPosition(std::vector<int> mManipulator_Fixed_Position){ Algorithm::Manipulator_Fixed_Position = mManipulator_Fixed_Position;}
 
-void set_forced_pallet(int set_to)
-{
-	forced_pallet = set_to;
-}
 
-void set_order(Brick brick)
-{
 
-	AddOrder(brick, &Manipulator_Order_List, Manipulator_Fixed_Position);
-	//orced_pallet = set_to;
-}
+	std::deque<int> Algorithm::Get::Available_DNI_List(){return Algorithm::Available_DNI_List;}
+	std::vector<std::deque<Order>> Algorithm::Get::Manipulator_Order_List(){return Algorithm::Manipulator_Order_List;}
+	std::deque<Brick> Algorithm::Get::Bricks_Before_The_Line(){return Algorithm::Bricks_Before_The_Line;}
+	std::deque<Brick> Algorithm::Get::Bricks_On_The_Line(){return Algorithm::Bricks_On_The_Line;}
 
-std::deque<Brick> GetListOfBricksOnTheLine(void)
-{
-	return Bricks_On_The_Line;
-}
+	std::vector<int> Algorithm::Get::Bricks_Ready_For_Output(){return Algorithm::Bricks_Ready_For_Output;}
+	std::vector<int> Algorithm::Get::Manipulator_Fixed_Position(){return Algorithm::Manipulator_Fixed_Position;}
+	std::vector<int> Algorithm::Get::Manipulator_Modes(){return Algorithm::Manipulator_Modes;}
+	std::vector<int> Algorithm::Get::Pallet_LowSpeedPulse_Height_List(){return Algorithm::Pallet_LowSpeedPulse_Height_List;}
+	std::vector<Brick> Algorithm::Get::Manipulator_TakenBrick(){return Algorithm::Manipulator_TakenBrick;}
+	std::vector<int> Algorithm::Get::IndexesOfBricksOnLine(std::deque<Brick> Bricks_On_The_Line)
+	{
+		std::vector<int> IndexesOfBricks;
+		for(unsigned int i=0; i<Bricks_On_The_Line.size(); i++)
+		{
+			//If item i on the line is not a gap
+			if(Bricks_On_The_Line.at(i).Type != 0)
+			{
+				IndexesOfBricks.push_back(i);
+			}
+		}
 
-std::vector<Brick> GetListOfBricksTakenByManipulators(void)
-{
-	return Manipulator_TakenBrick;
-}
+		return IndexesOfBricks;
+	}
 
-void Algorithm_SetCurrentPackagingColor(int PackagingColor)
-{
-	CurrentPackagingColor=PackagingColor;
-	std::cout << "Setting current packaging color to " << CurrentPackagingColor << std::endl;
-}
 
-void Algorithm_SetCurrentPackagingGrade(int PackagingGrade)
-{
-	CurrentPackagingGrade=PackagingGrade;
-	std::cout << "Setting current packaging type to " << CurrentPackagingGrade << std::endl;
-}
 
-void Algorithm_SetManipulatorOperationTime(int mManipulatorOperationTime)
-{
-	ManipulatorOperationTime=mManipulatorOperationTime;
-}
-
-void Algorithm_SetManipulatorModes(std::vector<int> mModes)
-{
-	Manipulator_Modes=mModes;
-}
 
 void CheckForBricksAtTheTop(std::vector<int>* _Bricks_Ready_For_Output, int _RawCurrentPackagingBrick)
 {
@@ -946,27 +946,11 @@ void RFIDSubroutine()
 		}
 	}
 }
-
-std::vector<int> GetIndexesOfBricksOnLine(std::deque<Brick> Bricks_On_The_Line)
-{
-	std::vector<int> IndexesOfBricks;
-	for(unsigned int i=0; i<Bricks_On_The_Line.size(); i++)
-	{
-		//If item i on the line is not a gap
-		if(Bricks_On_The_Line.at(i).Type != 0)
-		{
-			IndexesOfBricks.push_back(i);
-		}
-	}
-
-	return IndexesOfBricks;
-}
-
 //-----------------------------------------------------------------------//
 void * AlgorithmV2(void *Arg)
 {
 
-
+	using namespace Algorithm;
 	/*Load configuration from file*******************/
 	ConfigParser config("/etc/unit14/unit14.conf");
 	CurrentPackagingColor = config.GetPackagingColor();
