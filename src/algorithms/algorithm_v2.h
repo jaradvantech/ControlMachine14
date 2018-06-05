@@ -47,7 +47,6 @@ namespace Algorithm {
 		void ManipulatorFixedPosition(std::vector<int> mManipulator_Fixed_Position);
 	}
 	namespace Get{
-
 		std::deque<int> Available_DNI_List();
 		std::vector<std::deque<Order>> Manipulator_Order_List();
 		std::deque<Brick> Bricks_Before_The_Line();
@@ -59,7 +58,6 @@ namespace Algorithm {
 		std::vector<int> Pallet_LowSpeedPulse_Height_List();
 		std::vector<Brick> Manipulator_TakenBrick();
 		std::vector<int> IndexesOfBricksOnLine(std::deque<Brick> Bricks_On_The_Line);
-
 	}
 
 

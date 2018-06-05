@@ -15,6 +15,9 @@
 #include <boost/lexical_cast.hpp>
 #include <algorithms/algorithm_v2.h>
 #include "ConfigParser.h"
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
 
 inline const char * const BoolToString(bool b)
 {
@@ -460,8 +463,126 @@ std::string Command_FOTP(std::string const& Buffer)
 	return "FOTP\r\n";
 }
 
+void Command_GDIS(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter){
 
-bool readBool(std::string mString)
+	//Get debug internal state
+
+	DOC_in.IsNull(); //removes a warning. I hate warnings.
+
+	std::deque<int> Available_DNI_List = Algorithm::Get::Available_DNI_List();
+	std::vector<std::deque<Order>> Manipulator_Order_List = Algorithm::Get::Manipulator_Order_List();
+	std::deque<Brick> Bricks_Before_The_Line = Algorithm::Get::Bricks_Before_The_Line();
+	std::deque<Brick> Bricks_On_The_Line = Algorithm::Get::Bricks_On_The_Line();
+
+	std::vector<int> Bricks_Ready_For_Output = Algorithm::Get::Bricks_Ready_For_Output();
+	std::vector<int> Manipulator_Fixed_Position = Algorithm::Get::Manipulator_Fixed_Position();
+	std::vector<int> Manipulator_Modes = Algorithm::Get::Manipulator_Modes();
+	std::vector<int> Pallet_LowSpeedPulse_Height_List = Algorithm::Get::Pallet_LowSpeedPulse_Height_List();
+	std::vector<Brick> Manipulator_TakenBrick = Algorithm::Get::Manipulator_TakenBrick();
+
+	AnswerWriter->StartObject();			// Between StartObject()/EndObject(),
+
+	AnswerWriter->Key("command_ID");		// output a key,
+	AnswerWriter->String("GDIS");			// follow by a value.
+
+	AnswerWriter->Key("Available_DNI_List");
+	AnswerWriter->StartArray();
+	for(int i=0;i<Available_DNI_List.size();i++) AnswerWriter->Int(Available_DNI_List.at(i));
+	AnswerWriter->EndArray();
+
+	AnswerWriter->Key("Manipulator_Order_List");
+	AnswerWriter->StartArray();
+	for(int i=0;i<Manipulator_Order_List.size();i++){
+		AnswerWriter->StartObject();			// Between StartObject()/EndObject(),
+		for (int j=0;j<Manipulator_Order_List.at(i).size();j++){
+			AnswerWriter->Key("What");
+			AnswerWriter->Bool(Manipulator_Order_List.at(i).at(j).What);
+			AnswerWriter->Key("When");
+			AnswerWriter->Int(Manipulator_Order_List.at(i).at(j).When);
+			AnswerWriter->Key("Where");
+			AnswerWriter->Bool(Manipulator_Order_List.at(i).at(j).Where);
+		}
+		AnswerWriter->EndObject();
+	}
+	AnswerWriter->EndArray();
+
+	AnswerWriter->Key("Bricks_Before_The_Line");
+	AnswerWriter->StartArray();
+	for(int i=0;i<Bricks_Before_The_Line.size();i++){
+		AnswerWriter->StartObject();			// Between StartObject()/EndObject(),
+		AnswerWriter->Key("DNI");
+		AnswerWriter->Int(Bricks_Before_The_Line.at(i).DNI);
+		AnswerWriter->Key("AssignedPallet");
+		AnswerWriter->Int(Bricks_Before_The_Line.at(i).AssignedPallet);
+		AnswerWriter->Key("Position");
+		AnswerWriter->Int(Bricks_Before_The_Line.at(i).Position);
+		AnswerWriter->Key("Type");
+		AnswerWriter->Int(Bricks_Before_The_Line.at(i).Type);
+		AnswerWriter->EndObject();
+	}
+	AnswerWriter->EndArray();
+
+	AnswerWriter->Key("Bricks_On_The_Line");
+	AnswerWriter->StartArray();
+	for(int i=0;i<Bricks_On_The_Line.size();i++){
+		AnswerWriter->StartObject();			// Between StartObject()/EndObject(),
+		AnswerWriter->Key("DNI");
+		AnswerWriter->Int(Bricks_On_The_Line.at(i).DNI);
+		AnswerWriter->Key("AssignedPallet");
+		AnswerWriter->Int(Bricks_On_The_Line.at(i).AssignedPallet);
+		AnswerWriter->Key("Position");
+		AnswerWriter->Int(Bricks_On_The_Line.at(i).Position);
+		AnswerWriter->Key("Type");
+		AnswerWriter->Int(Bricks_On_The_Line.at(i).Type);
+		AnswerWriter->EndObject();
+	}
+	AnswerWriter->EndArray();
+
+	AnswerWriter->Key("Bricks_Ready_For_Output");
+	AnswerWriter->StartArray();
+	for(int i=0;i<Bricks_Ready_For_Output.size();i++) AnswerWriter->Int(Bricks_Ready_For_Output.at(i));
+	AnswerWriter->EndArray();
+
+	AnswerWriter->Key("Manipulator_Fixed_Position");
+	AnswerWriter->StartArray();
+	for(int i=0;i<Manipulator_Fixed_Position.size();i++) AnswerWriter->Int(Manipulator_Fixed_Position.at(i));
+	AnswerWriter->EndArray();
+
+
+	AnswerWriter->Key("Manipulator_Modes");
+	AnswerWriter->StartArray();
+	for(int i=0;i<Manipulator_Modes.size();i++) AnswerWriter->Int(Manipulator_Modes.at(i));
+	AnswerWriter->EndArray();
+
+	AnswerWriter->Key("Pallet_LowSpeedPulse_Height_List");
+	AnswerWriter->StartArray();
+	for(int i=0;i<Pallet_LowSpeedPulse_Height_List.size();i++) AnswerWriter->Int(Pallet_LowSpeedPulse_Height_List.at(i));
+	AnswerWriter->EndArray();
+
+	AnswerWriter->Key("Manipulator_TakenBrick");
+	AnswerWriter->StartArray();
+	for(int i=0;i<Manipulator_TakenBrick.size();i++){
+		AnswerWriter->StartObject();			// Between StartObject()/EndObject(),
+		AnswerWriter->Key("DNI");
+		AnswerWriter->Int(Manipulator_TakenBrick.at(i).DNI);
+		AnswerWriter->Key("AssignedPallet");
+		AnswerWriter->Int(Manipulator_TakenBrick.at(i).AssignedPallet);
+		AnswerWriter->Key("Position");
+		AnswerWriter->Int(Manipulator_TakenBrick.at(i).Position);
+		AnswerWriter->Key("Type");
+		AnswerWriter->Int(Manipulator_TakenBrick.at(i).Type);
+		AnswerWriter->EndObject();
+	}
+	AnswerWriter->EndArray();
+
+
+
+	AnswerWriter->EndObject();
+}
+
+
+
+bool readBool(const std::string & mString)
 {
 	if(mString=="0" || mString=="00")
 		return false;
@@ -577,6 +698,7 @@ std::string ProcessCommand(std::string const& bufferRead, bool ServerIsReady)
 			bufferWrite = "Error_FOTP\r\n";
 		}
 	}
+
 	else if (boost::contains(bufferRead,"PING"))
 	{
 		/* RBS 20/03/2018

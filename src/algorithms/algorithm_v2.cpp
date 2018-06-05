@@ -680,7 +680,6 @@ namespace Algorithm {
 	int	forced_pallet=0;
 }
 
-
 //-----------------------------------------------------------------------//
 //Getters and setters for other functions
 
@@ -949,7 +948,6 @@ void RFIDSubroutine()
 //-----------------------------------------------------------------------//
 void * AlgorithmV2(void *Arg)
 {
-
 	using namespace Algorithm;
 	/*Load configuration from file*******************/
 	ConfigParser config("/etc/unit14/unit14.conf");
