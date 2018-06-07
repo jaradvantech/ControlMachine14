@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 #include <deque>
-#include "algorithm_v2_types.h"
+#include "algorithms/algorithm_v2_types.h"
 namespace Algorithm {
 	namespace Set {
 		void enable_WhetherOrNotPutTheTileTo_16(bool set_to);
@@ -27,7 +27,7 @@ namespace Algorithm {
 	}
 	namespace Get{
 		std::deque<int> Available_DNI_List();
-		std::vector<std::deque<Order>> Manipulator_Order_List();
+		OrderManager Manipulator_Order_List();
 		std::deque<Brick> Bricks_Before_The_Line();
 		std::deque<Brick> Bricks_On_The_Line();
 

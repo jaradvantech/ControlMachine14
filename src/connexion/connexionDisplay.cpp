@@ -23,6 +23,50 @@ inline const char * const BoolToString(bool b)
 {
 	return b ? "1" : "0";
 }
+bool readBool(const std::string & mString)
+{
+	if(mString=="0" || mString=="00")
+		return false;
+	else
+		return true;
+}
+/* 6/7/2018 JAGM Functions for the transition to JSON Based on Control Machine 18*/
+
+bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, int* Variable)
+{
+	static rapidjson::Value::ConstMemberIterator itr;
+	itr = DOC.FindMember(Key.c_str());
+	if(itr !=DOC.MemberEnd()) {
+		*Variable=itr->value.GetInt();
+		return true;
+	}
+	else return false;
+}
+
+bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, std::string* Variable)
+{
+	static rapidjson::Value::ConstMemberIterator itr;
+	itr = DOC.FindMember(Key.c_str());
+	if(itr !=DOC.MemberEnd()) {
+		*Variable=itr->value.GetString();
+		return true;
+	}
+	else return false;
+}
+
+bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, bool* Variable)
+{
+	static rapidjson::Value::ConstMemberIterator itr;
+	itr = DOC.FindMember(Key.c_str());
+	if(itr !=DOC.MemberEnd()) {
+		*Variable=itr->value.GetBool();
+		return true;
+	}
+	else return false;
+}
+/*Functions for the transition to JSON Based on Control Machine 18*/
+
+
 
 /*
  * PLC Get the information of Single Robotic Arm
@@ -293,7 +337,7 @@ std::string Command_RPRV(std::string const& Buffer)
 	//For every manipulator
 	std::vector<Brick> mListOfBricksTakenByManipulators = Algorithm::Get::Manipulator_TakenBrick();
 
-	for(int i=0; i<mListOfBricksTakenByManipulators.size(); i++)
+	for(unsigned int i=0; i<mListOfBricksTakenByManipulators.size(); i++)
 	{
 		Answer+="_";
 		Answer+=(boost::format("%06u")%(DesiredRoboticArm(i+1)->ActualValueEncoder)).str();
@@ -470,7 +514,7 @@ void Command_GDIS(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	DOC_in.IsNull(); //removes a warning. I hate warnings.
 
 	std::deque<int> Available_DNI_List = Algorithm::Get::Available_DNI_List();
-	std::vector<std::deque<Order>> Manipulator_Order_List = Algorithm::Get::Manipulator_Order_List();
+	OrderManager Manipulator_Order_List = Algorithm::Get::Manipulator_Order_List();
 	std::deque<Brick> Bricks_Before_The_Line = Algorithm::Get::Bricks_Before_The_Line();
 	std::deque<Brick> Bricks_On_The_Line = Algorithm::Get::Bricks_On_The_Line();
 
@@ -487,20 +531,20 @@ void Command_GDIS(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 
 	AnswerWriter->Key("Available_DNI_List");
 	AnswerWriter->StartArray();
-	for(int i=0;i<Available_DNI_List.size();i++) AnswerWriter->Int(Available_DNI_List.at(i));
+	for(unsigned int i=0;i<Available_DNI_List.size();i++) AnswerWriter->Int(Available_DNI_List.at(i));
 	AnswerWriter->EndArray();
 
 	AnswerWriter->Key("Manipulator_Order_List");
 	AnswerWriter->StartArray();
-	for(int i=0;i<Manipulator_Order_List.size();i++){
+	for(unsigned int i=0;i<Manipulator_Order_List.NumberOfManipulators();i++){
 		AnswerWriter->StartObject();			// Between StartObject()/EndObject(),
-		for (int j=0;j<Manipulator_Order_List.at(i).size();j++){
+		for (unsigned int j=0;j<Manipulator_Order_List.atManipulator(i)->NumberOfOrders();j++){
 			AnswerWriter->Key("What");
-			AnswerWriter->Bool(Manipulator_Order_List.at(i).at(j).What);
+			AnswerWriter->Bool(Manipulator_Order_List.atManipulator(i)->getOrder_byIndex(j)->What);
 			AnswerWriter->Key("When");
-			AnswerWriter->Int(Manipulator_Order_List.at(i).at(j).When);
+			AnswerWriter->Int(Manipulator_Order_List.atManipulator(i)->getOrder_byIndex(j)->When);
 			AnswerWriter->Key("Where");
-			AnswerWriter->Bool(Manipulator_Order_List.at(i).at(j).Where);
+			AnswerWriter->Bool(Manipulator_Order_List.atManipulator(i)->getOrder_byIndex(j)->Where);
 		}
 		AnswerWriter->EndObject();
 	}
@@ -508,7 +552,7 @@ void Command_GDIS(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 
 	AnswerWriter->Key("Bricks_Before_The_Line");
 	AnswerWriter->StartArray();
-	for(int i=0;i<Bricks_Before_The_Line.size();i++){
+	for(unsigned int i=0;i<Bricks_Before_The_Line.size();i++){
 		AnswerWriter->StartObject();			// Between StartObject()/EndObject(),
 		AnswerWriter->Key("DNI");
 		AnswerWriter->Int(Bricks_Before_The_Line.at(i).DNI);
@@ -524,7 +568,7 @@ void Command_GDIS(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 
 	AnswerWriter->Key("Bricks_On_The_Line");
 	AnswerWriter->StartArray();
-	for(int i=0;i<Bricks_On_The_Line.size();i++){
+	for(unsigned int i=0;i<Bricks_On_The_Line.size();i++){
 		AnswerWriter->StartObject();			// Between StartObject()/EndObject(),
 		AnswerWriter->Key("DNI");
 		AnswerWriter->Int(Bricks_On_The_Line.at(i).DNI);
@@ -540,28 +584,28 @@ void Command_GDIS(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 
 	AnswerWriter->Key("Bricks_Ready_For_Output");
 	AnswerWriter->StartArray();
-	for(int i=0;i<Bricks_Ready_For_Output.size();i++) AnswerWriter->Int(Bricks_Ready_For_Output.at(i));
+	for(unsigned int i=0;i<Bricks_Ready_For_Output.size();i++) AnswerWriter->Int(Bricks_Ready_For_Output.at(i));
 	AnswerWriter->EndArray();
 
 	AnswerWriter->Key("Manipulator_Fixed_Position");
 	AnswerWriter->StartArray();
-	for(int i=0;i<Manipulator_Fixed_Position.size();i++) AnswerWriter->Int(Manipulator_Fixed_Position.at(i));
+	for(unsigned int i=0;i<Manipulator_Fixed_Position.size();i++) AnswerWriter->Int(Manipulator_Fixed_Position.at(i));
 	AnswerWriter->EndArray();
 
 
 	AnswerWriter->Key("Manipulator_Modes");
 	AnswerWriter->StartArray();
-	for(int i=0;i<Manipulator_Modes.size();i++) AnswerWriter->Int(Manipulator_Modes.at(i));
+	for(unsigned int i=0;i<Manipulator_Modes.size();i++) AnswerWriter->Int(Manipulator_Modes.at(i));
 	AnswerWriter->EndArray();
 
 	AnswerWriter->Key("Pallet_LowSpeedPulse_Height_List");
 	AnswerWriter->StartArray();
-	for(int i=0;i<Pallet_LowSpeedPulse_Height_List.size();i++) AnswerWriter->Int(Pallet_LowSpeedPulse_Height_List.at(i));
+	for(unsigned int i=0;i<Pallet_LowSpeedPulse_Height_List.size();i++) AnswerWriter->Int(Pallet_LowSpeedPulse_Height_List.at(i));
 	AnswerWriter->EndArray();
 
 	AnswerWriter->Key("Manipulator_TakenBrick");
 	AnswerWriter->StartArray();
-	for(int i=0;i<Manipulator_TakenBrick.size();i++){
+	for(unsigned int i=0;i<Manipulator_TakenBrick.size();i++){
 		AnswerWriter->StartObject();			// Between StartObject()/EndObject(),
 		AnswerWriter->Key("DNI");
 		AnswerWriter->Int(Manipulator_TakenBrick.at(i).DNI);
@@ -582,13 +626,7 @@ void Command_GDIS(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 
 
 
-bool readBool(const std::string & mString)
-{
-	if(mString=="0" || mString=="00")
-		return false;
-	else
-		return true;
-}
+
 
 std::string ProcessCommand(std::string const& bufferRead, bool ServerIsReady)
 {
@@ -711,6 +749,43 @@ std::string ProcessCommand(std::string const& bufferRead, bool ServerIsReady)
 		std::cout << ".";
 		fflush(stdout);
 	}
+
+	/*7/6/2018 JAGM: This piece of code below implements JSON over the old stringbanging method. */
+
+	else if (boost::contains(bufferRead,"GDIS") && ServerIsReady) /* This line to be removed, see ControlMachine18 for reference */
+	{
+	    rapidjson::Document DOC_in;
+	    rapidjson::StringBuffer Answer_JSON;
+	    rapidjson::Writer<rapidjson::StringBuffer> writer(Answer_JSON);
+	    rapidjson::ParseResult result;
+
+	    result = DOC_in.Parse(bufferRead.c_str());
+	    if(!result)
+	    {
+	    	 std::cout << "Message is not JSON or is corrupt: " << std::endl;
+	    	 return "ERROR_MESSAGECORRUPT\n";
+	    }
+
+	    // 2. Modify it by DOM.
+	    std::string command_ID;
+	    bool command_ID_check = FindAndAddTo(DOC_in, "command_ID", &command_ID);
+	    if(command_ID_check)
+	    //try //Yup, it's dirty. But we don't want to risk that the machine stops working by a corrupt packet
+	    {
+	        if(boost::equals(command_ID, "GDIS")) Command_GDIS(DOC_in, &writer);
+	        else std::cout << "Unknown command: " << command_ID << std::endl;
+	    }
+	    //catch( ... )
+	    else
+	    {
+	    	return "command_ID not found\n";
+	    	std::cout << command_ID << " Bad Syntax" << std::endl;
+	    }
+	    // 3. Stringify the DOM output
+
+	    return ((std::string)Answer_JSON.GetString()) + "\n";
+	}
+
 	else
 	{
 		bufferWrite = "Error_unknown_CMD\r\n";

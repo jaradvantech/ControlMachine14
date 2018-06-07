@@ -29,17 +29,17 @@
 
 
 
-void SetNumberOfManipulators(std::vector<std::deque<Order>>* _Manipulator_Order_List,
+void SetNumberOfManipulators(OrderManager* _Manipulator_Order_List,
 		std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 		std::vector<int>* _Bricks_Ready_For_Output,
 		std::vector<Brick>* _Manipulator_TakenBrick,
 		short _NumberOfManipulators)
 {
+	_Manipulator_Order_List->SetNumberOfArms(_NumberOfManipulators);
 	for(int i=0;i<_NumberOfManipulators;i++)
 	{
 		std::deque<Order> _ListOfOrders;
 		Brick NoBrick(1,0,0,0);
-		_Manipulator_Order_List->push_back(_ListOfOrders);
 		_Manipulator_TakenBrick->push_back(NoBrick);
 		_Pallet_LowSpeedPulse_Height_List->push_back(5000);
 		_Pallet_LowSpeedPulse_Height_List->push_back(5000);
@@ -254,28 +254,28 @@ void update_list(std::deque<Brick>* mBrickList,
 	}
 }
 
-void update_order_list(std::vector<std::deque<Order>>* _Manipulator_Order_List, int _EncoderAdvance)
+void update_order_list(OrderManager* _Manipulator_Order_List, int _EncoderAdvance)
 {
 	//Update position of every brick
-	for(unsigned int i=0; i<_Manipulator_Order_List->size(); i++) //for every manipulator
+	for(unsigned int i=0; i<_Manipulator_Order_List->NumberOfManipulators(); i++) //for every manipulator
 	{
-		for(unsigned int j=0; j<_Manipulator_Order_List->at(i).size(); j++) //for every order in that manipulator
+		for(unsigned int j=0; j<_Manipulator_Order_List->atManipulator(i)->NumberOfOrders(); j++) //for every order in that manipulator
 		{
-			_Manipulator_Order_List->at(i).at(j).When -= _EncoderAdvance; //decrease when it's going to happen. Will happen when it reaches 0
+			_Manipulator_Order_List->atManipulator(i)->getOrder_byIndex(j)->When -= _EncoderAdvance; //decrease when it's going to happen. Will happen when it reaches 0
 		}
 
-		//Check if it's outdated TODO: Clear constant
+		//Check if it's outdated TODO: Clear constant 6000
 
-		//if((_Manipulator_Order_List->at(i).size()>0 && _Manipulator_Order_List->at(i).begin()->When<=-35000)||
-		if(_Manipulator_Order_List->at(i).size()>0 && DesiredRoboticArm(i+1)->ManipulatorStatePosition==1 &&
-				 _Manipulator_Order_List->at(i).begin()->When<=-6000)//
+		if(_Manipulator_Order_List->atManipulator(i)->NumberOfOrders()>0 && DesiredRoboticArm(i+1)->ManipulatorStatePosition==1 &&
+				 _Manipulator_Order_List->atManipulator(i)->getOrder_byIndex(0)->When<=-6000)// the first order
 		{
+			//PLC needs to have this cleaned to 0 between orders
 				DesiredRoboticArm(i+1)->WhatToDoWithTheBrick = 0;
 				DesiredRoboticArm(i+1)->CatchOrDrop = 0;
 				DesiredRoboticArm(i+1)->PulseZAxis = 0;
 
 			std::cout << "Order expired, probably executed at manipulator "<< i+1 << std::endl;
-			_Manipulator_Order_List->at(i).pop_front();
+			_Manipulator_Order_List->atManipulator(i)->RemoveFirstOrder();
 		}
 	}
 }
@@ -447,7 +447,7 @@ int CheckInputScore(int NumberOfPallet, int TypeOfTheBrick , int _RawCurrentPack
 }
 
 void Choose_Best_Pallet(Brick* _BrickToClassify,
-						const std::vector<std::deque<Order>>& _Manipulator_Order_List,
+						OrderManager _Manipulator_Order_List,
 						const std::vector<int>& _Manipulator_Fixed_Position,
 						std::vector<int> _Manipulator_Modes,
 						int _RawCurrentPackagingBrick,
@@ -459,7 +459,7 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 
 	std::vector<int>ListOfPoints={10000,10000,10000,10000,10000,10000,10000,10000,10000,10000};
 
-	for(unsigned int i=0;i<_Manipulator_Order_List.size();i++) //Check for every manipulator
+	for(unsigned int i=0;i<_Manipulator_Order_List.NumberOfManipulators();i++) //Check for every manipulator
 	{
 		//bool ManipulatorWillBeReady = true; //Let's agree that unless noted otherwise the manipulator will be ready
 		//CONDITION 1: Manipulator is enabled as input (0=in, 1=in/out, 2=out, 3=disabled)
@@ -468,7 +468,7 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 			//ManipulatorWillBeReady = false;
 		}
 		else{
-			for(unsigned int j=0;j<_Manipulator_Order_List.at(i).size();j++) //And for every order
+			for(unsigned int j=0;j<_Manipulator_Order_List.atManipulator(i)->NumberOfOrders();j++) //And for every order
 			{
 				//----------------------------------------------------------------------
 
@@ -491,8 +491,8 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 				//-----------------B2------------B1M----------------------------------------
 				//                     <----K---> As we had this security distance, there is no problem.
 				//
-				if(_Manipulator_Order_List.at(i).at(j).When + K > _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position
-				&& _Manipulator_Order_List.at(i).at(j).When < _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position)
+				if(_Manipulator_Order_List.atManipulator(i)->getOrder_byIndex(j)->When + K > _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position
+				&& _Manipulator_Order_List.atManipulator(i)->getOrder_byIndex(j)->When < _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position)
 				{
 					//ManipulatorWillBeReady = false;
 					//TODO:EXCEPTION TO 3: it does not matter if it will be busy if it's an output operation, as we will cancel that output operation
@@ -515,8 +515,8 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 				//                     <----K---> As we had this security distance, there is no problem.
 				//
 
-				if(_Manipulator_Order_List.at(i).at(j).When > _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position
-				&& _Manipulator_Order_List.at(i).at(j).When - K < _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position )
+				if(_Manipulator_Order_List.atManipulator(i)->getOrder_byIndex(j)->When > _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position
+				&& _Manipulator_Order_List.atManipulator(i)->getOrder_byIndex(j)->When - K < _Manipulator_Fixed_Position.at(i) -_BrickToClassify->Position )
 				{
 					//ManipulatorWillBeReady = false;
 
@@ -578,8 +578,8 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 
 
 
-
-void AddOrder(const Brick& mBrick, std::vector<std::deque<Order>>* _ManipulatorOrderList, const std::vector<int>& _Manipulator_Fixed_Position)
+/*
+void AddOrder(const Brick& mBrick, OrderManager* _ManipulatorOrderList, const std::vector<int>& _Manipulator_Fixed_Position)
 {
 	//What stands for what order 1=catch and pick down 0=retrieve from the storage and put on the line
 	//Where is at which side, 0=left 1=right
@@ -595,28 +595,28 @@ void AddOrder(const Brick& mBrick, std::vector<std::deque<Order>>* _ManipulatorO
 	//Orders must be ordered by its position.
 
 	unsigned int i=0;
-	while(i<_ManipulatorOrderList->at(mWho).size() && _ManipulatorOrderList->at(mWho).at(i).When < OrderToPlace.When){
+	while(i<_ManipulatorOrderList->atManipulator(mWho).size() && _ManipulatorOrderList->at(mWho).at(i).When < OrderToPlace.When){
 				i++;
 	}
 	_ManipulatorOrderList->at(mWho).insert(_ManipulatorOrderList->at(mWho).begin()+i,OrderToPlace);
 }
-
-void ProcessOrdersToPLC(const std::vector<std::deque<Order>>& _ManipulatorOrderList, const std::vector<int>& _Pallet_LowSpeedPulse_Height_List)
+*/
+void ProcessOrdersToPLC(OrderManager* _ManipulatorOrderList, const std::vector<int>& _Pallet_LowSpeedPulse_Height_List)
 {
-	for(unsigned int i=0;i<_ManipulatorOrderList.size();i++)
+	for(unsigned int i=0;i<_ManipulatorOrderList->NumberOfManipulators();i++)
 	{
-		if(_ManipulatorOrderList.at(i).size()>0 &&
+		if(_ManipulatorOrderList->atManipulator(i)->NumberOfOrders()>0 &&
 				(
-				(_ManipulatorOrderList.at(i).begin()->What==false  && _ManipulatorOrderList.at(i).begin()->When<2000)
+				(_ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->What==false  && _ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->When<2000)
 				||
-				(_ManipulatorOrderList.at(i).begin()->What==true && _ManipulatorOrderList.at(i).begin()->When<14000)
+				(_ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->What==true && _ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->When<14000)
 				)
 
 		)
 		{
 			//WHAT TO DO WITH THE BRICK
 
-			if(_ManipulatorOrderList.at(i).begin()->Where){
+			if(_ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->Where){
 				DesiredRoboticArm(i+1)->WhatToDoWithTheBrick = 1; //right side
 			}
 			else
@@ -626,24 +626,22 @@ void ProcessOrdersToPLC(const std::vector<std::deque<Order>>& _ManipulatorOrderL
 
 			//CATH OR DROP
 
-			if(_ManipulatorOrderList.at(i).begin()->What==false) DesiredRoboticArm(i+1)->CatchOrDrop=1;
+			if(_ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->What==false) DesiredRoboticArm(i+1)->CatchOrDrop=1;
 			else DesiredRoboticArm(i+1)->CatchOrDrop=2;
 
 			//VALUE OF CATH OR DROP
 
-			if(RoboticArm::ActualValueOfTheLineEncoder + _ManipulatorOrderList.at(i).begin()->When <100000)
+			if(RoboticArm::ActualValueOfTheLineEncoder + _ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->When <100000)
 			{
-				DesiredRoboticArm(i+1)->ValueOfCatchDrop = RoboticArm::ActualValueOfTheLineEncoder + _ManipulatorOrderList.at(i).begin()->When;
+				DesiredRoboticArm(i+1)->ValueOfCatchDrop = RoboticArm::ActualValueOfTheLineEncoder + _ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->When;
 			}
 			else
 			{
-				DesiredRoboticArm(i+1)->ValueOfCatchDrop = RoboticArm::ActualValueOfTheLineEncoder + _ManipulatorOrderList.at(i).begin()->When - 100000;
+				DesiredRoboticArm(i+1)->ValueOfCatchDrop = RoboticArm::ActualValueOfTheLineEncoder + _ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->When - 100000;
 			}
-
 			//THE PULSE OF Z AXIS
 			//DesiredRoboticArm(i+1)->PulseZAxis=_Pallet_LowSpeedPulse_Height_List.at(i*2+(DesiredRoboticArm(i+1)->WhatToDoWithTheBrick-1));
 			DesiredRoboticArm(i+1)->PulseZAxis=_Pallet_LowSpeedPulse_Height_List.at(i*2+(DesiredRoboticArm(i+1)->WhatToDoWithTheBrick-1));//0
-
 		}
 		else
 		{
@@ -659,7 +657,8 @@ void ProcessOrdersToPLC(const std::vector<std::deque<Order>>& _ManipulatorOrderL
 namespace Algorithm {
 	std::deque<int> Available_DNI_List;						//Has the DNI list, these ids are used
 
-	std::vector<std::deque<Order>> Manipulator_Order_List;  //Has the list of orders, the vector holds a list with orders of each manipulator
+	//std::vector<std::deque<Order>> Manipulator_Order_List;  //Has the list of orders, the vector holds a list with orders of each manipulator
+	OrderManager Manipulator_Order_List;
 	std::deque<Brick> Bricks_Before_The_Line;				//List with the bricks between the photosensor 1 and the photosensor 4
 	std::deque<Brick> Bricks_On_The_Line;					//List with the bricks between the photosensor 4 and the end of the line.
 
@@ -689,7 +688,7 @@ namespace Algorithm {
 	void Algorithm::Set::force_output(bool set_to){ Algorithm::force_output = set_to; }
 	void Algorithm::Set::forced_pallet(int set_to){ Algorithm::forced_pallet = set_to; }
 	void Algorithm::Set::order(Brick brick){
-		AddOrder(brick, &Algorithm::Manipulator_Order_List, Algorithm::Manipulator_Fixed_Position);
+		Manipulator_Order_List.AddOrder(brick, Algorithm::Manipulator_Fixed_Position);
 	}
 	void Algorithm::Set::CurrentPackagingColor(int PackagingColor)
 	{
@@ -714,7 +713,7 @@ namespace Algorithm {
 
 
 	std::deque<int> Algorithm::Get::Available_DNI_List(){return Algorithm::Available_DNI_List;}
-	std::vector<std::deque<Order>> Algorithm::Get::Manipulator_Order_List(){return Algorithm::Manipulator_Order_List;}
+	OrderManager Algorithm::Get::Manipulator_Order_List(){return Algorithm::Manipulator_Order_List;}
 	std::deque<Brick> Algorithm::Get::Bricks_Before_The_Line(){return Algorithm::Bricks_Before_The_Line;}
 	std::deque<Brick> Algorithm::Get::Bricks_On_The_Line(){return Algorithm::Bricks_On_The_Line;}
 
@@ -783,7 +782,7 @@ void CheckForBricksAtTheTop(std::vector<int>* _Bricks_Ready_For_Output, int _Raw
 void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 								std::vector<int>* _Bricks_Ready_For_Output,
 								const std::vector<int>& _Manipulator_Fixed_Position,
-								std::vector<std::deque<Order>>* _ManipulatorOrderList,
+								OrderManager* _ManipulatorOrderList,
 								const std::vector<int>& _Manipulator_Modes)
 {
 	//for(unsigned int i=0; i<_Bricks_Ready_For_Output->size(); i++) //For all the pallets
@@ -828,18 +827,18 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 				}
 				//how do we know if it's usable?
 				//By checking the orders. We need an spot of K between orders
-				if(_ManipulatorOrderList->at(destinationManipulator).size()==0) Spot = Bricks_On_The_Line->at(j).Position-100;
-				for(unsigned int k = 0; k < _ManipulatorOrderList->at(destinationManipulator).size();k++) //For all the orders of this manipulator
+				if(_ManipulatorOrderList->atManipulator(destinationManipulator)->NumberOfOrders()==0) Spot = Bricks_On_The_Line->at(j).Position-100;
+				for(unsigned int k = 0; k < _ManipulatorOrderList->atManipulator(destinationManipulator)->NumberOfOrders();k++) //For all the orders of this manipulator
 				{
 
 					//a----------------b
 					//       c--------------d
 					//ORDER B SHOULD BE ALWAYS SMALLER THAN ORDER A
 
-					Order OrderB = _ManipulatorOrderList->at(destinationManipulator).at(k);
+					Order OrderB = *_ManipulatorOrderList->atManipulator(destinationManipulator)->getOrder_byIndex(k);
 					Order OrderA(0,0,0);
-					if(k==_ManipulatorOrderList->at(destinationManipulator).size()-1) OrderA.When=100000;
-					else OrderA= _ManipulatorOrderList->at(destinationManipulator).at(k+1);
+					if(k==_ManipulatorOrderList->atManipulator(destinationManipulator)->NumberOfOrders()-1) OrderA.When=100000; //In case that A does not exist,
+					else OrderA= *_ManipulatorOrderList->atManipulator(destinationManipulator)->getOrder_byIndex(k+1);
 
 					//CONDITION 3: There must be enough space between two orders to place another one
 					if(OrderA.When - OrderB.When > K)
@@ -916,7 +915,7 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 					std::cout << "The 'gap' with index " << j << " is expected to be retreived at  " << _Manipulator_Fixed_Position.at(destinationManipulator) <<  std::endl;
 					std::cout << "The 'gap' with index " << j << " currently is at  " << Bricks_On_The_Line->at(j+1).Position <<  std::endl;
 					std::cout << "The 'gap' with index " << j << " is of size " << Bricks_On_The_Line->at(j+1).Position - Bricks_On_The_Line->at(j+2).Position  <<  std::endl;
-					AddOrder(GapToUse, _ManipulatorOrderList, _Manipulator_Fixed_Position);
+					_ManipulatorOrderList->AddOrder(GapToUse, _Manipulator_Fixed_Position);
 					break;
 				}
 			}
@@ -997,13 +996,13 @@ void * AlgorithmV2(void *Arg)
 				else
 				{
 					Choose_Best_Pallet(BrickToWorkWith, Manipulator_Order_List, Manipulator_Fixed_Position, Manipulator_Modes, RawCurrentPackagingBrick, forced_pallet); //BrickToWorkWith is a pointer, take care
-					AddOrder(*BrickToWorkWith, &Manipulator_Order_List, Manipulator_Fixed_Position);
+					Manipulator_Order_List.AddOrder(*BrickToWorkWith, Manipulator_Fixed_Position);
 				}
 			}
 			else
 			{
 				Choose_Best_Pallet(BrickToWorkWith, Manipulator_Order_List, Manipulator_Fixed_Position, Manipulator_Modes, RawCurrentPackagingBrick, forced_pallet); //BrickToWorkWith is a pointer, take care
-				AddOrder(*BrickToWorkWith, &Manipulator_Order_List, Manipulator_Fixed_Position);
+				Manipulator_Order_List.AddOrder(*BrickToWorkWith, Manipulator_Fixed_Position);
 			}
 		}
 
@@ -1047,6 +1046,6 @@ void * AlgorithmV2(void *Arg)
 
 
 
-		ProcessOrdersToPLC(Manipulator_Order_List, Pallet_LowSpeedPulse_Height_List);
+		ProcessOrdersToPLC(&Manipulator_Order_List, Pallet_LowSpeedPulse_Height_List);
 	}
 }

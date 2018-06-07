@@ -40,9 +40,9 @@ class OrderManager {
 			private:
 			std::deque<Order> _OrderList;
 			public:
-			void AddOrder();
-			void DeleteOrder();
-
+			void RemoveFirstOrder();
+			void InsertOrder(Order OrderToPlace);
+			size_t NumberOfOrders() {return _OrderList.size(); };
 			Order* getOrder_byIndex(int _index);
 			Order* getOrder_afterPosition(int _position);
 			Order* getOrder_beforePosition(int _position);
@@ -57,8 +57,14 @@ class OrderManager {
 	std::vector<Manipulators> _Manipulator_OrderList;
 
 	public:
+	OrderManager();
 	OrderManager(int numberOfArms);
-	Manipulators& atManipulator(int _index);
+	void SetNumberOfArms(int numberOfArms);
+	Manipulators* atManipulator(int _index);
+	size_t NumberOfManipulators() { return _Manipulator_OrderList.size(); };
+
+	void AddOrder(const Brick& mBrick, const std::vector<int>& _Manipulator_Fixed_Position);
+
 	static bool CheckIfOrderExists(Order* _orderTocheck, Order* _outputOrder);
 	static bool CheckIfOrderExists(Order* _orderTocheck);
 
