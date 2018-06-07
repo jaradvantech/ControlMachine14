@@ -11,28 +11,7 @@
 #include <string>
 #include <vector>
 #include <deque>
-
-class Brick
-{
-	public:
-		Brick(short argType, int argPosition, short argAssignedPallet, short argDNI);
-
-		static short size;
-		short Type;
-		int Position;
-		short AssignedPallet;
-		short DNI;
-};
-
-class Order
-{
-	public:
-		Order(int When, bool Where, bool What);
-
-		int When;
-		bool Where;
-		bool What;
-};
+#include "algorithm_v2_types.h"
 namespace Algorithm {
 	namespace Set {
 		void enable_WhetherOrNotPutTheTileTo_16(bool set_to);
