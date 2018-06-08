@@ -793,7 +793,7 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 		int Spot=0;
 		//If a gap is required for this pallet and its manipulator is enabled as output (2) or in/out (1)
 		if	(
-				_Bricks_Ready_For_Output->at(i) == 1 &&
+				_Bricks_Ready_For_Output->at(i) == 1 &&	//1 = Gap required
 				(_Manipulator_Modes.at(destinationManipulator) == MODE_INOUT ||
 				_Manipulator_Modes.at(destinationManipulator) == MODE_OUTPUT)
 			)
@@ -801,7 +801,7 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 			//std::cout<< "Confirmation that: Brick at pallet " << i+1
 			//					 << "matches the packing type and has not been assigned a manipulator for take out yet" <<std::endl;
 			//start checking from front to back
-			for(unsigned int j=0; j<Bricks_On_The_Line->size(); j++)  //Rewrite with for to avoid break
+			for(unsigned int j=0; j<Bricks_On_The_Line->size(); j++)
 			{
 				Brick mBrick = Bricks_On_The_Line->at(j);
 				Brick nextBrick(0,0,0,0);
@@ -827,7 +827,7 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 				}
 				//how do we know if it's usable?
 				//By checking the orders. We need an spot of K between orders
-				if(_ManipulatorOrderList->atManipulator(destinationManipulator)->NumberOfOrders()==0) Spot = Bricks_On_The_Line->at(j).Position-100;
+				if(_ManipulatorOrderList->atManipulator(destinationManipulator)->NumberOfOrders()==0) Spot = Bricks_On_The_Line->at(j).Position-100; // MAGICNUMBER
 				for(unsigned int k = 0; k < _ManipulatorOrderList->atManipulator(destinationManipulator)->NumberOfOrders();k++) //For all the orders of this manipulator
 				{
 
@@ -837,7 +837,8 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 
 					Order OrderB = *_ManipulatorOrderList->atManipulator(destinationManipulator)->getOrder_byIndex(k);
 					Order OrderA(0,0,0);
-					if(k==_ManipulatorOrderList->atManipulator(destinationManipulator)->NumberOfOrders()-1) OrderA.When=100000; //In case that A does not exist,
+					//if(k==_ManipulatorOrderList->atManipulator(destinationManipulator)->NumberOfOrders()-1) OrderA.When=100000; //In case that A does not exist, we set it far far away
+					if(k==_ManipulatorOrderList->atManipulator(destinationManipulator)->NumberOfOrders()-1) OrderA.When=_Manipulator_Fixed_Position.at(destinationManipulator); //In case that A does not exist, we set it far far away
 					else OrderA= *_ManipulatorOrderList->atManipulator(destinationManipulator)->getOrder_byIndex(k+1);
 
 					//CONDITION 3: There must be enough space between two orders to place another one
