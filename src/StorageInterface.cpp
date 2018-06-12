@@ -40,8 +40,8 @@ int StorageReadUID(int StorageNumber){
 	//IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
 	//if(mPallet->VirtualPallet) VirtualPallet_PetitionOf_ReadUID(mPallet, RFIDServer,Channel);
 	///else 	PetitionOf_ReadUID(RFIDServer,Channel);
-	PetitionOf_ReadUID(RFIDServer,Channel);
-	return 1;
+
+	return PetitionOf_ReadUID(RFIDServer,Channel);
 }
 
 int StorageReadAllMemory(int StorageNumber){
@@ -187,6 +187,7 @@ int StorageGetRaw(int StorageNumber,int Position){
 	RFIDServer=(StorageNumber-1) / 4;
 	Channel=StorageNumber-RFIDServer*4;
 	IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
+	//if(Position==0) return 1;
 	return mPallet->Brick[Position];
 }
 
@@ -196,6 +197,7 @@ int StorageGetBrickColor(int StorageNumber,int Position){
 	RFIDServer=(StorageNumber-1) / 4;
 	Channel=StorageNumber-RFIDServer*4;
 	IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
+	//if(Position==0) return 1;
 	return mPallet->Brick[Position] & 15;
 }
 
@@ -205,6 +207,7 @@ int StorageGetBrickGrade(int StorageNumber,int Position){
 	RFIDServer=(StorageNumber-1) / 4;
 	Channel=StorageNumber-RFIDServer*4;
 	IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
+	//if(Position==0) return 1;
 	return mPallet->Brick[Position] >> 4;
 }
 

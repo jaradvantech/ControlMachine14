@@ -18,8 +18,8 @@ bool RoboticArm::InquiryTheTile;
 bool RoboticArm::TransmissionManualDebugging;
 short RoboticArm::PCState=1;
 int RoboticArm::Z_AxisDeceletationDistance=1200;
-int RoboticArm::Z_AxisStandbyValue=150;
-int RoboticArm::ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance=300; //Yup bitches. I'm serious, in the manual had this name and I decided to keep it.
+int RoboticArm::Z_AxisStandbyValue=400;
+int RoboticArm::ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance=500; //Yup bitches. I'm serious, in the manual had this name and I decided to keep it.
 int RoboticArm::ThePulseOfZ_AxisAdvanceDownInAdvance=6500;
 //_________________________________________________________
 bool RoboticArm::TheQueueOfPhotosensor_1;

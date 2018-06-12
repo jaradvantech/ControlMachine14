@@ -119,7 +119,7 @@ void AttemptReconnection(void)
 	CliDisconnectPLC(ClientPlc14);
 
 	//Wait for a couple of seconds before reconnecting
-	sleep(2);
+	std::this_thread::sleep_for(std::chrono::seconds(2));
 
 	CliConnectPLC(ClientPlc14, InfoPlc14);
 }
@@ -130,7 +130,7 @@ void init(){
 	//--------------------------------------------------------------------
 	 ClientPlc14 = new TS7Client();
 
-	 InfoPlc14.PlcAddress = "192.168.0.199";
+	 InfoPlc14.PlcAddress = "192.168.0.10";
 	 InfoPlc14.PlcRack = 0;
 	 InfoPlc14.PlcSlot = 1;
 	 CliConnectPLC(ClientPlc14,InfoPlc14);
@@ -183,11 +183,13 @@ int main() {
 
 	//}
 
+#define FORMATPALLETS 0
+#if FORMATPALLETS
 		 for(int i=1;i<=10;i++){
-			//DesiredPallet(i)->VirtualPallet=1;
-			//StorageFormatMemory(i);
+			StorageFormatMemory(i);
+			std::cout << "Pallet " << i << "initialized succesfully" << std::endl;
 		 }
-
+#else
 		//Algorithm implementation.
 
 		while(1){
@@ -196,24 +198,29 @@ int main() {
 			//Asks for the RFID tags.
 			for(int i=1;i<=10;i++)
 			{
-				StorageReadUID(i); 			//First read the UID of the pallet.
-				if(StorageGetStoredUIDChangedFlag(i) && StorageGetStoredUIDChangedCount(i)>5)
-				{  			//Check if there has been any pallet change
-				    StorageClearStoredUIDChangedFlag(i);
-					if(!boost::equals(StorageGetStoredUID(i),"0000000000000000"))
-					{	//If the change is to another pallet, read it.
-						StorageReadAllMemory(i);
-						//cout<< "This simulates a memory Read" << endl;
-					}
-					else
-					{						 									//If the change is to no pallet, clear the memory.
-						StorageCleanPalletMemory(i);
+				if(StorageReadUID(i)==0) std::this_thread::sleep_for(std::chrono::seconds(1)); 			//First read the UID of the pallet.
+				else
+				{
+					if(StorageGetStoredUIDChangedFlag(i) && StorageGetStoredUIDChangedCount(i)>5)
+					{  			//Check if there has been any pallet change
+						StorageClearStoredUIDChangedFlag(i);
+						if(!boost::equals(StorageGetStoredUID(i),"0000000000000000"))
+						{	//If the change is to another pallet, read it.
+							StorageReadAllMemory(i);
+							//cout<< "This simulates a memory Read" << endl;
+						}
+						else
+						{						 									//If the change is to no pallet, clear the memory.
+							StorageCleanPalletMemory(i);
+						}
 					}
 				}
 			}
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			std::this_thread::sleep_for(std::chrono::milliseconds(200));
 		}
+#endif
+
 	//}
 	exit(0);
 	return 0;

@@ -482,8 +482,6 @@ std::string Command_WADI(std::string const& Buffer)
 std::string Command_PLRD(std::string const& Buffer)
 {
 
-
-
 	int type = boost::lexical_cast<int>(Buffer.substr(5, 6));  //type
 	int position = boost::lexical_cast<int>(Buffer.substr(12, 6)); //position (as a brick, it's relative to PS4)
 	int pallet = boost::lexical_cast<int>(Buffer.substr(19, 6));//pallet
@@ -618,9 +616,19 @@ void Command_GDIS(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 		AnswerWriter->EndObject();
 	}
 	AnswerWriter->EndArray();
-
-
-
+	AnswerWriter->Key("Manipulator_State");
+	AnswerWriter->StartArray();
+	for(unsigned int i=0;i<Manipulator_Fixed_Position.size();i++){
+		AnswerWriter->StartObject();
+		AnswerWriter->Key("WhatToDoWithTheBrick");
+		AnswerWriter->Int(DesiredRoboticArm(i+1)->WhatToDoWithTheBrick);
+		AnswerWriter->Key("CatchOrDrop");
+		AnswerWriter->Int(DesiredRoboticArm(i+1)->CatchOrDrop);
+		AnswerWriter->Key("ValueOfCatchDrop");
+		AnswerWriter->Int(DesiredRoboticArm(i+1)->ValueOfCatchDrop);
+		AnswerWriter->EndObject();
+	}
+	AnswerWriter->EndArray();
 	AnswerWriter->EndObject();
 }
 

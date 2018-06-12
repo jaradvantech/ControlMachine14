@@ -171,6 +171,7 @@ void * RFIDLoop(void *Arg){
 			 emergencyList.clear();
 			 //Close connection, but not sure if it's working as expected JAGM
 			 RFIDManager[RFIDServer]->ShutdownConnection();
+			 std::this_thread::sleep_for(std::chrono::seconds(2));
 			 RFIDManager[RFIDServer]->InitializeClient();
 
 			 PetitionOf_ConfigUnit(RFIDServer,RFID_IP_ADRESS[RFIDServer] , RFID_PORT[RFIDServer], 0, 0, 0);

@@ -40,7 +40,7 @@ Order* OrderManager::Manipulators::getOrder_byIndex(int _index){
 Order* OrderManager::Manipulators::getOrder_afterPosition(int _position){
 	//linear time complexity
 	for(int i=0;i<_OrderList.size();i++){
-		if(_OrderList[i].When>_position) return &_OrderList[i];
+		if(_OrderList[i].When>_position) return &_OrderList.at(i);
 	}
 	return nullptr;
 }
@@ -49,7 +49,7 @@ Order* OrderManager::Manipulators::getOrder_afterPosition(int _position){
 Order* OrderManager::Manipulators::getOrder_beforePosition(int _position){
 	//linear time complexity
 	for(int i=_OrderList.size()-1;i<0;i--){
-		if(_OrderList[i].When<_position) return &_OrderList[i];
+		if(_OrderList[i].When<_position) return &_OrderList.at(i);
 	}
 	return nullptr;
 }
@@ -68,6 +68,18 @@ void OrderManager::AddOrder(const Brick& mBrick, const std::vector<int>& _Manipu
 	this->atManipulator(mWho)->InsertOrder(OrderToPlace);
 }
 
+void OrderManager::ReplaceFirstOrder(const Brick& mBrick, const std::vector<int>& _Manipulator_Fixed_Position)
+{
+	//What stands for what order 1=catch and pick down 0=retrieve from the storage and put on the line
+	//Where is at which side, 0=left 1=right
+
+	int mWho = (mBrick.AssignedPallet-1)/2;	//Who is which manipulator. From 0 to NMANIPULATORS-1
+
+	this->atManipulator(mWho)->getOrder_byIndex(0)->What = mBrick.Type==0; //If has a Type, must be picked down, what = 0. If it's a hole, must retrieve. what = 1
+	this->atManipulator(mWho)->getOrder_byIndex(0)->Where = mBrick.AssignedPallet%2 == 1; //0=left 1=right
+	this->atManipulator(mWho)->getOrder_byIndex(0)->When = _Manipulator_Fixed_Position.at(mWho)-mBrick.Position; //When is the distance in encoder units that is left to reach the assigned manipulator
+}
+
 void OrderManager::Manipulators::InsertOrder(Order OrderToPlace)
 {
 	//Here we have the order. But where to place it?
@@ -81,10 +93,11 @@ void OrderManager::Manipulators::InsertOrder(Order OrderToPlace)
 void OrderManager::Manipulators::RemoveFirstOrder(){
 	_OrderList.pop_front();
 }
+void OrderManager::Manipulators::DelayFirstOrder(int ammount)
+{
+	_OrderList.at(0).When+=ammount;
+}
 //-------------------------------------------------------------------------------
-
-
-
 
 OrderManager::Manipulators* OrderManager::atManipulator(int _index){
 	return &_Manipulator_OrderList.at(_index);
@@ -100,8 +113,6 @@ bool CheckIfOrderExists(Order* _orderTocheck){
 	if(_orderTocheck==nullptr) return false;
 	return true;
 }
-
-
 
 OrderManager orders(5);
 
