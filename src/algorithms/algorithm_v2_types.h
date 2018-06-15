@@ -42,6 +42,7 @@ class OrderManager {
 			public:
 			void RemoveFirstOrder();
 			void DelayFirstOrder(int ammount);
+			void ClearOrders();
 			void InsertOrder(Order OrderToPlace);
 			unsigned long NumberOfOrders() {return _OrderList.size(); };
 			Order* getOrder_byIndex(int _index);

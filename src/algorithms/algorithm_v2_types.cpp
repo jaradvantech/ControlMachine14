@@ -97,6 +97,9 @@ void OrderManager::Manipulators::DelayFirstOrder(int ammount)
 {
 	_OrderList.at(0).When+=ammount;
 }
+void OrderManager::Manipulators::ClearOrders(){
+	_OrderList.clear();
+}
 //-------------------------------------------------------------------------------
 
 OrderManager::Manipulators* OrderManager::atManipulator(int _index){
