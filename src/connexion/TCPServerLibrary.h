@@ -11,10 +11,10 @@
 
 #define MAXPACKETSIZE 4096
 
-
+#include <string>
 
 
 void * OpenServer(void *Arg);
-
+void SetFunctionToProcessMessages(std::string (*_FunctionToProcessMessages)(std::string));
 
 #endif /* CONNEXION_TCPSERVERLIBRARY_H_ */

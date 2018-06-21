@@ -21,6 +21,7 @@
 #include <algorithms/algorithm_v2.h>
 #include <SynchronizationPoints.h>
 #include <boost/algorithm/string/predicate.hpp>
+#include "connexion/connexionDisplay.h"
 //#include <Logs.h>
 
 TS7Client *ClientPlc14;
@@ -128,16 +129,19 @@ void init(){
 	//--------------------------------------------------------------------
     // CONFIGURE PLCs
 	//--------------------------------------------------------------------
+	/*
 	 ClientPlc14 = new TS7Client();
 
 	 InfoPlc14.PlcAddress = "192.168.0.10";
 	 InfoPlc14.PlcRack = 0;
 	 InfoPlc14.PlcSlot = 1;
 	 CliConnectPLC(ClientPlc14,InfoPlc14);
+	 */
 	 //--------------------------------------------------------------------
 	 // OPEN DISPLAY COMMUNICATIONS
 	 //--------------------------------------------------------------------
 	 Synchro::IncreaseSynchronizationPointValue(0);
+	 InitDisplayParser();
 	 pthread_create(&DisplayServerThread, NULL, OpenServer, (void *)0);
 	 //--------------------------------------------------------------------
 	 // CONFIGURE RFID Servers
@@ -148,9 +152,9 @@ void init(){
 	 //--------------------------------------------------------------------
 	 // CONFIGURE ROBOTIC ARMS
 	 //--------------------------------------------------------------------
-	 Synchro::IncreaseSynchronizationPointValue(0);
-	 initGlobalArms(ClientPlc14);
-	 pthread_create(&PLCThread, NULL, PLCAdquisitionLoop, (void *)0);
+	 //Synchro::IncreaseSynchronizationPointValue(0);
+	 //initGlobalArms(ClientPlc14);
+	 //pthread_create(&PLCThread, NULL, PLCAdquisitionLoop, (void *)0);
 	 //--------------------------------------------------------------------
 	 // CONFIGURE PALLETS
 	 //--------------------------------------------------------------------
@@ -160,9 +164,9 @@ void init(){
 
 	 initPallet(10);
 	 //Wait until all previous threads are working in their loops
-	 Synchro::IncreaseSynchronizationPointValue(0);
+	 //Synchro::IncreaseSynchronizationPointValue(0);
 
-	 pthread_create(&AlgorithmThread, NULL, AlgorithmV2, (void *)0);
+	 //pthread_create(&AlgorithmThread, NULL, AlgorithmV2, (void *)0);
 
 	 while(Synchro::GetSynchronizationPointValue(0)!=0)	 {
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -235,8 +239,6 @@ C++
 
 
 Android
-	-Add motor control for tablet
-	-Add support for SCAP
 	-Add support for lateral movement
 	-
 */
