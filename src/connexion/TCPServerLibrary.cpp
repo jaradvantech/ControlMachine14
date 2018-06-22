@@ -53,7 +53,7 @@ void CheckForDeadTimedOutSockets(std::vector<_TCPClient>& TCPClients, struct soc
 {
 	//check for dead timed out sockets
 	//-----------------------------------------------------------------------------
-	for (int i = 0; i < TCPClients.size(); i++)
+	for (unsigned int i = 0; i < TCPClients.size(); i++)
 	{
 		//if position is NOT empty
 
@@ -77,7 +77,7 @@ void AddChildSocketsToSet(fd_set *readfds, int& max_sd,
 		std::vector<_TCPClient>& TCPClients)
 {
 	//add child sockets to set
-	for (int i = 0; i < TCPClients.size(); i++)	//TODO: REWRITE THIS LOOP WITH OPERATOR OVERLOAD
+	for (unsigned int i = 0; i < TCPClients.size(); i++)	//TODO: REWRITE THIS LOOP WITH OPERATOR OVERLOAD
 	{
 		//add socket to set
 		FD_SET(TCPClients.at(i).client_socket, readfds);
@@ -125,7 +125,7 @@ void CheckForIncomingConnections(fd_set* readfds, int master_socket, struct sock
 		*/
 		_TCPClient newClient(new_socket, std::chrono::system_clock::now());
 		TCPClients.push_back(newClient);
-		printf("Adding to list of sockets as %d\n", TCPClients.size() - 1);
+		printf("Adding to list of sockets as %d\n", int(TCPClients.size() - 1));
 	}
 }
 

@@ -87,7 +87,7 @@ void Command_PGSI(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	AnswerWriter->Key("command_ID");
 	AnswerWriter->String("PGSI");
 
-	int selectedArm=0;
+	int selectedArm=1;
 	FindAndAddTo(DOC_in, "selectedArm", &selectedArm);
 	RoboticArm* mArm = DesiredRoboticArm(selectedArm);
 
@@ -192,18 +192,20 @@ void Command_PWDA(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
  */
 void Command_RGMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	int selectedPallet=0;
-	FindAndAddTo(DOC_in, "selectedPallet", &selectedPallet);
+	int selectedPallet=1;
+	FindAndAddTo(DOC_in, "palletNumber", &selectedPallet);
 
 	DOC_in.IsNull();
 	AnswerWriter->StartObject();
 	AnswerWriter->Key("command_ID");
 	AnswerWriter->String("RGMV");
+	AnswerWriter->Key("palletNumber");
+	AnswerWriter->Int(selectedPallet);
 	AnswerWriter->Key("totalBricks");
 	AnswerWriter->Int(StorageGetNumberOfBricks(selectedPallet));
 	AnswerWriter->Key("memoryValues");
 	AnswerWriter->StartArray();
-	for(int i=0; i<=StorageGetNumberOfBricks(selectedPallet); i++)
+	for(int i=0; i<StorageGetNumberOfBricks(selectedPallet); i++)
 	{
 		AnswerWriter->StartObject();
 		AnswerWriter->Key("memoryValue");
@@ -219,7 +221,7 @@ void Command_RGMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
  */
 void Command_RFMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	int selectedPallet=0;
+	int selectedPallet=1;
 	FindAndAddTo(DOC_in, "selectedPallet", &selectedPallet);
 
 	StorageFormatMemory(selectedPallet);
@@ -238,7 +240,7 @@ void Command_RFMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
  */
 void Command_RAMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	int selectedPallet=0, valueToAdd=0;
+	int selectedPallet=1, valueToAdd=0;
 	FindAndAddTo(DOC_in, "selectedPallet", &selectedPallet);
 	FindAndAddTo(DOC_in, "valueToAdd", &valueToAdd);
 
@@ -258,7 +260,7 @@ void Command_RAMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
  */
 void Command_RDMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	int selectedPallet=0, positionToDelete=0;
+	int selectedPallet=1, positionToDelete=0;
 	FindAndAddTo(DOC_in, "selectedPallet", &selectedPallet);
 	FindAndAddTo(DOC_in, "positionToDelete", &positionToDelete);
 
@@ -434,7 +436,7 @@ void Command_CHAL(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	DOC_in.IsNull();
 	AnswerWriter->StartObject();
 	AnswerWriter->Key("command_ID");
-	AnswerWriter->String("SCAP");
+	AnswerWriter->String("CHAL");
 	AnswerWriter->Key("equipmentAlarms");
 	AnswerWriter->Int(abs(RoboticArm::EquipmentAlarmArray));
 	AnswerWriter->Key("manipulatorAlarms");
@@ -443,7 +445,7 @@ void Command_CHAL(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	{
 		AnswerWriter->StartObject();
 		AnswerWriter->Key("alarmArray");
-		AnswerWriter->Int(abs(DesiredRoboticArm(i)->AlarmArray));
+		AnswerWriter->Int(abs(DesiredRoboticArm(i+1)->AlarmArray));
 		AnswerWriter->EndObject();
 	}
 	AnswerWriter->EndArray();
@@ -700,6 +702,7 @@ void Command_PING(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 
 std::string ProcessCommand(std::string Message)
 {
+	std::cout << "Received: " << Message << std::endl;
 	//one document for input
     rapidjson::Document DOC_in;
     rapidjson::StringBuffer Answer_JSON;

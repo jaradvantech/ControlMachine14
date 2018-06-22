@@ -1301,4 +1301,5 @@ void * AlgorithmV2(void *Arg)
 
 		ProcessOrdersToPLC(&Manipulator_Order_List, Pallet_LowSpeedPulse_Height_List);
 	}
+	return nullptr;
 }

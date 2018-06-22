@@ -39,7 +39,7 @@ Order* OrderManager::Manipulators::getOrder_byIndex(int _index){
 //_position is given in relative encoder units with origin at the manipulator
 Order* OrderManager::Manipulators::getOrder_afterPosition(int _position){
 	//linear time complexity
-	for(int i=0;i<_OrderList.size();i++){
+	for(unsigned int i=0;i<_OrderList.size();i++){
 		if(_OrderList[i].When>_position) return &_OrderList.at(i);
 	}
 	return nullptr;
