@@ -179,6 +179,7 @@ void * RFIDLoop(void *Arg){
 					PetitionOf_ConfigChannel(RFIDServer, j, 11, 1000, 4,28,  1);
 				}
 		 }
-
+		 //Wait Before polling again
+		 std::this_thread::sleep_for(std::chrono::microseconds(500));
 	 }
 }

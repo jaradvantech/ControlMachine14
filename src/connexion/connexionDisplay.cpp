@@ -19,77 +19,7 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 #include "TCPServerLibrary.h"
-
-//RBS TODO:these functions deserve their own file.
-bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, short* Variable)
-{
-	static rapidjson::Value::ConstMemberIterator itr;
-	itr = DOC.FindMember(Key.c_str());
-	if(itr !=DOC.MemberEnd()) {
-		*Variable=short(itr->value.GetInt());
-		return true;
-	}
-	else {
-		std::cout << "Json parser: Can't find member " << Key << std::endl;
-		return false;
-	}
-}
-
-bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, int* Variable)
-{
-	static rapidjson::Value::ConstMemberIterator itr;
-	itr = DOC.FindMember(Key.c_str());
-	if(itr !=DOC.MemberEnd()) {
-		*Variable=itr->value.GetInt();
-		return true;
-	}
-	else {
-		std::cout << "Json parser: Can't find member " << Key << std::endl;
-		return false;
-	}
-}
-
-bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, long* Variable)
-{
-	static rapidjson::Value::ConstMemberIterator itr;
-	itr = DOC.FindMember(Key.c_str());
-	if(itr !=DOC.MemberEnd()) {
-		*Variable=long(itr->value.GetInt());
-		return true;
-	}
-	else {
-		std::cout << "Json parser: Can't find member " << Key << std::endl;
-		return false;
-	}
-}
-
-bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, std::string* Variable)
-{
-	static rapidjson::Value::ConstMemberIterator itr;
-	itr = DOC.FindMember(Key.c_str());
-	if(itr !=DOC.MemberEnd()) {
-		*Variable=itr->value.GetString();
-		return true;
-	}
-	else {
-		std::cout << "Json parser: Can't find member " << Key << std::endl;
-		return false;
-	}
-}
-
-bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, bool* Variable)
-{
-	static rapidjson::Value::ConstMemberIterator itr;
-	itr = DOC.FindMember(Key.c_str());
-	if(itr !=DOC.MemberEnd()) {
-		*Variable=itr->value.GetBool();
-		return true;
-	}
-	else {
-		std::cout << "Json parser: Can't find member " << Key << std::endl;
-		return false;
-	}}
-
+#include "JSON_FindAndAdd.h"
 
 /*
  * PLC Get Status Information
@@ -393,7 +323,7 @@ void Command_ALSC(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 {
 	ConfigParser config("/etc/unit14/unit14.conf");
 	std::vector<int> modes;
-	int color=0, grade=0; //ConfigParser.getManipulatorNumber();
+	int color=1, grade=1; //ConfigParser.getManipulatorNumber();
 	DOC_in.IsNull();
 
 	FindAndAddTo(DOC_in, "color", &color);
@@ -409,7 +339,6 @@ void Command_ALSC(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 		modes.push_back(DOC_in["modes"][i].GetInt()); //RBS TODO this may crash the entire machine if a bad JSON is received
 	config.SetManipulatorModes(modes);
 	Algorithm::Set::ManipulatorModes(modes);
-
 
 	DOC_in.IsNull();
 	AnswerWriter->StartObject();
@@ -483,8 +412,11 @@ void Command_CHAL(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 //Save CAlibration Parameters
 void Command_SCAP(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	int NumberOfArms=0;
+	DOC_in.IsNull();
+	int SBV=0, AGBTTWPIA, NumberOfArms=0;
 	FindAndAddTo(DOC_in, "armNumber", &NumberOfArms);
+	FindAndAddTo(DOC_in, "SBV", &SBV);
+	FindAndAddTo(DOC_in, "AGBTTWPIA", &AGBTTWPIA);
 
 	ConfigParser config("/etc/unit14/unit14.conf");
 	//Implement: save arms to config now. THIS is where the number is stored.
@@ -494,16 +426,14 @@ void Command_SCAP(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	{
 		ArmPositions.push_back(DOC_in["positions"][i].GetInt());
 	}
-	Algorithm::Set::ManipulatorFixedPosition(ArmPositions);
 	config.SetArmPositions(ArmPositions);
+	//config.SetAxisGoBackToTheWaitingPositionInAdvance(AGBTTWPIA);
+	//config.SetZAxisStandbyValue(SBV);
 
-	DOC_in.IsNull();
-	AnswerWriter->StartObject();
-	AnswerWriter->Key("command_ID");
-	AnswerWriter->String("SCAP");
-	AnswerWriter->Key("reply");
-	AnswerWriter->String("OK");
-	AnswerWriter->EndObject();
+	//STOP PROGRAM AFTER SAVING THIS CRITICAL CONFIGURATION
+	//Resources not released, but the entire machine will be restarted after this.
+	std::cout << "Configuration received from tablet, shutting server down." << std::endl;
+	exit(0);
 }
 
 /*
@@ -743,7 +673,7 @@ void Command_PING(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 
 std::string ProcessCommand(std::string Message)
 {
-	std::cout << "Received: " << Message << std::endl;
+	//std::cout << "Received: " << Message << std::endl;
 	//one document for input
     rapidjson::Document DOC_in;
     rapidjson::StringBuffer Answer_JSON;

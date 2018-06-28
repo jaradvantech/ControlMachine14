@@ -290,7 +290,7 @@ void * OpenServer(void *Arg)
         					}
 
         					send(TCPClients.at(i).client_socket , bufferWrite.c_str() , strlen( bufferWrite.c_str() ) , 0 );
-        					std::cout << "Sent: " << bufferWrite.c_str() << std::endl;
+        					//std::cout << "Sent: " << bufferWrite.c_str() << std::endl;
         					bufferWrite="";
                 		}
                 	}

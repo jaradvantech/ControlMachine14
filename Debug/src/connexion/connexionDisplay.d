@@ -38,7 +38,7 @@ src/connexion/connexionDisplay.o: ../src/connexion/connexionDisplay.cpp \
  /home/baseconfig/git/ControlMachine14/src/rapidjson/internal/itoa.h \
  /home/baseconfig/git/ControlMachine14/src/rapidjson/stringbuffer.h \
  /home/baseconfig/git/ControlMachine14/src/rapidjson/stringbuffer.h \
- ../src/connexion/TCPServerLibrary.h
+ ../src/connexion/TCPServerLibrary.h ../src/connexion/JSON_FindAndAdd.h
 
 /home/baseconfig/git/ControlMachine14/src/connexion/connexionDisplay.h:
 
@@ -119,3 +119,5 @@ src/connexion/connexionDisplay.o: ../src/connexion/connexionDisplay.cpp \
 /home/baseconfig/git/ControlMachine14/src/rapidjson/stringbuffer.h:
 
 ../src/connexion/TCPServerLibrary.h:
+
+../src/connexion/JSON_FindAndAdd.h:

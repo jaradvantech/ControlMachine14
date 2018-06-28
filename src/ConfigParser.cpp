@@ -42,6 +42,7 @@ std::vector<int> ConfigParser::GetArmPositions()
 
 void ConfigParser::SetArmPositions(std::vector<int> ArmPositions)
 {
+	if(ArmPositions.size() < 1) throw "ConfigParser::SetArmPositions(): Empty data";
 	ReadVectorAndAddToTheFile<int>(ArmPositions,1);
 }
 
@@ -54,6 +55,7 @@ std::vector<std::string> ConfigParser::GetServerIPs()
 
 void ConfigParser::SetServerIPs(std::vector<std::string> ServerIPs)
 {
+	if(ServerIPs.size() < 1) throw "ConfigParser::SetServerIPs(): Empty data";
 	ReadVectorAndAddToTheFile<std::string>(ServerIPs,2);
 }
 
@@ -65,6 +67,7 @@ std::vector<int>ConfigParser::GetServerPorts()
 
 void ConfigParser::SetServerPorts(std::vector<int> ServerPorts)
 {
+	if(ServerPorts.size() < 1) throw "ConfigParser::SetServerPorts(): Empty data";
 	ReadVectorAndAddToTheFile<int>(ServerPorts,3);
 }
 
@@ -76,6 +79,7 @@ std::vector<int>ConfigParser::GetManipulatorModes()
 
 void ConfigParser::SetManipulatorModes(std::vector<int> ManipulatorModes)
 {
+	if(ManipulatorModes.size() < 1) throw "ConfigParser::SetManipulatorModes(): Empty data";
 	ReadVectorAndAddToTheFile<int>(ManipulatorModes,4);
 }
 
