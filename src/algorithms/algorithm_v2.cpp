@@ -27,7 +27,8 @@
 	int K = 14000; //RBS debug only, TODO improve
 	int E = 2000;
 
-
+pthread_mutex_t read_mutex;
+pthread_cond_t read_condition;
 
 void SetNumberOfManipulators(OrderManager* _Manipulator_Order_List,
 		std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
@@ -64,24 +65,6 @@ void Cancel_Order(int index, std::vector<std::deque<Order>>* Manipulator_Order_L
 
 }
 
-//------------------------BRICK CLASS ----------------------------------------
-short Brick::size = 0; //former E  FUCK IT, IT WAS THIS!!!! JAGM
-Brick::Brick(short argType, int argPosition, short argAssignedPallet, short argDNI)
-{
-	Type = argType;
-	Position = argPosition;
-	AssignedPallet = argAssignedPallet;
-	DNI=argDNI;
-}
-
-//------------------------ORDER CLASS ----------------------------------------
-Order::Order(int mWhen, bool mWhere, bool mWhat)
-{
-
-	When = mWhen;
-	Where = mWhere;
-	What = mWhat;
-}
 
 int Calculate_Advance(long* PreviousValueOfTheLineEncoder)
 {
@@ -1300,6 +1283,14 @@ void * AlgorithmV2(void *Arg)
 		//After that, return to IN/OUT Mode
 
 		ProcessOrdersToPLC(&Manipulator_Order_List, Pallet_LowSpeedPulse_Height_List);
+
+#define __BLOCKING_MODE 1
+#if __BLOCKING_MODE
+		pthread_mutex_lock(&read_mutex);
+		pthread_cond_wait(&read_condition, &read_mutex);
+		pthread_mutex_unlock(&read_mutex);
+#endif
+
 	}
-	return nullptr;
+	pthread_exit(NULL);
 }

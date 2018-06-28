@@ -8,6 +8,22 @@
 
 #include "algorithms/algorithm_v2_types.h"
 
+short Brick::size = 0; //former E  FUCK IT, IT WAS THIS!!!! JAGM
+Brick::Brick(short argType, int argPosition, short argAssignedPallet, short argDNI)
+{
+	Type = argType;
+	Position = argPosition;
+	AssignedPallet = argAssignedPallet;
+	DNI=argDNI;
+}
+
+Order::Order(int mWhen, bool mWhere, bool mWhat)
+{
+
+	When = mWhen;
+	Where = mWhere;
+	What = mWhat;
+}
 
 OrderManager::OrderManager(){
 

@@ -29,7 +29,10 @@ bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, short* Variab
 		*Variable=short(itr->value.GetInt());
 		return true;
 	}
-	else return false;
+	else {
+		std::cout << "Json parser: Can't find member " << Key << std::endl;
+		return false;
+	}
 }
 
 bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, int* Variable)
@@ -40,7 +43,10 @@ bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, int* Variable
 		*Variable=itr->value.GetInt();
 		return true;
 	}
-	else return false;
+	else {
+		std::cout << "Json parser: Can't find member " << Key << std::endl;
+		return false;
+	}
 }
 
 bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, long* Variable)
@@ -51,7 +57,10 @@ bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, long* Variabl
 		*Variable=long(itr->value.GetInt());
 		return true;
 	}
-	else return false;
+	else {
+		std::cout << "Json parser: Can't find member " << Key << std::endl;
+		return false;
+	}
 }
 
 bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, std::string* Variable)
@@ -62,7 +71,10 @@ bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, std::string* 
 		*Variable=itr->value.GetString();
 		return true;
 	}
-	else return false;
+	else {
+		std::cout << "Json parser: Can't find member " << Key << std::endl;
+		return false;
+	}
 }
 
 bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, bool* Variable)
@@ -73,8 +85,10 @@ bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, bool* Variabl
 		*Variable=itr->value.GetBool();
 		return true;
 	}
-	else return false;
-}
+	else {
+		std::cout << "Json parser: Can't find member " << Key << std::endl;
+		return false;
+	}}
 
 
 /*
@@ -106,11 +120,11 @@ void Command_PGSI(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	AnswerWriter->Bool(mArm->LeftStorageBinSecurity);
 	AnswerWriter->Key("rightStorageBinSecurity");
 	AnswerWriter->Bool(mArm->RightStorageBinSecurity);
-	AnswerWriter->Key("AlarmArray");
+	AnswerWriter->Key("alarmArray");
 	AnswerWriter->Int(abs(mArm->AlarmArray));
-	AnswerWriter->Key("ManipulatorRepositionState");
+	AnswerWriter->Key("manipulatorRepositionState");
 	AnswerWriter->Int(mArm->ManipulatorRepositionState);
-	AnswerWriter->Key("ActualValueEncoder");
+	AnswerWriter->Key("actualValueEncoder");
 	AnswerWriter->Int(abs(mArm->ActualValueEncoder));
 
 	//Common Variables
@@ -136,8 +150,10 @@ void Command_PGSI(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	AnswerWriter->Int(mArm->SystemState);
 	AnswerWriter->Key("actualValueOfTheLineEncoder");
 	AnswerWriter->Int(mArm->ActualValueOfTheLineEncoder);
+	std::cout << mArm->ActualValueOfTheLineEncoder << std::endl;
 	AnswerWriter->Key("enterTheTileStartingCodeValue");
 	AnswerWriter->Int(mArm->EnterTheTileStartingCodeValue);
+	AnswerWriter->EndObject();
 }
 
 
@@ -146,43 +162,44 @@ void Command_PGSI(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
  */
 void Command_PWDA(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	int selectedArm=0;
+	int selectedArm=1; //RBS default 1, so we can start and stop the motor without sending this parameter.
 	FindAndAddTo(DOC_in, "selectedArm", &selectedArm);
 	RoboticArm* mArm = DesiredRoboticArm(selectedArm);
 
 	//These names were poorly translated from chinese. It is a nightmare, but not our fault
-	FindAndAddTo(DOC_in, "StorageBinDirection", &mArm->StorageBinDirection);
-	FindAndAddTo(DOC_in, "ManipulatorReset", &mArm->ManipulatorReset);
-	FindAndAddTo(DOC_in, "StorageBinFullA", &mArm->StorageBinFullA);
-	FindAndAddTo(DOC_in, "StorageBinFullB", &mArm->StorageBinFullB);
-	FindAndAddTo(DOC_in, "BarCodeReadStateA", &mArm->BarCodeReadStateA);
-	FindAndAddTo(DOC_in, "BarCodeReadStateB", &mArm->BarCodeReadStateB);
-	FindAndAddTo(DOC_in, "ManipulatorMode", &mArm->ManipulatorMode);
-	FindAndAddTo(DOC_in, "VacuumValve", &mArm->VacuumValve);
-	FindAndAddTo(DOC_in, "ManualForwardBackward", &mArm->ManualForwardBackward);
-	FindAndAddTo(DOC_in, "ManualLeftRight", &mArm->ManualLeftRight);
-	FindAndAddTo(DOC_in, "ManualUpDown", &mArm->ManualUpDown);
-	FindAndAddTo(DOC_in, "CatchOrDrop", &mArm->CatchOrDrop);
-	FindAndAddTo(DOC_in, "WhatToDoWithTheBrick", &mArm->WhatToDoWithTheBrick);
-	FindAndAddTo(DOC_in, "PulseZAxis", &mArm->PulseZAxis);
-	FindAndAddTo(DOC_in, "ValueOfCatchDrop", &mArm->ValueOfCatchDrop);
-	FindAndAddTo(DOC_in, "CommunicationExchange", &mArm->CommunicationExchange);
-	FindAndAddTo(DOC_in, "TestPattern", &mArm->TestPattern);
-	FindAndAddTo(DOC_in, "TransmissionManualDebugging", &mArm->TransmissionManualDebugging);
-	FindAndAddTo(DOC_in, "PCState", &mArm->PCState);
-	FindAndAddTo(DOC_in, "Z_AxisDeceletationDistance", &mArm->Z_AxisDeceletationDistance);
-	FindAndAddTo(DOC_in, "ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance", &mArm->ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance);
-	FindAndAddTo(DOC_in, "ThePulseOfZ_AxisAdvanceDownInAdvance", &mArm->ThePulseOfZ_AxisAdvanceDownInAdvance);
+	FindAndAddTo(DOC_in, "SBD", &mArm->StorageBinDirection);
+	FindAndAddTo(DOC_in, "MR", &mArm->ManipulatorReset);
+	FindAndAddTo(DOC_in, "SBFA", &mArm->StorageBinFullA);
+	FindAndAddTo(DOC_in, "SBFB", &mArm->StorageBinFullB);
+	FindAndAddTo(DOC_in, "BCRSA", &mArm->BarCodeReadStateA);
+	FindAndAddTo(DOC_in, "BCRSB", &mArm->BarCodeReadStateB);
+	FindAndAddTo(DOC_in, "MM", &mArm->ManipulatorMode);
+	FindAndAddTo(DOC_in, "VV", &mArm->VacuumValve);
+	FindAndAddTo(DOC_in, "MFB", &mArm->ManualForwardBackward);
+	FindAndAddTo(DOC_in, "MLR", &mArm->ManualLeftRight);
+	FindAndAddTo(DOC_in, "MUD", &mArm->ManualUpDown);
+	FindAndAddTo(DOC_in, "COD", &mArm->CatchOrDrop);
+	FindAndAddTo(DOC_in, "WTDWT", &mArm->WhatToDoWithTheBrick);
+	FindAndAddTo(DOC_in, "PZA", &mArm->PulseZAxis);
+	FindAndAddTo(DOC_in, "VOCD", &mArm->ValueOfCatchDrop);
+	FindAndAddTo(DOC_in, "CE", &mArm->CommunicationExchange);
+	FindAndAddTo(DOC_in, "ITT", &mArm->TestPattern);
+	FindAndAddTo(DOC_in, "TMD", &mArm->TransmissionManualDebugging);
+	FindAndAddTo(DOC_in, "PCS", &mArm->PCState);
+	FindAndAddTo(DOC_in, "ADD", &mArm->Z_AxisDeceletationDistance);
+	FindAndAddTo(DOC_in, "ZASV", &mArm->Z_AxisStandbyValue);
+	FindAndAddTo(DOC_in, "TPOX_AGB", &mArm->ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance);
+	FindAndAddTo(DOC_in, "TPOX_ADD", &mArm->ThePulseOfZ_AxisAdvanceDownInAdvance);
 
 	DOC_in.IsNull();
 	AnswerWriter->StartObject();
 	AnswerWriter->Key("command_ID");
 	AnswerWriter->String("PWDA");
-	AnswerWriter->Key("manualForwardBackwardFeedback");
+	AnswerWriter->Key("MFBFeedback");
 	AnswerWriter->Int(mArm->ManualForwardBackward);
-	AnswerWriter->Key("manualLeftRightFeedback");
+	AnswerWriter->Key("MLRFeedback");
 	AnswerWriter->Int(mArm->ManualLeftRight);
-	AnswerWriter->Key("manualUpDownFeedback");
+	AnswerWriter->Key("MUDFeedback");
 	AnswerWriter->Int(mArm->ManualUpDown);
 	AnswerWriter->EndObject();
 }
@@ -209,8 +226,8 @@ void Command_RGMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	{
 		AnswerWriter->StartObject();
 		AnswerWriter->Key("memoryValue");
-		AnswerWriter->Int(StorageGetRaw(selectedPallet, i));
-		AnswerWriter->EndObject();
+		AnswerWriter->Int(StorageGetRaw(selectedPallet, i+1)); //RBS +1 because 0 represents ust the number of bricks
+		AnswerWriter->EndObject();								//Just another side effect of the index salad.
 	}
 	AnswerWriter->EndArray();
 	AnswerWriter->EndObject();
@@ -293,9 +310,11 @@ void Command_RPRV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	FindAndAddTo(DOC_in, "numberOfPallets", &NumberOfPallets);
 
 	//Write Pallet Information
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("RPRV");
 	AnswerWriter->Key("palletInformation");
 	AnswerWriter->StartArray();
-	for(int i=0; i<NumberOfPallets; i++)
+	for(int i=1; i<=NumberOfPallets; i++)
 	{
 			AnswerWriter->StartObject();
 			AnswerWriter->Key("palletUID");
@@ -303,7 +322,10 @@ void Command_RPRV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 			AnswerWriter->Key("numberOfBricks");
 			AnswerWriter->Int(StorageGetNumberOfBricks(i));
 			AnswerWriter->Key("topBrick");
-			AnswerWriter->Int(StorageGetRaw(i, StorageGetNumberOfBricks(i)));
+			if(StorageGetNumberOfBricks(i) > 0)
+				AnswerWriter->Int(StorageGetRaw(i, StorageGetNumberOfBricks(i)));
+			else
+				AnswerWriter->Int(-1);
 			AnswerWriter->EndObject();
 	}
 	AnswerWriter->EndArray();
@@ -313,9 +335,10 @@ void Command_RPRV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	std::vector<int> brickIndexes = Algorithm::Get::IndexesOfBricksOnLine(mListOfBricksOnTheLine);
 	AnswerWriter->Key("bricksOnTheLine");
 	AnswerWriter->StartArray();
-	for(unsigned int i=0; i<mListOfBricksOnTheLine.size(); i++)
+	//RBS This list only contains non-type0 bricks.
+	for(unsigned int i=0; i<brickIndexes.size(); i++)
 	{
-		if(mListOfBricksOnTheLine.at(brickIndexes.at(i)).Type!=0)
+		if(mListOfBricksOnTheLine.at(brickIndexes.at(i)).DNI) //to make sure never happens
 		{
 			AnswerWriter->StartObject();
 			AnswerWriter->Key("position");
@@ -328,6 +351,10 @@ void Command_RPRV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 			AnswerWriter->Int(mListOfBricksOnTheLine.at(brickIndexes.at(i)).DNI);
 			AnswerWriter->EndObject();
 		}
+		else
+		{
+			std::cout << "INTERNAL ERRROR, DNI 0 assigned to something" << std::endl;
+		}
 	}
 	AnswerWriter->EndArray();
 
@@ -337,20 +364,20 @@ void Command_RPRV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	AnswerWriter->StartArray();
 	for(unsigned int i=0; i<mListOfBricksTakenByManipulators.size(); i++)
 	{
-		AnswerWriter->StartObject();
-		AnswerWriter->Key("curentXEncoderValue");
-		AnswerWriter->Int(DesiredRoboticArm(i+1)->ActualValueEncoder);
-		AnswerWriter->Key("valueOfCatchDrop");
-		AnswerWriter->Int(DesiredRoboticArm(i+1)->ValueOfCatchDrop);
-		AnswerWriter->Key("position");
-		AnswerWriter->Int(mListOfBricksTakenByManipulators.at(i).Position);
-		AnswerWriter->Key("type");
-		AnswerWriter->Int(mListOfBricksTakenByManipulators.at(i).Type);
-		AnswerWriter->Key("assignedPallet");
-		AnswerWriter->Int(mListOfBricksTakenByManipulators.at(i).AssignedPallet);
-		AnswerWriter->Key("DNI");
-		AnswerWriter->Int(mListOfBricksTakenByManipulators.at(i).DNI);
-		AnswerWriter->EndObject();
+			AnswerWriter->StartObject();
+			AnswerWriter->Key("currentXEncoderValue");
+			AnswerWriter->Int(DesiredRoboticArm(i+1)->ActualValueEncoder);
+			AnswerWriter->Key("valueOfCatchDrop");
+			AnswerWriter->Int(DesiredRoboticArm(i+1)->ValueOfCatchDrop);
+			AnswerWriter->Key("position");
+			AnswerWriter->Int(mListOfBricksTakenByManipulators.at(i).Position);
+			AnswerWriter->Key("type");
+			AnswerWriter->Int(mListOfBricksTakenByManipulators.at(i).Type);
+			AnswerWriter->Key("assignedPallet");
+			AnswerWriter->Int(mListOfBricksTakenByManipulators.at(i).AssignedPallet);
+			AnswerWriter->Key("DNI");
+			AnswerWriter->Int(mListOfBricksTakenByManipulators.at(i).DNI);
+			AnswerWriter->EndObject();
 	}
 	AnswerWriter->EndArray();
 
@@ -378,8 +405,8 @@ void Command_ALSC(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	config.SetCurrentPackagingGrade(boost::lexical_cast<int>(grade));
 	Algorithm::Set::CurrentPackagingGrade(boost::lexical_cast<int>(grade));
 
-	//for(Value::ConstValueIterator itr = modes.Begin; itr != modes.End();; ++itr)
-	//	modes.pushBack(itr.GetInt());
+	for(unsigned int i=0; i<DOC_in["modes"].Size(); i++)
+		modes.push_back(DOC_in["modes"][i].GetInt()); //RBS TODO this may crash the entire machine if a bad JSON is received
 	config.SetManipulatorModes(modes);
 	Algorithm::Set::ManipulatorModes(modes);
 
@@ -558,7 +585,7 @@ void Command_FOTP(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	DOC_in.IsNull();
 
 	int destination_pallet = 0;
-	FindAndAddTo(DOC_in, "ForceTo", &destination_pallet);
+	FindAndAddTo(DOC_in, "pllet", &destination_pallet);
 	Algorithm::Set::forced_pallet(destination_pallet);
 	std::cout << "Brick forced to pallet " << destination_pallet << std::endl;
 
@@ -684,6 +711,20 @@ void Command_GDIS(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	}
 	AnswerWriter->EndArray();
 
+	AnswerWriter->Key("Manipulator_State");
+	AnswerWriter->StartArray();
+	for(unsigned int i=0;i<Manipulator_Fixed_Position.size();i++){
+		AnswerWriter->StartObject();
+		AnswerWriter->Key("WhatToDoWithTheBrick");
+		AnswerWriter->Int(DesiredRoboticArm(i+1)->WhatToDoWithTheBrick);
+		AnswerWriter->Key("CatchOrDrop");
+		AnswerWriter->Int(DesiredRoboticArm(i+1)->CatchOrDrop);
+		AnswerWriter->Key("ValueOfCatchDrop");
+		AnswerWriter->Int(DesiredRoboticArm(i+1)->ValueOfCatchDrop);
+		AnswerWriter->EndObject();
+	}
+	AnswerWriter->EndArray();
+AnswerWriter->EndObject();
 }
 
 void Command_PING(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)

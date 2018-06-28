@@ -12,6 +12,9 @@
 #include <vector>
 #include <deque>
 #include "algorithms/algorithm_v2_types.h"
+
+extern pthread_cond_t read_condition;
+
 namespace Algorithm {
 	namespace Set {
 		void enable_WhetherOrNotPutTheTileTo_16(bool set_to);
@@ -38,6 +41,7 @@ namespace Algorithm {
 		std::vector<Brick> Manipulator_TakenBrick();
 		std::vector<int> IndexesOfBricksOnLine(std::deque<Brick> Bricks_On_The_Line);
 	}
+
 
 
 	/*It shouldn't be needed anymore*/

@@ -188,7 +188,7 @@ int StorageGetRaw(int StorageNumber,int Position){
 	Channel=StorageNumber-RFIDServer*4;
 	IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
 	//if(Position==0) return 1;
-	return mPallet->Brick[Position+1]; //RBS because position 0 represents the number of bricks
+	return mPallet->Brick[Position];
 }
 
 int StorageGetBrickColor(int StorageNumber,int Position){
