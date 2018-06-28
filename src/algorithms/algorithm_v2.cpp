@@ -1207,7 +1207,7 @@ void CheckManualModes(OrderManager* _Manipulator_Order_List,
 			 std::vector<int>* _Bricks_Ready_For_Output,
 			 std::vector<Brick>* _Manipulator_TakenBrick,
 			 std::deque<int>* Available_DNI_List){
-	for(int i=0; i<_Manipulator_Order_List->NumberOfManipulators(); i++){
+	for(unsigned int i=0; i<_Manipulator_Order_List->NumberOfManipulators(); i++){
 
 		if(DesiredRoboticArm(i+1)->ManipulatorMode==0)
 		{
