@@ -18,438 +18,437 @@
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
-
-inline const char * const BoolToString(bool b)
-{
-	return b ? "1" : "0";
-}
-bool readBool(const std::string & mString)
-{
-	if(mString=="0" || mString=="00")
-		return false;
-	else
-		return true;
-}
-/* 6/7/2018 JAGM Functions for the transition to JSON Based on Control Machine 18*/
-
-bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, int* Variable)
-{
-	static rapidjson::Value::ConstMemberIterator itr;
-	itr = DOC.FindMember(Key.c_str());
-	if(itr !=DOC.MemberEnd()) {
-		*Variable=itr->value.GetInt();
-		return true;
-	}
-	else return false;
-}
-
-bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, std::string* Variable)
-{
-	static rapidjson::Value::ConstMemberIterator itr;
-	itr = DOC.FindMember(Key.c_str());
-	if(itr !=DOC.MemberEnd()) {
-		*Variable=itr->value.GetString();
-		return true;
-	}
-	else return false;
-}
-
-bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, bool* Variable)
-{
-	static rapidjson::Value::ConstMemberIterator itr;
-	itr = DOC.FindMember(Key.c_str());
-	if(itr !=DOC.MemberEnd()) {
-		*Variable=itr->value.GetBool();
-		return true;
-	}
-	else return false;
-}
-/*Functions for the transition to JSON Based on Control Machine 18*/
-
-
+#include "TCPServerLibrary.h"
+#include "JSON_FindAndAdd.h"
 
 /*
- * PLC Get the information of Single Robotic Arm
- * Rev.: RBS
+ * PLC Get Status Information
  */
-std::string Command_PGSI(std::string const& Buffer)
+void Command_PGSI(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	std::string Answer;
-	int mPlcNumber = boost::lexical_cast<int>(Buffer.substr(5, 2));
-	int mArmNumber = boost::lexical_cast<int>(Buffer.substr(8, 2));
-	RoboticArm* mArm = DesiredRoboticArm(mArmNumber);
+	DOC_in.IsNull();
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("PGSI");
 
-	/*Arm specific variables*/
-	Answer  = "PGSI_";
-	Answer += (boost::format("%02u") % mPlcNumber).str();
-	Answer += "_";
-	Answer += (boost::format("%02u") % mArmNumber).str();
-	Answer += "_";
-	Answer += (boost::format("%01u") % mArm->HasDischarged).str();
-	Answer += (boost::format("%01u") % mArm->PhotosensorOfManipulator).str();
-	Answer += (boost::format("%01u") % mArm->ManipulatorStatePosition).str();
-	Answer += (boost::format("%01u") % mArm->DischargedTheBrickConfirm).str();
-	Answer += (boost::format("%01u") % mArm->LeftStorageBinSecurity).str();
-	Answer += (boost::format("%01u") % mArm->RightStorageBinSecurity).str();
-	Answer += "_";
-	Answer += (boost::format("%05u") % abs(mArm->AlarmArray)).str();
-	Answer += "_";
-	Answer += (boost::format("%01u") % mArm->ManipulatorRepositionState).str();
-	Answer += "_";
-	Answer += (boost::format("%010u") % abs(mArm->ActualValueEncoder)).str();
-	Answer += "_";
+	int selectedArm=1;
+	FindAndAddTo(DOC_in, "selectedArm", &selectedArm);
+	RoboticArm* mArm = DesiredRoboticArm(selectedArm);
 
-	/*Common Variables*/
-	Answer += (boost::format("%01u") % mArm->TheQueueOfPhotosensor_1).str();
-	Answer += (boost::format("%01u") % mArm->TheQueueOfPhotosensor_2).str();
-	Answer += (boost::format("%01u") % mArm->TheQueueOfPhotosensor_3).str();
-	Answer += (boost::format("%01u") % mArm->TheQueueOfPhotosensor_4).str();
-	Answer += (boost::format("%01u") % mArm->StationInterlock_16).str();
-	Answer += (boost::format("%01u") % mArm->WhetherOrNotPutTheTileTo_16).str();
-	Answer += "_";
-	Answer += (boost::format("%05u") % abs(mArm->EquipmentAlarmArray)).str();
-	Answer += "_";
-	Answer += (boost::format("%03u") % mArm->TileGrade).str();
-	Answer += "_";
-	Answer += (boost::format("%03u") % mArm->ChangeColor).str();
-	Answer += "_";
-	Answer += (boost::format("%03u") % mArm->SystemState).str();
-	Answer += "_";
-	Answer += (boost::format("%010u") % abs(mArm->ActualValueOfTheLineEncoder)).str();
-	Answer += "_";
-	Answer += (boost::format("%010u") % abs(mArm->EnterTheTileStartingCodeValue)).str();
-	Answer += "\r\n";
-	return Answer;
+	//Arm specific variables (for the selected Manipulator)
+	AnswerWriter->Key("selectedArm");
+	AnswerWriter->Int(selectedArm);
+	AnswerWriter->Key("hasDischarged");
+	AnswerWriter->Bool(mArm->HasDischarged);
+	AnswerWriter->Key("photosensorOfManipulator");
+	AnswerWriter->Bool(mArm->PhotosensorOfManipulator);
+	AnswerWriter->Key("manipulatorStatePosition");
+	AnswerWriter->Bool(mArm->ManipulatorStatePosition);
+	AnswerWriter->Key("dischargedTheBrickConfirm");
+	AnswerWriter->Bool(mArm->DischargedTheBrickConfirm);
+	AnswerWriter->Key("leftStorageBinSecurity");
+	AnswerWriter->Bool(mArm->LeftStorageBinSecurity);
+	AnswerWriter->Key("rightStorageBinSecurity");
+	AnswerWriter->Bool(mArm->RightStorageBinSecurity);
+	AnswerWriter->Key("alarmArray");
+	AnswerWriter->Int(abs(mArm->AlarmArray));
+	AnswerWriter->Key("manipulatorRepositionState");
+	AnswerWriter->Int(mArm->ManipulatorRepositionState);
+	AnswerWriter->Key("actualValueEncoder");
+	AnswerWriter->Int(abs(mArm->ActualValueEncoder));
 
+	//Common Variables
+	AnswerWriter->Key("theQueueOfPhotosensor_1");
+	AnswerWriter->Bool(mArm->TheQueueOfPhotosensor_1);
+	AnswerWriter->Key("theQueueOfPhotosensor_2");
+	AnswerWriter->Bool(mArm->TheQueueOfPhotosensor_2);
+	AnswerWriter->Key("theQueueOfPhotosensor_3");
+	AnswerWriter->Bool(mArm->TheQueueOfPhotosensor_3);
+	AnswerWriter->Key("theQueueOfPhotosensor_4");
+	AnswerWriter->Bool(mArm->TheQueueOfPhotosensor_4);
+	AnswerWriter->Key("stationInterlock_16");
+	AnswerWriter->Bool(mArm->StationInterlock_16);
+	AnswerWriter->Key("whetherOrNotPutTheTileTo_16");
+	AnswerWriter->Bool(mArm->WhetherOrNotPutTheTileTo_16);
+	AnswerWriter->Key("equipmentAlarmArray");
+	AnswerWriter->Int(abs(mArm->EquipmentAlarmArray));
+	AnswerWriter->Key("tileGrade");
+	AnswerWriter->Int(mArm->TileGrade);
+	AnswerWriter->Key("changeColor");
+	AnswerWriter->Int(mArm->ChangeColor);
+	AnswerWriter->Key("systemState");
+	AnswerWriter->Int(mArm->SystemState);
+	AnswerWriter->Key("actualValueOfTheLineEncoder");
+	AnswerWriter->Int(mArm->ActualValueOfTheLineEncoder);
+	std::cout << mArm->ActualValueOfTheLineEncoder << std::endl;
+	AnswerWriter->Key("enterTheTileStartingCodeValue");
+	AnswerWriter->Int(mArm->EnterTheTileStartingCodeValue);
+	AnswerWriter->EndObject();
 }
 
 
 /*
  * RBS; PLC Write DAta
- * Values marked as 'X' won't be changed
  */
-std::string Command_PWDA(std::string const& Buffer)
+void Command_PWDA(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	int mArmNumber = boost::lexical_cast<int>(Buffer.substr(8,2));
-	RoboticArm* mArm = DesiredRoboticArm(mArmNumber);
+	int selectedArm=1; //RBS default 1, so we can start and stop the motor without sending this parameter.
+	FindAndAddTo(DOC_in, "selectedArm", &selectedArm);
+	RoboticArm* mArm = DesiredRoboticArm(selectedArm);
 
-	std::cout << Buffer << std::endl;
+	//These names were poorly translated from chinese. It is a nightmare, but not our fault
+	FindAndAddTo(DOC_in, "SBD", &mArm->StorageBinDirection);
+	FindAndAddTo(DOC_in, "MR", &mArm->ManipulatorReset);
+	FindAndAddTo(DOC_in, "SBFA", &mArm->StorageBinFullA);
+	FindAndAddTo(DOC_in, "SBFB", &mArm->StorageBinFullB);
+	FindAndAddTo(DOC_in, "BCRSA", &mArm->BarCodeReadStateA);
+	FindAndAddTo(DOC_in, "BCRSB", &mArm->BarCodeReadStateB);
+	FindAndAddTo(DOC_in, "MM", &mArm->ManipulatorMode);
+	FindAndAddTo(DOC_in, "VV", &mArm->VacuumValve);
+	FindAndAddTo(DOC_in, "MFB", &mArm->ManualForwardBackward);
+	FindAndAddTo(DOC_in, "MLR", &mArm->ManualLeftRight);
+	FindAndAddTo(DOC_in, "MUD", &mArm->ManualUpDown);
+	FindAndAddTo(DOC_in, "COD", &mArm->CatchOrDrop);
+	FindAndAddTo(DOC_in, "WTDWT", &mArm->WhatToDoWithTheBrick);
+	FindAndAddTo(DOC_in, "PZA", &mArm->PulseZAxis);
+	FindAndAddTo(DOC_in, "VOCD", &mArm->ValueOfCatchDrop);
+	FindAndAddTo(DOC_in, "CE", &mArm->CommunicationExchange);
+	FindAndAddTo(DOC_in, "ITT", &mArm->TestPattern);
+	FindAndAddTo(DOC_in, "TMD", &mArm->TransmissionManualDebugging);
+	FindAndAddTo(DOC_in, "PCS", &mArm->PCState);
+	FindAndAddTo(DOC_in, "ADD", &mArm->Z_AxisDeceletationDistance);
+	FindAndAddTo(DOC_in, "ZASV", &mArm->Z_AxisStandbyValue);
+	FindAndAddTo(DOC_in, "TPOX_AGB", &mArm->ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance);
+	FindAndAddTo(DOC_in, "TPOX_ADD", &mArm->ThePulseOfZ_AxisAdvanceDownInAdvance);
 
-	if(boost::contains(Buffer.substr(11,1), "X") == false)
-		mArm->StorageBinDirection = readBool(Buffer.substr(11,1));
-
-	if(boost::contains(Buffer.substr(12,1), "X") == false)
-		mArm->ManipulatorReset = readBool(Buffer.substr(12,1));
-
-	if(boost::contains(Buffer.substr(13,1), "X") == false)
-		mArm->StorageBinFullA = readBool(Buffer.substr(13,1));
-
-	if(boost::contains(Buffer.substr(14,1), "X") == false)
-		mArm->StorageBinFullB = readBool(Buffer.substr(14,1));
-
-	if(boost::contains(Buffer.substr(15,1), "X") == false)
-		mArm->BarCodeReadStateA = readBool(Buffer.substr(15,1));
-
-	if(boost::contains(Buffer.substr(16,1), "X") == false)
-		mArm->BarCodeReadStateB = readBool(Buffer.substr(16,1));
-
-	if(boost::contains(Buffer.substr(17,1), "X") == false)
-		mArm->ManipulatorMode = readBool(Buffer.substr(17,1));
-
-	if(boost::contains(Buffer.substr(18,1), "X") == false)
-		mArm->VacuumValve = readBool(Buffer.substr(18, 1));
-
-	if(boost::contains(Buffer.substr(20,3), "X") == false)
-		mArm->ManualForwardBackward = boost::lexical_cast<short>(Buffer.substr(20,3));
-
-	if(boost::contains(Buffer.substr(24,3), "X") == false)
-		mArm->ManualLeftRight = boost::lexical_cast<short>(Buffer.substr(24,3));
-
-	if(boost::contains(Buffer.substr(28,3), "X") == false)
-		mArm->ManualUpDown = boost::lexical_cast<short>(Buffer.substr(28,3));
-
-	if(boost::contains(Buffer.substr(32,3), "X") == false)
-		mArm->CatchOrDrop =  boost::lexical_cast<short>(Buffer.substr(32,3));
-
-	if(boost::contains(Buffer.substr(36,3), "X") == false)
-		mArm->WhatToDoWithTheBrick = boost::lexical_cast<short>(Buffer.substr(36,3));
-
-	if(boost::contains(Buffer.substr(40,6), "X") == false)
-		mArm->PulseZAxis = boost::lexical_cast<int>(Buffer.substr(40,6));
-
-	if(boost::contains(Buffer.substr(47,6), "X") == false)
-		mArm->ValueOfCatchDrop = boost::lexical_cast<long>(Buffer.substr(47,6));
-
-	if(boost::contains(Buffer.substr(54,1), "X") == false)
-		mArm->CommunicationExchange = readBool(Buffer.substr(54,1));
-
-	if(boost::contains(Buffer.substr(55,1), "X") == false)
-		mArm->TestPattern = readBool(Buffer.substr(55,1));
-
-	if(boost::contains(Buffer.substr(56,1), "X") == false)
-		mArm->InquiryTheTile = readBool(Buffer.substr(56,1));
-
-	if(boost::contains(Buffer.substr(57,1), "X") == false)
-		mArm->TransmissionManualDebugging = readBool(Buffer.substr(57,1));
-
-	if(boost::contains(Buffer.substr(59,3), "X") == false)
-		mArm->PCState = (short) boost::lexical_cast<int>(Buffer.substr(59,3));
-
-	if(boost::contains(Buffer.substr(63,6), "X") == false)
-		mArm->Z_AxisDeceletationDistance = boost::lexical_cast<int>(Buffer.substr(63,6));
-
-	if(boost::contains(Buffer.substr(70,6), "X") == false)
-		mArm->Z_AxisStandbyValue = boost::lexical_cast<int>(Buffer.substr(70,6));
-
-	if(boost::contains(Buffer.substr(77,6), "X") == false)
-		mArm->ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance = boost::lexical_cast<int>(Buffer.substr(77,6));
-
-	if(boost::contains(Buffer.substr(84,6), "X") == false)
-		mArm->ThePulseOfZ_AxisAdvanceDownInAdvance = boost::lexical_cast<int>(Buffer.substr(84,6));
-
-	return Buffer;
+	DOC_in.IsNull();
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("PWDA");
+	AnswerWriter->Key("MFBFeedback");
+	AnswerWriter->Int(mArm->ManualForwardBackward);
+	AnswerWriter->Key("MLRFeedback");
+	AnswerWriter->Int(mArm->ManualLeftRight);
+	AnswerWriter->Key("MUDFeedback");
+	AnswerWriter->Int(mArm->ManualUpDown);
+	AnswerWriter->EndObject();
 }
 
-std::string Command_RGMV(std::string const& Buffer)
+/*
+ * Rfid Get Memory Values
+ */
+void Command_RGMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	std::string Answer;
-	int mPalletNumber = boost::lexical_cast<int>(Buffer.substr(5, 2)) + 1;
-	//StorageReadAllMemory(mPalletNumber);
-	Answer = "RGMV_";
-	Answer += Buffer.substr(5, 2); //mPalletNumber
-	Answer += "_";
+	int selectedPallet=1;
+	FindAndAddTo(DOC_in, "palletNumber", &selectedPallet);
 
-	for (int i = 0; i <= StorageGetNumberOfBricks(mPalletNumber); i++)
+	DOC_in.IsNull();
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("RGMV");
+	AnswerWriter->Key("palletNumber");
+	AnswerWriter->Int(selectedPallet);
+	AnswerWriter->Key("totalBricks");
+	AnswerWriter->Int(StorageGetNumberOfBricks(selectedPallet));
+	AnswerWriter->Key("memoryValues");
+	AnswerWriter->StartArray();
+	for(int i=0; i<StorageGetNumberOfBricks(selectedPallet); i++)
 	{
-
-		Answer += char(StorageGetRaw(mPalletNumber, i));
+		AnswerWriter->StartObject();
+		AnswerWriter->Key("memoryValue");
+		AnswerWriter->Int(StorageGetRaw(selectedPallet, i+1)); //RBS +1 because 0 represents ust the number of bricks
+		AnswerWriter->EndObject();								//Just another side effect of the index salad.
 	}
-	Answer += "\r\n";
-
-	return Answer;
+	AnswerWriter->EndArray();
+	AnswerWriter->EndObject();
 }
 
-std::string Command_RFMV(std::string const& Buffer)
+/*
+ * Rfid Format Memory Values
+ */
+void Command_RFMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	std::string Answer;
+	int selectedPallet=1;
+	FindAndAddTo(DOC_in, "selectedPallet", &selectedPallet);
 
-	int mPalletNumber = boost::lexical_cast<int>(Buffer.substr(5, 2)) + 1;
-	StorageFormatMemory(mPalletNumber);
-	//StorageReadAllMemory(mPalletNumber);
-	Answer = "RFMV_";
-	Answer += Buffer.substr(5, 2);
-	Answer += "\r\n";
+	StorageFormatMemory(selectedPallet);
 
-	return Answer;
+	DOC_in.IsNull();
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("RFMV");
+	AnswerWriter->Key("reply");
+	AnswerWriter->String("OK");
+	AnswerWriter->EndObject();
 }
 
-std::string Command_RAMV(std::string const& Buffer)
+/*
+ * Rfid Add Memory Value
+ */
+void Command_RAMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
+	int selectedPallet=1, valueToAdd=0;
+	FindAndAddTo(DOC_in, "selectedPallet", &selectedPallet);
+	FindAndAddTo(DOC_in, "valueToAdd", &valueToAdd);
 
-	std::string Answer;
+	StorageAddBrick(selectedPallet, valueToAdd >> 4, valueToAdd & 15);
 
-	int mPalletNumber = boost::lexical_cast<int>(Buffer.substr(5, 2)) + 1;
-	char mCharacterToAdd = Buffer.at(8);
-	int mCharacterToAdd_int = (int) mCharacterToAdd;
-
-	StorageAddBrick(mPalletNumber, mCharacterToAdd_int >> 4,
-			mCharacterToAdd_int & 15);
-
-	Answer = "RAMV_";
-	Answer += Buffer.substr(5, 2);
-	Answer += "_";
-	Answer += mCharacterToAdd;
-	Answer += "\r\n";
-
-	return Answer;
-
+	DOC_in.IsNull();
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("RAMV");
+	AnswerWriter->Key("reply");
+	AnswerWriter->String("OK");
+	AnswerWriter->EndObject();
 }
 
-std::string Command_RDMV(std::string const& Buffer)
+/*
+ * Rfid Delete Memory Value
+ */
+void Command_RDMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	std::string Answer;
+	int selectedPallet=1, positionToDelete=0;
+	FindAndAddTo(DOC_in, "selectedPallet", &selectedPallet);
+	FindAndAddTo(DOC_in, "positionToDelete", &positionToDelete);
 
-	int mPalletNumber = boost::lexical_cast<int>(Buffer.substr(5, 2)) + 1;
-	int mPositionToDelete = boost::lexical_cast<int>(Buffer.substr(8, 3));
+	StorageDeleteBrick(selectedPallet, positionToDelete);
 
-	StorageDeleteBrick(mPalletNumber, mPositionToDelete);
-
-	Answer = "RDMV_";
-	Answer += Buffer.substr(5, 2);
-	Answer += "_";
-	Answer += Buffer.substr(8, 3);
-	Answer += "\r\n";
-
-	return Answer;
+	DOC_in.IsNull();
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("RDMV");
+	AnswerWriter->Key("reply");
+	AnswerWriter->String("OK");
+	AnswerWriter->EndObject();
 }
 
-std::string Command_RGUV(std::string const& Buffer)
+void Command_RGUV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	std::string Answer;
-
-	return Answer;
+	//not implemented (?)
 }
 
-std::string Command_RPRV(std::string const& Buffer)
+/*
+ * Rifd Periodic Request Values RBS: Actually, all line info ( ⚆ _ ⚆ )
+ */
+void Command_RPRV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	std::string Answer;
-	//Get the number of pallets from the command
-	int mNumberOfPallets = boost::lexical_cast<int>(Buffer.substr(5, 2));
-	Answer = "RPRV_";
-	Answer+=(boost::format("%02u")%mNumberOfPallets).str();
-	// for every brick, add the UID, the number of bricks and the top brick
-	for(int i=1;i<=mNumberOfPallets;i++){
-		Answer+= "_";
-		Answer+=StorageGetStoredUID(i);
-		/*
-		 * Be careful with this char(), if it is 0, the string will be terminated and everything will crash.
-		 */
-		Answer+=char(StorageGetRaw(i,0));
-		if(StorageGetNumberOfBricks(i)>0)
+	DOC_in.IsNull();
+	AnswerWriter->StartObject();
+
+	//Get the number of pallets from the command. //TODO RBS this should be detected automatically.
+	int NumberOfPallets;
+	FindAndAddTo(DOC_in, "numberOfPallets", &NumberOfPallets);
+
+	//Write Pallet Information
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("RPRV");
+	AnswerWriter->Key("palletInformation");
+	AnswerWriter->StartArray();
+	for(int i=1; i<=NumberOfPallets; i++)
+	{
+			AnswerWriter->StartObject();
+			AnswerWriter->Key("palletUID");
+			AnswerWriter->String(StorageGetStoredUID(i).c_str());
+			AnswerWriter->Key("numberOfBricks");
+			AnswerWriter->Int(StorageGetNumberOfBricks(i));
+			AnswerWriter->Key("topBrick");
+			if(StorageGetNumberOfBricks(i) > 0)
+				AnswerWriter->Int(StorageGetRaw(i, StorageGetNumberOfBricks(i)));
+			else
+				AnswerWriter->Int(-1);
+			AnswerWriter->EndObject();
+	}
+	AnswerWriter->EndArray();
+
+	//Bricks on the line
+	std::deque<Brick> mListOfBricksOnTheLine = Algorithm::Get::Bricks_On_The_Line();
+	std::vector<int> brickIndexes = Algorithm::Get::IndexesOfBricksOnLine(mListOfBricksOnTheLine);
+	AnswerWriter->Key("bricksOnTheLine");
+	AnswerWriter->StartArray();
+	//RBS This list only contains non-type0 bricks.
+	for(unsigned int i=0; i<brickIndexes.size(); i++)
+	{
+		if(mListOfBricksOnTheLine.at(brickIndexes.at(i)).DNI) //to make sure never happens
 		{
-			Answer+=char(StorageGetRaw(i,StorageGetNumberOfBricks(i)));
-		}else
+			AnswerWriter->StartObject();
+			AnswerWriter->Key("position");
+			AnswerWriter->Int(mListOfBricksOnTheLine.at(brickIndexes.at(i)).Position);
+			AnswerWriter->Key("type");
+			AnswerWriter->Int(mListOfBricksOnTheLine.at(brickIndexes.at(i)).Type);
+			AnswerWriter->Key("assignedPallet");
+			AnswerWriter->Int(mListOfBricksOnTheLine.at(brickIndexes.at(i)).AssignedPallet);
+			AnswerWriter->Key("DNI");
+			AnswerWriter->Int(mListOfBricksOnTheLine.at(brickIndexes.at(i)).DNI);
+			AnswerWriter->EndObject();
+		}
+		else
 		{
-			Answer+=char(1);
+			std::cout << "INTERNAL ERRROR, DNI 0 assigned to something" << std::endl;
 		}
 	}
-	//Get the list of bricks on the line and add the number of bricks
-	std::deque<Brick> mListOfBricksOnTheLine = Algorithm::Get::Bricks_Before_The_Line();
-	Answer+= "_";
+	AnswerWriter->EndArray();
 
-	//RBS get list of bricks on line and iterate for every brick
-	std::vector<int> BricksOnLine = Algorithm::Get::IndexesOfBricksOnLine(mListOfBricksOnTheLine);
-	Answer+= (boost::format("%02u")%(BricksOnLine.size())).str();
-	for(unsigned int i=0; i<BricksOnLine.size(); i++)
-	{
-		//std::cout << i << std::endl;
-		if(mListOfBricksOnTheLine.at(BricksOnLine.at(i)).Type!=0)
-		{
-		Answer+= "_";
-		Answer+=(boost::format("%06u")%(mListOfBricksOnTheLine.at(BricksOnLine.at(i)).Position)).str();//position
-		Answer+=char(mListOfBricksOnTheLine.at(BricksOnLine.at(i)).Type);							 //grade and colour
-		Answer+=(boost::format("%02u")%(mListOfBricksOnTheLine.at(BricksOnLine.at(i)).AssignedPallet)).str();//assigned pallet
-		Answer+=(boost::format("%02u")%(mListOfBricksOnTheLine.at(BricksOnLine.at(i)).DNI)).str();//dni
-			//std::cout << Answer << std::endl;
-		}
-	}
-
-	//For every manipulator
+	//Bricks that have been taken already
 	std::vector<Brick> mListOfBricksTakenByManipulators = Algorithm::Get::Manipulator_TakenBrick();
-
+	AnswerWriter->Key("bricksTakenByManipulators");
+	AnswerWriter->StartArray();
 	for(unsigned int i=0; i<mListOfBricksTakenByManipulators.size(); i++)
 	{
-		Answer+="_";
-		Answer+=(boost::format("%06u")%(DesiredRoboticArm(i+1)->ActualValueEncoder)).str();
-		Answer+=(boost::format("%06u")%(DesiredRoboticArm(i+1)->ValueOfCatchDrop)).str();
-		Answer+=(boost::format("%06u")%(mListOfBricksTakenByManipulators.at(i).Position)).str();
-		Answer+=char(mListOfBricksTakenByManipulators.at(i).Type);
-		Answer+=(boost::format("%02u")%(mListOfBricksTakenByManipulators.at(i).AssignedPallet)).str();
-		Answer+=(boost::format("%02u")%(mListOfBricksTakenByManipulators.at(i).DNI)).str();
+			AnswerWriter->StartObject();
+			AnswerWriter->Key("currentXEncoderValue");
+			AnswerWriter->Int(DesiredRoboticArm(i+1)->ActualValueEncoder);
+			AnswerWriter->Key("valueOfCatchDrop");
+			AnswerWriter->Int(DesiredRoboticArm(i+1)->ValueOfCatchDrop);
+			AnswerWriter->Key("position");
+			AnswerWriter->Int(mListOfBricksTakenByManipulators.at(i).Position);
+			AnswerWriter->Key("type");
+			AnswerWriter->Int(mListOfBricksTakenByManipulators.at(i).Type);
+			AnswerWriter->Key("assignedPallet");
+			AnswerWriter->Int(mListOfBricksTakenByManipulators.at(i).AssignedPallet);
+			AnswerWriter->Key("DNI");
+			AnswerWriter->Int(mListOfBricksTakenByManipulators.at(i).DNI);
+			AnswerWriter->EndObject();
 	}
+	AnswerWriter->EndArray();
 
-	//Common manipulator information
-	Answer+="_";
-	Answer+=(boost::format("%06u")%(RoboticArm::ActualValueOfTheLineEncoder)).str();
-
-	Answer+="\r\n";
-	return Answer;
+	AnswerWriter->Key("currentEncoderValue");
+	AnswerWriter->Int(RoboticArm::ActualValueOfTheLineEncoder);
+	AnswerWriter->EndObject();
 }
 
-//ALgorithm Save Config
-std::string Command_ALSC(std::string Buffer)
+/*
+ * ALgorithm Save Config
+ */
+void Command_ALSC(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
 	ConfigParser config("/etc/unit14/unit14.conf");
 	std::vector<int> modes;
-	int Manipulators = 5; //ConfigParser.getManipulatorNumber();
+	int color=1, grade=1; //ConfigParser.getManipulatorNumber();
+	DOC_in.IsNull();
+
+	FindAndAddTo(DOC_in, "color", &color);
+	FindAndAddTo(DOC_in, "grade", &grade);
 
 	//Update both, running program and config file
-	config.SetCurrentPackagingColor(boost::lexical_cast<int>(Buffer.substr(8,2)));
-	Algorithm::Set::CurrentPackagingColor(boost::lexical_cast<int>(Buffer.substr(8,2)));
+	config.SetCurrentPackagingColor(boost::lexical_cast<int>(color));
+	Algorithm::Set::CurrentPackagingColor(boost::lexical_cast<int>(color));
+	config.SetCurrentPackagingGrade(boost::lexical_cast<int>(grade));
+	Algorithm::Set::CurrentPackagingGrade(boost::lexical_cast<int>(grade));
 
-	config.SetCurrentPackagingGrade(boost::lexical_cast<int>(Buffer.substr(11,3)));
-	Algorithm::Set::CurrentPackagingGrade(boost::lexical_cast<int>(Buffer.substr(11,3)));
-
-	for(int i=0; i<Manipulators; i++)
-		modes.push_back(boost::lexical_cast<int>(Buffer.substr((15+i),1)));
+	for(unsigned int i=0; i<DOC_in["modes"].Size(); i++)
+		modes.push_back(DOC_in["modes"][i].GetInt()); //RBS TODO this may crash the entire machine if a bad JSON is received
 	config.SetManipulatorModes(modes);
 	Algorithm::Set::ManipulatorModes(modes);
 
-	/*
-	 * code for weights
-	 */
-	std::string Answer=Buffer;
-	Answer+="\n";
-
-	return Answer;
+	DOC_in.IsNull();
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("ALSC");
+	AnswerWriter->Key("reply");
+	AnswerWriter->String("OK");
+	AnswerWriter->EndObject();
 }
 
-//ALgorithm Get Config
-std::string Command_ALGC(std::string Buffer)
+/*
+ * ALgorithm Get Config
+ */
+void Command_ALGC(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
+
 	ConfigParser config("/etc/unit14/unit14.conf");
 	std::vector<int> modes;
 	int Manipulators = 5; //ConfigParser.getManipulatorNumber();
 
-	std::string Answer = "ALGC_14_";
-	Answer += config.GetPackagingGrade();
-	Answer += "_";
-	Answer += config.GetPackagingColor();
-	Answer += "_";
-
+	DOC_in.IsNull();
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("ALGC");
+	AnswerWriter->Key("currentGrade");
+	AnswerWriter->Int(config.GetPackagingGrade());
+	AnswerWriter->Key("currentColor");
+	AnswerWriter->Int(config.GetPackagingColor());
+	AnswerWriter->Key("manipulatorModes");
+	AnswerWriter->StartArray();
 	for(int i=0; i<Manipulators; i++)
-		Answer += "_"; //(whatever)
+	{
+		AnswerWriter->StartObject();
+		//AnswerWriter->Key(""); //TODO: Insert modes and other relevant information
+		//AnswerWriter->String();
+		AnswerWriter->EndObject();
+	}
+	AnswerWriter->EndArray();
 
-	return Answer;
+	AnswerWriter->EndObject();
 }
-//Check for new alarms
-std::string Command_CHAL(std::string const& Buffer)
+
+/*
+ * Check for new alarms
+ */
+void Command_CHAL(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	std::string Answer;
+	//Get number of arms from ConfigParser config("/etc/unit14/unit14.conf");
 	int Manipulators = 5; //ConfigParser.getManipulatorNumber();
 
-	Answer += "CHAL_14_";
-	Answer += (boost::format("%05u") % abs(RoboticArm::EquipmentAlarmArray)).str();
-
-	for(int i=1; i<=Manipulators; i++)
+	DOC_in.IsNull();
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("CHAL");
+	AnswerWriter->Key("equipmentAlarms");
+	AnswerWriter->Int(abs(RoboticArm::EquipmentAlarmArray));
+	AnswerWriter->Key("manipulatorAlarms");
+	AnswerWriter->StartArray();
+	for(int i=0; i<Manipulators; i++)
 	{
-		Answer += "_";
-		Answer += (boost::format("%05u") % abs(DesiredRoboticArm(i)->AlarmArray)).str();
+		AnswerWriter->StartObject();
+		AnswerWriter->Key("alarmArray");
+		AnswerWriter->Int(abs(DesiredRoboticArm(i+1)->AlarmArray));
+		AnswerWriter->EndObject();
 	}
-	Answer += "\r\n";
+	AnswerWriter->EndArray();
 
-	return Answer;
+	AnswerWriter->EndObject();
 }
 
-std::string Command_SCAP(std::string const& Buffer)
+//Save CAlibration Parameters
+void Command_SCAP(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	std::string Answer;
+	DOC_in.IsNull();
+	int SBV=0, AGBTTWPIA, NumberOfArms=0;
+	FindAndAddTo(DOC_in, "armNumber", &NumberOfArms);
+	FindAndAddTo(DOC_in, "SBV", &SBV);
+	FindAndAddTo(DOC_in, "AGBTTWPIA", &AGBTTWPIA);
 
 	ConfigParser config("/etc/unit14/unit14.conf");
-	//SCAP
-	//_
-	//05_000000_000000_000000_000000_000000\r\n
+	//Implement: save arms to config now. THIS is where the number is stored.
 
-	int NumberOfArms = boost::lexical_cast<int>(Buffer.substr(5, 2));
 	std::vector<int> ArmPositions;
-
 	for(int i=0;i<NumberOfArms;i++)
 	{
-		ArmPositions.push_back(boost::lexical_cast<int>(Buffer.substr(8+i*7, 6)));
+		ArmPositions.push_back(DOC_in["positions"][i].GetInt());
 	}
-	Algorithm::Set::ManipulatorFixedPosition(ArmPositions);
 	config.SetArmPositions(ArmPositions);
-	Answer = "SCAP\r\n";
+	//config.SetAxisGoBackToTheWaitingPositionInAdvance(AGBTTWPIA);
+	//config.SetZAxisStandbyValue(SBV);
 
-	return Answer;
+	//STOP PROGRAM AFTER SAVING THIS CRITICAL CONFIGURATION
+	//Resources not released, but the entire machine will be restarted after this.
+	std::cout << "Configuration received from tablet, shutting server down." << std::endl;
+	exit(0);
 }
 
 /*
  * RBS: Write Advanced Debug Information
  */
-std::string Command_WADI(std::string const& Buffer)
+void Command_WADI(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	if(Buffer.substr(5,1) == "1")
+	DOC_in.IsNull();
+	bool enable16, forceOutput, forceInput;
+
+	FindAndAddTo(DOC_in, "enable16", &enable16);
+	FindAndAddTo(DOC_in, "forceOutput", &forceOutput);
+	FindAndAddTo(DOC_in, "forceInput", &forceInput);
+
+	if(enable16)
 	{
 		//WhetherOrNotPutTheTileTo is enabled
 		Algorithm::Set::enable_WhetherOrNotPutTheTileTo_16(true);
@@ -461,55 +460,80 @@ std::string Command_WADI(std::string const& Buffer)
 		Algorithm::Set::enable_WhetherOrNotPutTheTileTo_16(false);
 
 		//wheterornot16 disabled, force output
-		if(Buffer.substr(6,1) == "1")
+		if(forceOutput)
 			Algorithm::Set::force_output(true);
 		else
 			Algorithm::Set::force_output(false);
 
 		//wheterornot16 disabled, force input
-		if(Buffer.substr(7,1) == "1")
+		if(forceInput)
 			Algorithm::Set::force_input(true);
 		else
 			Algorithm::Set::force_input(false);
 	}
 
-	return "WADI\r\n";
+	//Reply
+	DOC_in.IsNull();
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("WADI");
+	AnswerWriter->Key("reply");
+	AnswerWriter->String("OK");
+	AnswerWriter->EndObject();
 }
 
 /*
  * RBS PLace ORder
  */
-std::string Command_PLRD(std::string const& Buffer)
+void Command_PLRD(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
+	DOC_in.IsNull();
+	int type, position, pallet;
 
-	int type = boost::lexical_cast<int>(Buffer.substr(5, 6));  //type
-	int position = boost::lexical_cast<int>(Buffer.substr(12, 6)); //position (as a brick, it's relative to PS4)
-	int pallet = boost::lexical_cast<int>(Buffer.substr(19, 6));//pallet
+	FindAndAddTo(DOC_in, "type", &type);
+	FindAndAddTo(DOC_in, "position", &position);
+	FindAndAddTo(DOC_in, "pallet", &pallet);
 
-	Brick brick(type,position,pallet,0);//DNI is meaningless here
+	Brick brick(type,position,pallet,0); //DNI is meaningless here
 	Algorithm::Set::order(brick);
-	return "PLRD\r\n";
+
+	//Reply
+	DOC_in.IsNull();
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("FOTP");
+	AnswerWriter->Key("reply");
+	AnswerWriter->String("OK");
+	AnswerWriter->EndObject();
 }
 
 /*
  * RBS FOrce To Pallet...
  */
-std::string Command_FOTP(std::string const& Buffer)
+void Command_FOTP(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	int destination_pallet = boost::lexical_cast<int>(Buffer.substr(5, 2));
+	DOC_in.IsNull();
 
+	int destination_pallet = 0;
+	FindAndAddTo(DOC_in, "pllet", &destination_pallet);
 	Algorithm::Set::forced_pallet(destination_pallet);
+	std::cout << "Brick forced to pallet " << destination_pallet << std::endl;
 
-	std::cout << "forced to: " << destination_pallet << std::endl;
-
-	return "FOTP\r\n";
+	//Reply
+	DOC_in.IsNull();
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("FOTP");
+	AnswerWriter->Key("reply");
+	AnswerWriter->String("OK");
+	AnswerWriter->EndObject();
 }
 
+/*
+ * Get Debug Internal State
+ */
 void Command_GDIS(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter){
-
-	//Get debug internal state
-
-	DOC_in.IsNull(); //removes a warning. I hate warnings.
+	DOC_in.IsNull();
 
 	std::deque<int> Available_DNI_List = Algorithm::Get::Available_DNI_List();
 	OrderManager Manipulator_Order_List = Algorithm::Get::Manipulator_Order_List();
@@ -616,6 +640,7 @@ void Command_GDIS(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 		AnswerWriter->EndObject();
 	}
 	AnswerWriter->EndArray();
+
 	AnswerWriter->Key("Manipulator_State");
 	AnswerWriter->StartArray();
 	for(unsigned int i=0;i<Manipulator_Fixed_Position.size();i++){
@@ -629,177 +654,74 @@ void Command_GDIS(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 		AnswerWriter->EndObject();
 	}
 	AnswerWriter->EndArray();
+AnswerWriter->EndObject();
+}
+
+void Command_PING(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
+{
+	DOC_in.IsNull();
+	AnswerWriter->StartObject();
+
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("PING");
+
+	AnswerWriter->Key("reply");
+	AnswerWriter->String("OK");
+
 	AnswerWriter->EndObject();
 }
 
-
-
-
-
-std::string ProcessCommand(std::string const& bufferRead, bool ServerIsReady)
+std::string ProcessCommand(std::string Message)
 {
-	std::string bufferWrite;
-	//TODO RBS, replace contains by substring(0,4) and be more specific when catching exceptions .-.
-	if (boost::contains(bufferRead, "PGSI") && ServerIsReady)
-	{
-		try {bufferWrite = Command_PGSI(bufferRead);}
-		catch(...){
-			std::cout << "Command_PGSI exception: bad syntax"<< std::endl;
-			bufferWrite = "Error_PGSI\r\n";
-		}
-	}
-	else if (boost::contains(bufferRead,"PWDA") && ServerIsReady)
-	{
-		try {bufferWrite = Command_PWDA(bufferRead);}
-		catch(...){
-			std::cout << "Command_PWDA exception: bad syntax"<< std::endl;
-			bufferWrite = "Error_PWDA\r\n";
-		}
-	}
-	else if (boost::contains(bufferRead,"RGMV") && ServerIsReady)
-	{
-		try {bufferWrite = Command_RGMV(bufferRead);}
-		catch(...){
-			std::cout << "Command_RGMV exception: bad syntax"<< std::endl;
-			bufferWrite = "Error_RGMV\r\n";
-		}
-	}
-	else if (boost::contains(bufferRead,"RFMV") && ServerIsReady)
-	{
-		try {bufferWrite = Command_RFMV(bufferRead);}
-		catch(...){
-			std::cout << "Command_RFMV exception: bad syntax"<< std::endl;
-			bufferWrite = "Error_RFMV\r\n";
-		}
-	}
-	else if (boost::contains(bufferRead,"RAMV") && ServerIsReady)
-	{
-		try {bufferWrite = Command_RAMV(bufferRead);}
-		catch(...){
-			std::cout << "Command_RAMV exception: bad syntax"<< std::endl;
-			bufferWrite = "Error_RAMV\r\n";
-		}
-	}
-	else if (boost::contains(bufferRead,"RDMV") && ServerIsReady)
-	{
-		try {bufferWrite = Command_RDMV(bufferRead);}
-		catch(...){
-			std::cout << "Command_RDMV exception: bad syntax"<< std::endl;
-			bufferWrite = "Error_RDMV\r\n";
-		}
-	}
-	else if (boost::contains(bufferRead,"RPRV") && ServerIsReady)
-	{
-		try {bufferWrite = Command_RPRV(bufferRead);}
-		catch(...){
-			std::cout << "Command_RPRV exception: bad syntax"<< std::endl;
-			std::cout << bufferRead << std::endl;
-		}
-	}
-	else if (boost::contains(bufferRead,"ALSC") && ServerIsReady)
-	{
-		try {bufferWrite = Command_ALSC(bufferRead);}
-		catch(...){
-			std::cout << "Command_ALSC exception: bad syntax"<< std::endl;
-			bufferWrite = "Error_ALSC\r\n";
-		}
-	}
-	else if (boost::contains(bufferRead,"CHAL") && ServerIsReady)
-	{
-		try {bufferWrite = Command_CHAL(bufferRead);}
-		catch(...){
-			std::cout << "Command_CHAL exception: bad syntax"<< std::endl;
-			bufferWrite = "Error_CHAL\r\n";
-		}
-	}
-	else if (boost::contains(bufferRead,"SCAP") && ServerIsReady)
-	{
-		try {bufferWrite = Command_SCAP(bufferRead);}
-		catch(...){
-			std::cout << "Command_SCAP exception: bad syntax"<< std::endl;
-			bufferWrite = "Error_SCAP\r\n";
-		}
-	}
-	else if (boost::contains(bufferRead,"WADI") && ServerIsReady)
-	{
-		try {bufferWrite = Command_WADI(bufferRead);}
-		catch(...){
-			std::cout << "Command_WADI exception: bad syntax"<< std::endl;
-			bufferWrite = "Error_WADI\r\n";
-		}
-	}
-	else if (boost::contains(bufferRead,"PLRD") && ServerIsReady)
-	{
-		try {bufferWrite = Command_PLRD(bufferRead);}
-		catch(...){
-			std::cout << "Command_PLRD exception: bad syntax"<< std::endl;
-			bufferWrite = "Error_PLRD\r\n";
-		}
-	}
-	else if (boost::contains(bufferRead,"FOTP") && ServerIsReady)
-	{
-		try {bufferWrite = Command_FOTP(bufferRead);}
-		catch(...){
-			std::cout << "Command_FOTP exception: bad syntax"<< std::endl;
-			bufferWrite = "Error_FOTP\r\n";
-		}
-	}
+	//std::cout << "Received: " << Message << std::endl;
+	//one document for input
+    rapidjson::Document DOC_in;
+    rapidjson::StringBuffer Answer_JSON;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(Answer_JSON);
+    rapidjson::ParseResult result;
+    result = DOC_in.Parse(Message.c_str());
+    if(!result)
+    {
+    	 std::cout << "Message is not JSON or is corrupt: " << std::endl;
+    	 return "ERROR_MESSAGECORRUPT\n";
+    }
 
-	else if (boost::contains(bufferRead,"PING"))
-	{
-		/* RBS 20/03/2018
-		 * Used to test connection. If this fails, the display app
-		 * will try reestablishing the communication.
-		 */
+    // 2. Modify it by DOM.
+    std::string command_ID;
+    bool command_ID_check = FindAndAddTo(DOC_in, "command_ID", &command_ID);
 
-		bufferWrite = "PING_PLC14_echo_reply\r\n";
+    if(command_ID_check)
+    {
+        	 if(boost::equals(command_ID, "PWDA")) Command_PWDA(DOC_in, &writer);
+        else if(boost::equals(command_ID, "PGSI")) Command_PGSI(DOC_in, &writer);
+        else if(boost::equals(command_ID, "RGMV")) Command_RGMV(DOC_in, &writer);
+        else if(boost::equals(command_ID, "RFMV")) Command_RFMV(DOC_in, &writer);
+        else if(boost::equals(command_ID, "RAMV")) Command_RAMV(DOC_in, &writer);
+        else if(boost::equals(command_ID, "RDMV")) Command_RDMV(DOC_in, &writer);
+        else if(boost::equals(command_ID, "RPRV")) Command_RPRV(DOC_in, &writer);
+        else if(boost::equals(command_ID, "ALSC")) Command_ALSC(DOC_in, &writer);
+        else if(boost::equals(command_ID, "CHAL")) Command_CHAL(DOC_in, &writer);
+        else if(boost::equals(command_ID, "SCAP")) Command_SCAP(DOC_in, &writer);
+        else if(boost::equals(command_ID, "WADI")) Command_WADI(DOC_in, &writer);
+        else if(boost::equals(command_ID, "PLRD")) Command_PLRD(DOC_in, &writer);
+        else if(boost::equals(command_ID, "FOTP")) Command_FOTP(DOC_in, &writer);
+        else if(boost::equals(command_ID, "GDIS")) Command_GDIS(DOC_in, &writer);
+        else if(boost::equals(command_ID, "PING")) Command_PING(DOC_in, &writer);
+        else std::cout << "Unknown command: " << command_ID << std::endl;
+    }
+    else
+    {
+    	std::cout << command_ID << " Bad Syntax" << std::endl;
+    	return "command_ID not found\n";
+    }
 
-		std::cout << ".";
-		fflush(stdout);
-	}
+    // 3. Stringify the DOM output
+    return ((std::string)Answer_JSON.GetString()) + "\n";
+}
 
-	/*7/6/2018 JAGM: This piece of code below implements JSON over the old stringbanging method. */
-
-	else if (boost::contains(bufferRead,"GDIS") && ServerIsReady) /* This line to be removed, see ControlMachine18 for reference */
-	{
-	    rapidjson::Document DOC_in;
-	    rapidjson::StringBuffer Answer_JSON;
-	    rapidjson::Writer<rapidjson::StringBuffer> writer(Answer_JSON);
-	    rapidjson::ParseResult result;
-
-	    result = DOC_in.Parse(bufferRead.c_str());
-	    if(!result)
-	    {
-	    	 std::cout << "Message is not JSON or is corrupt: " << std::endl;
-	    	 return "ERROR_MESSAGECORRUPT\n";
-	    }
-
-	    // 2. Modify it by DOM.
-	    std::string command_ID;
-	    bool command_ID_check = FindAndAddTo(DOC_in, "command_ID", &command_ID);
-	    if(command_ID_check)
-	    //try //Yup, it's dirty. But we don't want to risk that the machine stops working by a corrupt packet
-	    {
-	        if(boost::equals(command_ID, "GDIS")) Command_GDIS(DOC_in, &writer);
-	        else std::cout << "Unknown command: " << command_ID << std::endl;
-	    }
-	    //catch( ... )
-	    else
-	    {
-	    	return "command_ID not found\n";
-	    	std::cout << command_ID << " Bad Syntax" << std::endl;
-	    }
-	    // 3. Stringify the DOM output
-
-	    return ((std::string)Answer_JSON.GetString()) + "\n";
-	}
-
-	else
-	{
-		bufferWrite = "Error_unknown_CMD\r\n";
-	}
-
-	return bufferWrite;
+void InitDisplayParser()
+{
+	SetFunctionToProcessMessages(&ProcessCommand);
 }
 
 

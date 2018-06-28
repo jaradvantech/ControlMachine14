@@ -6,6 +6,8 @@
  */
 
 #include <RoboticArmInfo.h>
+#include <algorithms/algorithm_v2.h>
+#include <pthread.h>
 
 const short NUMBEROFARMS=5;
 RoboticArm *GlobalArm[NUMBEROFARMS];
@@ -207,6 +209,9 @@ int PerformGlobalReading(){
 		GlobalArm[j]->ManipulatorRepositionState=Buffer[4+StartByteOfThisArm];
 		GlobalArm[j]->ActualValueEncoder=S7_GetDIntAt(Buffer, 6+StartByteOfThisArm);
 	}
+
+		pthread_cond_signal(&read_condition);
+
 	return res;
 }
 //--------------------------------------------------------------------

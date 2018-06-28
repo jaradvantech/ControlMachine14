@@ -23,11 +23,16 @@
 #define MODE_INOUT  1
 #define MODE_OUTPUT	2
 #define MODE_DISABLED 3
-//WARNING, GLOBAL VARIABLES HERE
-	int K = 13000; //RBS debug only, TODO improve
-	int E = 2000;
 
+#define BRICK_READY_SPOT_ASSIGNED		-1
+#define BRICK_READY_NO_SPOT_ASSIGNED	 1
+#define BRICK_NOT_READY					 0
 
+#define K 14000
+#define E 2000
+
+pthread_mutex_t read_mutex;
+pthread_cond_t read_condition;
 
 void SetNumberOfManipulators(OrderManager* _Manipulator_Order_List,
 		std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
@@ -43,8 +48,8 @@ void SetNumberOfManipulators(OrderManager* _Manipulator_Order_List,
 		_Manipulator_TakenBrick->push_back(NoBrick);
 		_Pallet_LowSpeedPulse_Height_List->push_back(5000);
 		_Pallet_LowSpeedPulse_Height_List->push_back(5000);
-		_Bricks_Ready_For_Output->push_back(0);
-		_Bricks_Ready_For_Output->push_back(0);
+		_Bricks_Ready_For_Output->push_back(BRICK_NOT_READY);
+		_Bricks_Ready_For_Output->push_back(BRICK_NOT_READY);
 	}
 }
 
@@ -64,24 +69,6 @@ void Cancel_Order(int index, std::vector<std::deque<Order>>* Manipulator_Order_L
 
 }
 
-//------------------------BRICK CLASS ----------------------------------------
-short Brick::size = 0; //former E  FUCK IT, IT WAS THIS!!!! JAGM
-Brick::Brick(short argType, int argPosition, short argAssignedPallet, short argDNI)
-{
-	Type = argType;
-	Position = argPosition;
-	AssignedPallet = argAssignedPallet;
-	DNI=argDNI;
-}
-
-//------------------------ORDER CLASS ----------------------------------------
-Order::Order(int mWhen, bool mWhere, bool mWhat)
-{
-
-	When = mWhen;
-	Where = mWhere;
-	What = mWhat;
-}
 
 int Calculate_Advance(long* PreviousValueOfTheLineEncoder)
 {
@@ -349,8 +336,8 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 			//PhotosensorOfManipulator_Previous.at(i)=1;
 			_Pallet_LowSpeedPulse_Height_List->at(i)= DesiredRoboticArm(ArmIndex)->ActualValueEncoder - RoboticArm::Z_AxisDeceletationDistance;
 			std::cout<< "Updated height value to "<< _Pallet_LowSpeedPulse_Height_List->at(i) <<std::endl;
-			//PhotosensorOfManipulator_Previous.at(i) = DesiredRoboticArm(ArmIndex)->PhotosensorOfManipulator;
-			_Bricks_Ready_For_Output->at(i) = 0;
+			PhotosensorOfManipulator_Previous.at(i) = DesiredRoboticArm(ArmIndex)->PhotosensorOfManipulator;
+			_Bricks_Ready_For_Output->at(i) = BRICK_NOT_READY;
 		}
 
 		//Brick discharged on the line
@@ -831,9 +818,9 @@ void CheckForBricksAtTheTop(std::vector<int>* _Bricks_Ready_For_Output, int _Raw
 	for(int i=9; i>=0; i--)//for every pallet
 	{
 		//_Bricks_Ready_For_Output:
-		//	it's 0	when it does not match the top
-		//	it's -1 when it has been assigned a gap
-		//	it's 1	when it matches the top but it has not been assigned a gap
+		//	it's 0	when it does not match the top (BRICK_NOT_READY)
+		//	it's -1 when it has been assigned a gap (BRICK_READY_SPOT_ASSIGNED)
+		//	it's 1	when it matches the top but it has not been assigned a gap (BRICK_READY_NO_SPOT_ASSIGNED)
 		/*
 		if(i==4){
 				std::cout<< "The top at the pallet " << i+1
@@ -848,18 +835,18 @@ void CheckForBricksAtTheTop(std::vector<int>* _Bricks_Ready_For_Output, int _Raw
 				std::cout<< std::endl;
 		}
 		*/
-		bool MatchingTop=false;
+		bool MatchingTop = false;
 		if(StorageGetNumberOfBricks(i+1)>0)
-			MatchingTop= (StorageGetRaw(i+1, StorageGetNumberOfBricks(i+1)) == _RawCurrentPackagingBrick);
+			MatchingTop = (StorageGetRaw(i+1, StorageGetNumberOfBricks(i+1)) == _RawCurrentPackagingBrick);
 
-		if(MatchingTop == 0) //check for not matching top
+		if(MatchingTop == false)
 		{
-			_Bricks_Ready_For_Output->at(i)=0;
+			_Bricks_Ready_For_Output->at(i) = BRICK_NOT_READY;
 		}
-		else if(MatchingTop && _Bricks_Ready_For_Output->at(i) !=-1) //If the top matches and it has not been assigned yet
+		else if(MatchingTop && _Bricks_Ready_For_Output->at(i) != BRICK_READY_SPOT_ASSIGNED) //If the top matches and it has not been assigned yet
 		{
 			//Assign the brick to a gap.
-			_Bricks_Ready_For_Output->at(i) =1;
+			_Bricks_Ready_For_Output->at(i) = BRICK_READY_NO_SPOT_ASSIGNED;
 			//std::cout<< "Brick at pallet " << i+1
 			//		 << "matches the packing type and has not been assigned a manipulator for take out yet" <<std::endl;
 		}
@@ -881,7 +868,7 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 		int Spot=0;
 		//If a gap is required for this pallet and its manipulator is enabled as output (2) or in/out (1)
 		if	(
-				_Bricks_Ready_For_Output->at(i) == 1 &&	//1 = Gap required
+				_Bricks_Ready_For_Output->at(i) == BRICK_READY_NO_SPOT_ASSIGNED &&
 				_Manipulator_Modes.at(destinationManipulator) == MODE_INOUT
 			)
 		{
@@ -1010,7 +997,7 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 					//  Brick  | newSPOT | AssignedSpot |SPOT |  Brick  |   ...   |  FRONT  |
 					//---------+---------+--------------+-----+---------+---------+---------+
 
-					_Bricks_Ready_For_Output->at(i) = -1;
+					_Bricks_Ready_For_Output->at(i) = BRICK_READY_SPOT_ASSIGNED;
 					std::cout << "Spot found!!, for the 'brick' with index " << j << " Assigned to Manipulator " << destinationManipulator  <<  std::endl;
 
 					//Insert two items just after that place, so the middle spot can be assigned for the operation
@@ -1072,7 +1059,7 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 			{
 				Brick TemporaryGapToUse(0, -50000, i+1, 0);
 				_ManipulatorOrderList->AddOrder(TemporaryGapToUse, _Manipulator_Fixed_Position);
-				_Bricks_Ready_For_Output->at(i) = -1; //This means that the brick has been already flagged as pick up.
+				_Bricks_Ready_For_Output->at(i) = BRICK_READY_SPOT_ASSIGNED; //This means that the brick has been already flagged as pick up.
 				SPOTFOUND.at(i)=0;					  //But we haven't found a place yet for this brick
 				SPOTNEEDED.at(i)=1;					  //ANd we need a spot for this brick
 
@@ -1354,5 +1341,14 @@ void * AlgorithmV2(void *Arg)
 		//After that, return to IN/OUT Mode
 
 		ProcessOrdersToPLC(&Manipulator_Order_List, Pallet_LowSpeedPulse_Height_List);
+
+#define __BLOCKING_MODE 1
+#if __BLOCKING_MODE
+		pthread_mutex_lock(&read_mutex);
+		pthread_cond_wait(&read_condition, &read_mutex);
+		pthread_mutex_unlock(&read_mutex);
+#endif
+
 	}
+	pthread_exit(NULL);
 }

@@ -243,6 +243,7 @@ int PetitionOf_FormatMemory(int RFIDServer, short Channel){
 		std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 0;
 	}
+	return 0;
 }
 
 int PetitionOf_AddBrick(int RFIDServer, short Channel,int Grade, int Colour){

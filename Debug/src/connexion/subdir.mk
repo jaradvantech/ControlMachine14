@@ -4,6 +4,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
+../src/connexion/JSON_FindAndAdd.cpp \
 ../src/connexion/TCPClientLibrary.cpp \
 ../src/connexion/TCPServerLibrary.cpp \
 ../src/connexion/connexionDisplay.cpp \
@@ -12,6 +13,7 @@ CPP_SRCS += \
 ../src/connexion/connexionRFID.cpp 
 
 OBJS += \
+./src/connexion/JSON_FindAndAdd.o \
 ./src/connexion/TCPClientLibrary.o \
 ./src/connexion/TCPServerLibrary.o \
 ./src/connexion/connexionDisplay.o \
@@ -20,6 +22,7 @@ OBJS += \
 ./src/connexion/connexionRFID.o 
 
 CPP_DEPS += \
+./src/connexion/JSON_FindAndAdd.d \
 ./src/connexion/TCPClientLibrary.d \
 ./src/connexion/TCPServerLibrary.d \
 ./src/connexion/connexionDisplay.d \

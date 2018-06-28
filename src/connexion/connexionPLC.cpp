@@ -283,7 +283,7 @@ int TS7Client::PDULength()
 {
     int Requested, Negotiated;
     if (Cli_GetPduLength(Client, &Requested, &Negotiated)==0){
-        return Negotiated;byte Buffer[1];
+        return Negotiated;
     }    else{
         return 0;
     }
