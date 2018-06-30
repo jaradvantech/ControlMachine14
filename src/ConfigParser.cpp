@@ -9,13 +9,29 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <cmath>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/spirit/home/support/detail/hold_any.hpp>
 #include <boost/any.hpp>
 #include "ConfigParser.h"
 
+#define PALLETS  2 //How many pallets every manipulator has
+#define CHANNELS 4 //How many channels every RFIS server has
 
+/* RBS. Config file description
+ * Line 1: Number of arms in this machine
+ * Line 2: Position of the manipulators in encoder units
+ * Line 3: IPs of RFID servers
+ * Line 4: Ports of RFID servers
+ * Line 5: Array of manipulator modes
+ * Line 6: Grade of tile being currently packaged
+ * Line 7: Color of tile being currently packaged
+ * Line 8: IP address(es) of the PLC(s)
+ * Line 9: Mechanical parameters. 0=SetAxisGoBackToTheWaitingPositionInAdvance
+ * 								  1=StandByValue
+ * Line 10: ...
+ */
 
 ConfigParser::ConfigParser()
 {
@@ -35,75 +51,170 @@ void ConfigParser::SetConfigFilename(std::string mFilename)
 //--------------------------------------------------
 //Use this functions as template
 
+int ConfigParser::GetNumberOfArms()
+{
+	return ReadLineAndAddToVector<int>(1).at(0);
+}
+
+int ConfigParser::GetNumberOfRFIDservers()
+{
+	return ceil(((double)GetNumberOfArms()*PALLETS)/CHANNELS);
+}
+
 std::vector<int> ConfigParser::GetArmPositions()
 {
-	return ReadLineAndAddToVector<int>(1);
+	//If configuration is not complete, fill with defaults to avoid crashings.
+	std::vector<int> saved_positions = ReadLineAndAddToVector<int>(2);
+	std::vector<int> total_positions;
+	int total_arms = GetNumberOfArms();
+	int total_saved_arm_positions = saved_positions.size();
+	for(int i=0; i<total_arms; i++)
+	{
+		if(i<total_saved_arm_positions)
+			total_positions.push_back(saved_positions.at(i));
+		else
+			total_positions.push_back(0); //Default
+	}
+	return total_positions;
 }
 
 void ConfigParser::SetArmPositions(std::vector<int> ArmPositions)
 {
-	if(ArmPositions.size() < 1) throw "ConfigParser::SetArmPositions(): Empty data";
-	ReadVectorAndAddToTheFile<int>(ArmPositions,1);
+	ReadVectorAndAddToTheFile<int>(ArmPositions,2);
 }
 
 
 std::vector<std::string> ConfigParser::GetServerIPs()
 {
+	//If configuration is not complete, fill with defaults to avoid crashings.
+	std::vector<std::string> saved_IPs = ReadLineAndAddToVector<std::string>(3);
+	std::vector<std::string> total_IPs;
+	int total_servers = GetNumberOfRFIDservers();
+	int total_saved_IPs = saved_IPs.size();
+	for(int i=0; i<total_servers; i++)
+	{
+		if(i<total_saved_IPs)
+			total_IPs.push_back(saved_IPs.at(i));
+		else
+			total_IPs.push_back("192.168.0.0"); //Default
+	}
 
-	return ReadLineAndAddToVector<std::string>(2);
+	return total_IPs;
 }
 
 void ConfigParser::SetServerIPs(std::vector<std::string> ServerIPs)
 {
-	if(ServerIPs.size() < 1) throw "ConfigParser::SetServerIPs(): Empty data";
-	ReadVectorAndAddToTheFile<std::string>(ServerIPs,2);
+	ReadVectorAndAddToTheFile<std::string>(ServerIPs,3);
 }
 
 
 std::vector<int>ConfigParser::GetServerPorts()
 {
-	return ReadLineAndAddToVector<int>(3);
+	//If configuration is not complete, fill with defaults to avoid crashings.
+	std::vector<int> saved_ports = ReadLineAndAddToVector<int>(4);
+	std::vector<int> total_ports;
+	int total_servers = GetNumberOfRFIDservers();
+	int total_saved_servers = saved_ports.size();
+	for(int i=0; i<total_servers; i++)
+	{
+		if(i<total_saved_servers)
+			total_ports.push_back(saved_ports.at(i));
+		else
+			total_ports.push_back(0); //Default
+	}
+	return total_ports;
 }
 
 void ConfigParser::SetServerPorts(std::vector<int> ServerPorts)
 {
-	if(ServerPorts.size() < 1) throw "ConfigParser::SetServerPorts(): Empty data";
-	ReadVectorAndAddToTheFile<int>(ServerPorts,3);
+	ReadVectorAndAddToTheFile<int>(ServerPorts,4);
 }
 
 
 std::vector<int>ConfigParser::GetManipulatorModes()
 {
-	return ReadLineAndAddToVector<int>(4);
+	//If configuration is not complete, fill with defaults to avoid crashings.
+	std::vector<int> saved_modes = ReadLineAndAddToVector<int>(5);
+	std::vector<int> total_modes;
+	int total_arms = GetNumberOfArms();
+	int total_saved_modes = saved_modes.size();
+	for(int i=0; i<total_arms; i++)
+	{
+		if(i<total_saved_modes)
+			total_modes.push_back(saved_modes.at(i));
+		else
+			total_modes.push_back(0); //Default
+	}
+	return total_modes;
 }
 
 void ConfigParser::SetManipulatorModes(std::vector<int> ManipulatorModes)
 {
-	if(ManipulatorModes.size() < 1) throw "ConfigParser::SetManipulatorModes(): Empty data";
-	ReadVectorAndAddToTheFile<int>(ManipulatorModes,4);
+	ReadVectorAndAddToTheFile<int>(ManipulatorModes,5);
 }
 
-
+//TODO TRYCATCH?
 int ConfigParser::GetPackagingGrade()
 {
-	return ReadLineAndAddToVector<int>(5).at(0);
+	return ReadLineAndAddToVector<int>(6).at(0);
 }
 
 int ConfigParser::GetPackagingColor()
 {
-	return ReadLineAndAddToVector<int>(6).at(0);
+	return ReadLineAndAddToVector<int>(7).at(0);
 }
 
 void ConfigParser::SetCurrentPackagingGrade(int PackagingGrade)
 {
 	std::vector<int> TempVector={PackagingGrade};
-	ReadVectorAndAddToTheFile<int>(TempVector,5);
+	ReadVectorAndAddToTheFile<int>(TempVector,6);
 }
 
 void ConfigParser::SetCurrentPackagingColor(int PackagingColor)
 {
 	std::vector<int> TempVector={PackagingColor};
-	ReadVectorAndAddToTheFile<int>(TempVector,6);
+	ReadVectorAndAddToTheFile<int>(TempVector,7);
+}
+
+std::string ConfigParser::GetPLCAddress()
+{
+	std::string PLC_adddress; //TODO replace this with a function in config parser to load default parameters
+	try
+	{
+		PLC_adddress = ReadLineAndAddToVector<std::string>(8).at(0);
+	}
+	catch(const std::out_of_range& exc)
+	{
+		PLC_adddress = "127.0.0.1"; //default
+	}
+	return PLC_adddress;
+}
+
+void ConfigParser::SetPLCAddress(std::string PLC_address)
+{
+	std::vector<std::string> TempVector={PLC_address};
+	ReadVectorAndAddToTheFile<std::string>(TempVector,8);
+}
+
+std::vector<int> ConfigParser::GetMechanicalParameters()
+{
+	//If configuration is not complete, fill with defaults to avoid crashings.
+	std::vector<int> saved_parameters = ReadLineAndAddToVector<int>(9);
+	std::vector<int> total_parameters;
+	int total_saved_paramters = saved_parameters.size();
+	for(int i=0; i<2; i++)
+	{
+		if(i<total_saved_paramters)
+			total_parameters.push_back(saved_parameters.at(i));
+		else
+			total_parameters.push_back(0); //Default
+	}
+	return total_parameters;
+}
+
+void ConfigParser::SetMechanicalParameters(std::vector<int> MechanicalParameters)
+{
+	ReadVectorAndAddToTheFile<int>(MechanicalParameters,9);
 }
 
 //--------------------------------------------------

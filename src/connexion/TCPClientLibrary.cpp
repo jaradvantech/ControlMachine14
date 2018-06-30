@@ -6,6 +6,10 @@
  */
 #include <TCPClientLibrary.h>
 
+/* RBS
+ * TODO: rewrite this file to use more cplusplusy <iostream> instead of plain old printf.
+ * TODO: Add another abstraction layer to make it an actual library .-.
+ */
 
 TCPClient::TCPClient()
 {
@@ -26,7 +30,7 @@ bool TCPClient::setup(std::string address , int port)
     		}
         }
 
-  	if(inet_addr(address.c_str()) == -1)
+  	if(inet_addr(address.c_str()) == (unsigned) -1)
   	{
     		struct hostent *he;
     		struct in_addr **addr_list;

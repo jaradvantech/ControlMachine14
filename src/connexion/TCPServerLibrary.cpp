@@ -283,6 +283,8 @@ void * OpenServer(void *Arg)
 							   !boost::contains(bufferRead_Line, "PLRD") &&
 							   !boost::contains(bufferRead_Line, "FOTP") &&
 							   !boost::contains(bufferRead_Line, "GDIS") &&
+							   !boost::contains(bufferRead_Line, "SCFG") &&
+							   !boost::contains(bufferRead_Line, "GCFG") &&
         					   !boost::contains(bufferRead_Line, "PING")
         					){
             					std::cout << "Received  :  " << bufferRead_Line << std::endl;

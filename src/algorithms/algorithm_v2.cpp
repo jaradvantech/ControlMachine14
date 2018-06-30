@@ -5,8 +5,6 @@
  *      Author: Jose Andres Grau Martinez
  */
 
-
-
 #include "algorithm_v2.h"
 #include <string>
 #include <iostream>
@@ -17,12 +15,14 @@
 #include "StorageInterface.h"
 #include "RoboticArmInfo.h"
 #include "ConfigParser.h"
+#include "ScoreCalculation.h"
 #include <algorithm>
 
-#define MODE_INPUT  0
-#define MODE_INOUT  1
-#define MODE_OUTPUT	2
+#define MODE_INPUT    0
+#define MODE_INOUT    1
+#define MODE_OUTPUT	  2
 #define MODE_DISABLED 3
+#define MODE_MAMUAL   4 //RBS this is just an idea (?) Not implemented.
 
 #define BRICK_READY_SPOT_ASSIGNED		-1
 #define BRICK_READY_NO_SPOT_ASSIGNED	 1
@@ -38,6 +38,7 @@ void SetNumberOfManipulators(OrderManager* _Manipulator_Order_List,
 		std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 		std::vector<int>* _Bricks_Ready_For_Output,
 		std::vector<Brick>* _Manipulator_TakenBrick,
+		std::deque<int>* _DNI_List,
 		short _NumberOfManipulators)
 {
 	_Manipulator_Order_List->SetNumberOfArms(_NumberOfManipulators);
@@ -50,6 +51,12 @@ void SetNumberOfManipulators(OrderManager* _Manipulator_Order_List,
 		_Pallet_LowSpeedPulse_Height_List->push_back(5000);
 		_Bricks_Ready_For_Output->push_back(BRICK_NOT_READY);
 		_Bricks_Ready_For_Output->push_back(BRICK_NOT_READY);
+	}
+
+	//Fill DNIs
+	const int _MAXIMUMNUMBEROFBRICKSONLINE=10;
+	for(int i=1;i<=_MAXIMUMNUMBEROFBRICKSONLINE;i++){
+		_DNI_List->push_back(i);
 	}
 }
 
@@ -212,8 +219,8 @@ void update_list(std::deque<Brick>* mBrickList,
 
 			if(mBrickList->at(i).Position > _Manipulator_Fixed_Position.at(IndexAssignedManipulator)-100 &&
 			   mBrickList->at(i).Position < _Manipulator_Fixed_Position.at(IndexAssignedManipulator)+100 &&
-			   DesiredRoboticArm(IndexAssignedManipulator+1)->CatchOrDrop==1 // &&
-			   //DesiredRoboticArm(IndexAssignedManipulator+1)->PhotosensorOfManipulator == 1
+			   getArm(IndexAssignedManipulator+1)->CatchOrDrop==1 // &&
+			   //getArm(IndexAssignedManipulator+1)->PhotosensorOfManipulator == 1
 			   ) //If it's in its range
 			{
 				//Add that brick to _Manipulator_TakenBrick
@@ -260,14 +267,14 @@ void update_order_list(OrderManager* _Manipulator_Order_List, int _EncoderAdvanc
 		if(_Manipulator_Order_List->atManipulator(i)->NumberOfOrders()>0 &&
 				(
 				((_Manipulator_Order_List->atManipulator(i)->getOrder_byIndex(0)->When<=-2000) &&
-				DesiredRoboticArm(i+1)->ManipulatorStatePosition==1)
+				getArm(i+1)->ManipulatorStatePosition==1)
 				||
 				 _Manipulator_Order_List->atManipulator(i)->getOrder_byIndex(0)->When<=-15000))// the first order TODO: JAGM remember that it has to be changed back to K, for safety reasons.
 		{
 			//PLC needs to have this cleaned to 0 between orders
-				DesiredRoboticArm(i+1)->WhatToDoWithTheBrick = 0;
-				DesiredRoboticArm(i+1)->CatchOrDrop = 0;
-				DesiredRoboticArm(i+1)->PulseZAxis = 0;
+				getArm(i+1)->WhatToDoWithTheBrick = 0;
+				getArm(i+1)->CatchOrDrop = 0;
+				getArm(i+1)->PulseZAxis = 0;
 			std::cout << "Order expired, probably executed at manipulator "<< i+1 << std::endl;
 			_Manipulator_Order_List->atManipulator(i)->RemoveFirstOrder();
 		}
@@ -292,10 +299,10 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 		int ArmIndex=(i/2)+1; //001 , 101
 
 		//Brick stored at a pallet
-		if(DesiredRoboticArm(ArmIndex)->CatchOrDrop==1 && DesiredRoboticArm(ArmIndex)->HasDischarged == 1 &&
+		if(getArm(ArmIndex)->CatchOrDrop==1 && getArm(ArmIndex)->HasDischarged == 1 &&
 				HasDischarged_Previous.at(i)==0 && _Manipulator_TakenBrick->at(ArmIndex-1).DNI!=0)
 		{
-			_Pallet_LowSpeedPulse_Height_List->at(i)= DesiredRoboticArm(ArmIndex)->ActualValueEncoder - RoboticArm::Z_AxisDeceletationDistance;
+			_Pallet_LowSpeedPulse_Height_List->at(i)= getArm(ArmIndex)->ActualValueEncoder - RoboticArm::Z_AxisDeceletationDistance;
 			std::cout<< "Updated height value to "<< _Pallet_LowSpeedPulse_Height_List->at(i) <<std::endl;
 
 			std::cout<< "We are going to use the arm "<< ArmIndex << " to put a brick " <<
@@ -312,14 +319,14 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 
 
 		//Brick taken by a manipulator
-		else if(DesiredRoboticArm(ArmIndex)->CatchOrDrop == 2 && DesiredRoboticArm(ArmIndex)->PhotosensorOfManipulator == 1 &&
+		else if(getArm(ArmIndex)->CatchOrDrop == 2 && getArm(ArmIndex)->PhotosensorOfManipulator == 1 &&
 				PhotosensorOfManipulator_Previous.at(i)==0)
 		{
 			//Add Brick to the manipulator Taken Brick.
 			// i will iterate every pallet to
 			int pallet = 0;
-			if (DesiredRoboticArm(ArmIndex)->WhatToDoWithTheBrick == 1) 	 pallet=ArmIndex*2-1;	 // right
-			else if	(DesiredRoboticArm(ArmIndex)->WhatToDoWithTheBrick == 2) pallet=ArmIndex*2;	 //left
+			if (getArm(ArmIndex)->WhatToDoWithTheBrick == 1) 	 pallet=ArmIndex*2-1;	 // right
+			else if	(getArm(ArmIndex)->WhatToDoWithTheBrick == 2) pallet=ArmIndex*2;	 //left
 			std::cout<< "Brick taken at the pallet " << pallet << std::endl;
 			std::cout<< "The number of bricks before the pick up was " << StorageGetNumberOfBricks(pallet)<< std::endl; // says 0
 			if(StorageGetNumberOfBricks(pallet)>0)
@@ -334,14 +341,14 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 				StorageDeleteBrick(pallet,StorageGetNumberOfBricks(pallet));
 			}
 			//PhotosensorOfManipulator_Previous.at(i)=1;
-			_Pallet_LowSpeedPulse_Height_List->at(i)= DesiredRoboticArm(ArmIndex)->ActualValueEncoder - RoboticArm::Z_AxisDeceletationDistance;
+			_Pallet_LowSpeedPulse_Height_List->at(i)= getArm(ArmIndex)->ActualValueEncoder - RoboticArm::Z_AxisDeceletationDistance;
 			std::cout<< "Updated height value to "<< _Pallet_LowSpeedPulse_Height_List->at(i) <<std::endl;
-			PhotosensorOfManipulator_Previous.at(i) = DesiredRoboticArm(ArmIndex)->PhotosensorOfManipulator;
+			PhotosensorOfManipulator_Previous.at(i) = getArm(ArmIndex)->PhotosensorOfManipulator;
 			_Bricks_Ready_For_Output->at(i) = BRICK_NOT_READY;
 		}
 
 		//Brick discharged on the line
-		else if(DesiredRoboticArm(ArmIndex)->CatchOrDrop == 2 && DesiredRoboticArm(ArmIndex)->HasDischarged == 1 &&
+		else if(getArm(ArmIndex)->CatchOrDrop == 2 && getArm(ArmIndex)->HasDischarged == 1 &&
 				HasDischarged_Previous.at(i)==0)
 		{
 			std::cout << "Discharge operation detected at manipulator " << ArmIndex <<std::endl;
@@ -351,8 +358,8 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 						 << "(i+1)" << (i+1) << std::endl;
 
 				int pallet=0;
-				if (DesiredRoboticArm(ArmIndex)->WhatToDoWithTheBrick == 1) 	 pallet=ArmIndex*2-1;	 // right
-				else if	(DesiredRoboticArm(ArmIndex)->WhatToDoWithTheBrick == 2) pallet=ArmIndex*2;	 //left
+				if (getArm(ArmIndex)->WhatToDoWithTheBrick == 1) 	 pallet=ArmIndex*2-1;	 // right
+				else if	(getArm(ArmIndex)->WhatToDoWithTheBrick == 2) pallet=ArmIndex*2;	 //left
 
 				if(_ListOfBricksOnLine->at(j).AssignedPallet==pallet)// &&
 						//_ListOfBricksOnLine->at(j).Type==0					//&&
@@ -373,10 +380,10 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 			}
 		}
 
-		HasDischarged_Previous.at((ArmIndex*2)-2) = DesiredRoboticArm(ArmIndex)->HasDischarged;
-		HasDischarged_Previous.at((ArmIndex*2)-1) = DesiredRoboticArm(ArmIndex)->HasDischarged;
-		PhotosensorOfManipulator_Previous.at((ArmIndex*2)-2) = DesiredRoboticArm(ArmIndex)->PhotosensorOfManipulator;
-		PhotosensorOfManipulator_Previous.at((ArmIndex*2)-1) = DesiredRoboticArm(ArmIndex)->PhotosensorOfManipulator;
+		HasDischarged_Previous.at((ArmIndex*2)-2) = getArm(ArmIndex)->HasDischarged;
+		HasDischarged_Previous.at((ArmIndex*2)-1) = getArm(ArmIndex)->HasDischarged;
+		PhotosensorOfManipulator_Previous.at((ArmIndex*2)-2) = getArm(ArmIndex)->PhotosensorOfManipulator;
+		PhotosensorOfManipulator_Previous.at((ArmIndex*2)-1) = getArm(ArmIndex)->PhotosensorOfManipulator;
 	}
 }
 
@@ -385,102 +392,6 @@ void FillDNIs(std::deque<int>* _DNI_List){
 	for(int i=1;i<=_MAXIMUMNUMBEROFBRICKSONLINE;i++){
 		_DNI_List->push_back(i);
 	}
-}
-
-int CheckForSurfaceCoincidence(int StorageNumber, int Grade, int Colour)
-{
-
-	return StorageGetRaw(StorageNumber, StorageGetNumberOfBricks(StorageNumber)) == (Colour << 4) + Grade;
-}
-
-int CheckForFirstMatch(int StorageNumber,int Grade, int Colour)
-{
-	int NumberOfBricks=StorageGetNumberOfBricks(StorageNumber);
-	int PositionOfMatch=NumberOfBricks;
-	int BrickRaw=(Colour << 4) + Grade;
-
-	while(BrickRaw!=StorageGetRaw(StorageNumber,PositionOfMatch) || PositionOfMatch>=1) //Iterate until a match or end of pallet
-	{
-		PositionOfMatch--;
-	}
-
-	if(PositionOfMatch==0)return -1;
-
-	return NumberOfBricks-PositionOfMatch;
-}
-
-int CheckQuantityContained(int StorageNumber, int BrickRaw)
-{
-	int NumberOfBricks=StorageGetNumberOfBricks(StorageNumber);
-	int matches=0;
-
-	for(int i=0; i<NumberOfBricks; i++)
-		if(StorageGetRaw(StorageNumber, i) == BrickRaw)
-			matches++;
-
-	return matches;
-}
-
-int CheckInputScore(int NumberOfPallet, int TypeOfTheBrick , int _RawCurrentPackagingBrick)
-{
-	//When checking the Input Score we have to take in account :
-	//-TOP at the pallet matches our brick
-	//-Total ammount of bricks
-	//-Percentage of equal in the pallet
-	//-Relative position to the beginning of the line
-
-	//---------------------------------------------------------
-	int POINTS_OF_TOP_matches_our_brick;
-
-	if(StorageGetNumberOfBricks(NumberOfPallet)>0 &&
-			TypeOfTheBrick != StorageGetRaw(NumberOfPallet, StorageGetNumberOfBricks(NumberOfPallet))
-	&& _RawCurrentPackagingBrick != StorageGetRaw(NumberOfPallet, StorageGetNumberOfBricks(NumberOfPallet)))
-	{//If our brick does not match the top, but the packing type is different from the top, just bad points
-		POINTS_OF_TOP_matches_our_brick=30;
-	}
-	else if(StorageGetNumberOfBricks(NumberOfPallet)>0 &&
-			TypeOfTheBrick != StorageGetRaw(NumberOfPallet, StorageGetNumberOfBricks(NumberOfPallet))
-		 && _RawCurrentPackagingBrick == StorageGetRaw(NumberOfPallet, StorageGetNumberOfBricks(NumberOfPallet)))
-	{//If our brick does not match the top, but the packing type is equal to the top, very bad points
-		POINTS_OF_TOP_matches_our_brick=100;
-
-	}
-	else if(StorageGetNumberOfBricks(NumberOfPallet)>0 &&
-			TypeOfTheBrick == StorageGetRaw(NumberOfPallet, StorageGetNumberOfBricks(NumberOfPallet)))
-	{//If our brick matches the top, regardless packing type, good points
-		POINTS_OF_TOP_matches_our_brick=5;
-	}
-	else if(StorageGetNumberOfBricks(NumberOfPallet)==0)
-	{
-		//If the pallet is empty, it doesn't match the top. but it's slightly better
-		POINTS_OF_TOP_matches_our_brick = 15;
-	}
-
-	//---------------------------------------------------------
-	//---------------------------------------------------------
-	int POINTS_OF_Total_ammount=StorageGetNumberOfBricks(NumberOfPallet);
-
-	//---------------------------------------------------------
-	//---------------------------------------------------------
-
-	int POINTS_OF_Percentaje_of_equal_in_the_pallet=1;
-	//TODO: uncomment this
-	//POINTS_OF_Percentaje_of_equal_in_the_pallet=100-100*
-	//	((float)CheckQuantityContained(NumberOfPallet, _BrickToClassify.Type))
-	//						/
-	//	((float)StorageGetNumberOfBricks(NumberOfPallet)));
-	//---------------------------------------------------------
-	//---------------------------------------------------------
-	int POINTS_OF_Relative_position=(NumberOfPallet+1)/2;
-
-	return POINTS_OF_TOP_matches_our_brick * 10
-		 + POINTS_OF_Percentaje_of_equal_in_the_pallet * 1
-		 + POINTS_OF_Total_ammount * 1
-		 + POINTS_OF_Relative_position * 1;
-
-
-
-
 }
 
 void Choose_Best_Pallet(Brick* _BrickToClassify,
@@ -689,36 +600,36 @@ void ProcessOrdersToPLC(OrderManager* _ManipulatorOrderList, const std::vector<i
 			//WHAT TO DO WITH THE BRICK
 
 			if(_ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->Where){
-				DesiredRoboticArm(i+1)->WhatToDoWithTheBrick = 1; //right side
+				getArm(i+1)->WhatToDoWithTheBrick = 1; //right side
 			}
 			else
 			{
-				DesiredRoboticArm(i+1)->WhatToDoWithTheBrick = 2;	//left side
+				getArm(i+1)->WhatToDoWithTheBrick = 2;	//left side
 			}
 
 			//CATH OR DROP
 
-			if(_ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->What==false) DesiredRoboticArm(i+1)->CatchOrDrop=1;
-			else DesiredRoboticArm(i+1)->CatchOrDrop=2;
+			if(_ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->What==false) getArm(i+1)->CatchOrDrop=1;
+			else getArm(i+1)->CatchOrDrop=2;
 
 			//VALUE OF CATH OR DROP
 			if(RoboticArm::ActualValueOfTheLineEncoder + _ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->When <100000)
 			{
-				DesiredRoboticArm(i+1)->ValueOfCatchDrop = RoboticArm::ActualValueOfTheLineEncoder + _ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->When;
+				getArm(i+1)->ValueOfCatchDrop = RoboticArm::ActualValueOfTheLineEncoder + _ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->When;
 			}
 			else
 			{
-				DesiredRoboticArm(i+1)->ValueOfCatchDrop = RoboticArm::ActualValueOfTheLineEncoder + _ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->When - 100000;
+				getArm(i+1)->ValueOfCatchDrop = RoboticArm::ActualValueOfTheLineEncoder + _ManipulatorOrderList->atManipulator(i)->getOrder_byIndex(0)->When - 100000;
 			}
 			//THE PULSE OF Z AXIS
-			//DesiredRoboticArm(i+1)->PulseZAxis=_Pallet_LowSpeedPulse_Height_List.at(i*2+(DesiredRoboticArm(i+1)->WhatToDoWithTheBrick-1));
-			DesiredRoboticArm(i+1)->PulseZAxis=_Pallet_LowSpeedPulse_Height_List.at(i*2+(DesiredRoboticArm(i+1)->WhatToDoWithTheBrick-1));//0
+			//getArm(i+1)->PulseZAxis=_Pallet_LowSpeedPulse_Height_List.at(i*2+(getArm(i+1)->WhatToDoWithTheBrick-1));
+			getArm(i+1)->PulseZAxis=_Pallet_LowSpeedPulse_Height_List.at(i*2+(getArm(i+1)->WhatToDoWithTheBrick-1));//0
 		}
 		else
 		{
-				DesiredRoboticArm(i+1)->WhatToDoWithTheBrick = 0;
-				DesiredRoboticArm(i+1)->CatchOrDrop = 0;
-				DesiredRoboticArm(i+1)->ValueOfCatchDrop = 0;
+				getArm(i+1)->WhatToDoWithTheBrick = 0;
+				getArm(i+1)->CatchOrDrop = 0;
+				getArm(i+1)->ValueOfCatchDrop = 0;
 		}
 	}
 }
@@ -1049,12 +960,12 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 			if(_ManipulatorOrderList->atManipulator(destinationManipulator)->NumberOfOrders()==0 &&
 			   _Manipulator_TakenBrick.at(destinationManipulator).Type == 0 &&
 				_Bricks_Ready_For_Output->at(i) == 1 && //This means that I have a brick that needs to go to the line
-				DesiredRoboticArm(destinationManipulator+1)->ManipulatorStatePosition==1 && //&&
-				DesiredRoboticArm(destinationManipulator+1)->ManipulatorRepositionState==2 //&&
+				getArm(destinationManipulator+1)->ManipulatorStatePosition==1 && //&&
+				getArm(destinationManipulator+1)->ManipulatorRepositionState==2 //&&
 				&& Algorithm::OUTPUTCOOLDOWN.at(destinationManipulator)<=0
-				//DesiredRoboticArm(destinationManipulator+1)->WhatToDoWithTheBrick == 0 &&
-				//DesiredRoboticArm(i+1)->CatchOrDrop == 0 &&
-				//DesiredRoboticArm(i+1)->PulseZAxis == 0
+				//getArm(destinationManipulator+1)->WhatToDoWithTheBrick == 0 &&
+				//getArm(i+1)->CatchOrDrop == 0 &&
+				//getArm(i+1)->PulseZAxis == 0
 			    )
 			{
 				Brick TemporaryGapToUse(0, -50000, i+1, 0);
@@ -1083,7 +994,7 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 
 			if(_ManipulatorOrderList->atManipulator(destinationManipulator)->NumberOfOrders()!=0 &&
 			   _Manipulator_TakenBrick.at(destinationManipulator).Type != 1 &&
-			   DesiredRoboticArm(destinationManipulator+1)->DischargedTheBrickConfirm==1 &&
+			   getArm(destinationManipulator+1)->DischargedTheBrickConfirm==1 &&
 				SPOTFOUND.at(i) == 0 && SPOTNEEDED.at(i)==1)
 			{
 				for(unsigned int j=0; j<Bricks_On_The_Line->size(); j++)
@@ -1209,7 +1120,7 @@ void CheckManualModes(OrderManager* _Manipulator_Order_List,
 			 std::deque<int>* Available_DNI_List){
 	for(unsigned int i=0; i<_Manipulator_Order_List->NumberOfManipulators(); i++){
 
-		if(DesiredRoboticArm(i+1)->ManipulatorMode==0)
+		if(getArm(i+1)->ManipulatorMode==0)
 		{
 			_Manipulator_Order_List->atManipulator(i)->ClearOrders();
 			_Bricks_Ready_For_Output->at(i*2)=0;
@@ -1235,8 +1146,9 @@ void * AlgorithmV2(void *Arg)
 			&Pallet_LowSpeedPulse_Height_List,
 			&Bricks_Ready_For_Output,
 			&Manipulator_TakenBrick,
+			&Available_DNI_List,
 			Manipulator_Fixed_Position.size());
-	FillDNIs(&Available_DNI_List);
+
 	if(Manipulator_Fixed_Position.size()>0){
 		Bricks_On_The_Line.push_back(Brick(0,Manipulator_Fixed_Position.back()+2*E,0,0));
 	} else {

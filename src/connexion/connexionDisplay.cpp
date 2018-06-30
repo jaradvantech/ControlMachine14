@@ -33,7 +33,7 @@ void Command_PGSI(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 
 	int selectedArm=1;
 	FindAndAddTo(DOC_in, "selectedArm", &selectedArm);
-	RoboticArm* mArm = DesiredRoboticArm(selectedArm);
+	RoboticArm* mArm = getArm(selectedArm);
 
 	//Arm specific variables (for the selected Manipulator)
 	AnswerWriter->Key("selectedArm");
@@ -80,7 +80,6 @@ void Command_PGSI(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	AnswerWriter->Int(mArm->SystemState);
 	AnswerWriter->Key("actualValueOfTheLineEncoder");
 	AnswerWriter->Int(mArm->ActualValueOfTheLineEncoder);
-	std::cout << mArm->ActualValueOfTheLineEncoder << std::endl;
 	AnswerWriter->Key("enterTheTileStartingCodeValue");
 	AnswerWriter->Int(mArm->EnterTheTileStartingCodeValue);
 	AnswerWriter->EndObject();
@@ -94,7 +93,7 @@ void Command_PWDA(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 {
 	int selectedArm=1; //RBS default 1, so we can start and stop the motor without sending this parameter.
 	FindAndAddTo(DOC_in, "selectedArm", &selectedArm);
-	RoboticArm* mArm = DesiredRoboticArm(selectedArm);
+	RoboticArm* mArm = getArm(selectedArm);
 
 	//These names were poorly translated from chinese. It is a nightmare, but not our fault
 	FindAndAddTo(DOC_in, "SBD", &mArm->StorageBinDirection);
@@ -131,6 +130,8 @@ void Command_PWDA(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	AnswerWriter->Int(mArm->ManualLeftRight);
 	AnswerWriter->Key("MUDFeedback");
 	AnswerWriter->Int(mArm->ManualUpDown);
+	AnswerWriter->Key("encoderFeedback");
+	AnswerWriter->Int(mArm->ActualValueOfTheLineEncoder);
 	AnswerWriter->EndObject();
 }
 
@@ -154,10 +155,7 @@ void Command_RGMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	AnswerWriter->StartArray();
 	for(int i=0; i<StorageGetNumberOfBricks(selectedPallet); i++)
 	{
-		AnswerWriter->StartObject();
-		AnswerWriter->Key("memoryValue");
-		AnswerWriter->Int(StorageGetRaw(selectedPallet, i+1)); //RBS +1 because 0 represents ust the number of bricks
-		AnswerWriter->EndObject();								//Just another side effect of the index salad.
+		AnswerWriter->Int(StorageGetRaw(selectedPallet, i+1)); //RBS +1 because 0 represents just the number of bricks
 	}
 	AnswerWriter->EndArray();
 	AnswerWriter->EndObject();
@@ -232,12 +230,10 @@ void Command_RGUV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
  */
 void Command_RPRV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
+	int NumberOfPallets = 2 * getTotalArms();
+
 	DOC_in.IsNull();
 	AnswerWriter->StartObject();
-
-	//Get the number of pallets from the command. //TODO RBS this should be detected automatically.
-	int NumberOfPallets;
-	FindAndAddTo(DOC_in, "numberOfPallets", &NumberOfPallets);
 
 	//Write Pallet Information
 	AnswerWriter->Key("command_ID");
@@ -296,9 +292,9 @@ void Command_RPRV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	{
 			AnswerWriter->StartObject();
 			AnswerWriter->Key("currentXEncoderValue");
-			AnswerWriter->Int(DesiredRoboticArm(i+1)->ActualValueEncoder);
+			AnswerWriter->Int(getArm(i+1)->ActualValueEncoder);
 			AnswerWriter->Key("valueOfCatchDrop");
-			AnswerWriter->Int(DesiredRoboticArm(i+1)->ValueOfCatchDrop);
+			AnswerWriter->Int(getArm(i+1)->ValueOfCatchDrop);
 			AnswerWriter->Key("position");
 			AnswerWriter->Int(mListOfBricksTakenByManipulators.at(i).Position);
 			AnswerWriter->Key("type");
@@ -321,7 +317,7 @@ void Command_RPRV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
  */
 void Command_ALSC(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	ConfigParser config("/etc/unit14/unit14.conf");
+	ConfigParser config(CONFIG_FILE);
 	std::vector<int> modes;
 	int color=1, grade=1; //ConfigParser.getManipulatorNumber();
 	DOC_in.IsNull();
@@ -355,9 +351,9 @@ void Command_ALSC(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 void Command_ALGC(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
 
-	ConfigParser config("/etc/unit14/unit14.conf");
+	ConfigParser config(CONFIG_FILE);
 	std::vector<int> modes;
-	int Manipulators = 5; //ConfigParser.getManipulatorNumber();
+	int Manipulators = getTotalArms();
 
 	DOC_in.IsNull();
 	AnswerWriter->StartObject();
@@ -367,6 +363,8 @@ void Command_ALGC(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	AnswerWriter->Int(config.GetPackagingGrade());
 	AnswerWriter->Key("currentColor");
 	AnswerWriter->Int(config.GetPackagingColor());
+	AnswerWriter->Key("totalArms");
+	AnswerWriter->Int(getTotalArms());
 	AnswerWriter->Key("manipulatorModes");
 	AnswerWriter->StartArray();
 	for(int i=0; i<Manipulators; i++)
@@ -386,8 +384,7 @@ void Command_ALGC(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
  */
 void Command_CHAL(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	//Get number of arms from ConfigParser config("/etc/unit14/unit14.conf");
-	int Manipulators = 5; //ConfigParser.getManipulatorNumber();
+	int Manipulators = getTotalArms();
 
 	DOC_in.IsNull();
 	AnswerWriter->StartObject();
@@ -399,10 +396,7 @@ void Command_CHAL(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	AnswerWriter->StartArray();
 	for(int i=0; i<Manipulators; i++)
 	{
-		AnswerWriter->StartObject();
-		AnswerWriter->Key("alarmArray");
-		AnswerWriter->Int(abs(DesiredRoboticArm(i+1)->AlarmArray));
-		AnswerWriter->EndObject();
+		AnswerWriter->Int(abs(getArm(i+1)->AlarmArray));
 	}
 	AnswerWriter->EndArray();
 
@@ -418,7 +412,7 @@ void Command_SCAP(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	FindAndAddTo(DOC_in, "SBV", &SBV);
 	FindAndAddTo(DOC_in, "AGBTTWPIA", &AGBTTWPIA);
 
-	ConfigParser config("/etc/unit14/unit14.conf");
+	ConfigParser config(CONFIG_FILE);
 	//Implement: save arms to config now. THIS is where the number is stored.
 
 	std::vector<int> ArmPositions;
@@ -427,8 +421,11 @@ void Command_SCAP(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 		ArmPositions.push_back(DOC_in["positions"][i].GetInt());
 	}
 	config.SetArmPositions(ArmPositions);
-	//config.SetAxisGoBackToTheWaitingPositionInAdvance(AGBTTWPIA);
-	//config.SetZAxisStandbyValue(SBV);
+
+	std::vector<int> MechanicalParameters;
+	MechanicalParameters.push_back(AGBTTWPIA);
+	MechanicalParameters.push_back(SBV);
+	config.SetMechanicalParameters(MechanicalParameters);
 
 	//STOP PROGRAM AFTER SAVING THIS CRITICAL CONFIGURATION
 	//Resources not released, but the entire machine will be restarted after this.
@@ -515,12 +512,11 @@ void Command_FOTP(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	DOC_in.IsNull();
 
 	int destination_pallet = 0;
-	FindAndAddTo(DOC_in, "pllet", &destination_pallet);
+	FindAndAddTo(DOC_in, "pallet", &destination_pallet);
 	Algorithm::Set::forced_pallet(destination_pallet);
 	std::cout << "Brick forced to pallet " << destination_pallet << std::endl;
 
 	//Reply
-	DOC_in.IsNull();
 	AnswerWriter->StartObject();
 	AnswerWriter->Key("command_ID");
 	AnswerWriter->String("FOTP");
@@ -646,15 +642,85 @@ void Command_GDIS(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	for(unsigned int i=0;i<Manipulator_Fixed_Position.size();i++){
 		AnswerWriter->StartObject();
 		AnswerWriter->Key("WhatToDoWithTheBrick");
-		AnswerWriter->Int(DesiredRoboticArm(i+1)->WhatToDoWithTheBrick);
+		AnswerWriter->Int(getArm(i+1)->WhatToDoWithTheBrick);
 		AnswerWriter->Key("CatchOrDrop");
-		AnswerWriter->Int(DesiredRoboticArm(i+1)->CatchOrDrop);
+		AnswerWriter->Int(getArm(i+1)->CatchOrDrop);
 		AnswerWriter->Key("ValueOfCatchDrop");
-		AnswerWriter->Int(DesiredRoboticArm(i+1)->ValueOfCatchDrop);
+		AnswerWriter->Int(getArm(i+1)->ValueOfCatchDrop);
 		AnswerWriter->EndObject();
 	}
 	AnswerWriter->EndArray();
 AnswerWriter->EndObject();
+}
+
+/*
+ * RBS Get ConFiGuration
+ */
+void Command_GCFG(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
+{
+	DOC_in.IsNull();
+
+	ConfigParser config(CONFIG_FILE);
+	std::vector<int> RFID_ports = config.GetServerPorts();
+	std::vector<std::string> RFID_addresses = config.GetServerIPs();
+	int totalRFIDservers = RFID_addresses.size();
+
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("GCFG");
+	AnswerWriter->Key("RFID_servers");
+	//AnswerWriter->Int(config.GetNumberOfArms());
+	AnswerWriter->Int(3);
+	AnswerWriter->Key("RFID_ports");
+	AnswerWriter->StartArray();
+	for(int i=0; i<totalRFIDservers; i++)
+	{
+		AnswerWriter->Int(RFID_ports.at(i));
+	}
+	AnswerWriter->EndArray();
+
+	AnswerWriter->Key("RFID_addresses");
+	AnswerWriter->StartArray();
+	for(int i=0; i<totalRFIDservers; i++)
+	{
+		AnswerWriter->String(RFID_addresses.at(i).c_str());
+	}
+	AnswerWriter->EndArray();
+
+	AnswerWriter->Key("PLC_address");
+	AnswerWriter->String(config.GetPLCAddress().c_str());
+
+	AnswerWriter->EndObject();
+}
+
+/*
+ * RBS Set ConFiGuration
+ */
+void Command_SCFG(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
+{
+	DOC_in.IsNull();
+	std::vector<int> RFID_ports;
+	std::vector<std::string> RFID_addresses;
+	std::string PLC_address;
+	ConfigParser config(CONFIG_FILE);
+
+	FindAndAddTo(DOC_in, "PLC_address", &PLC_address);
+	config.SetPLCAddress(PLC_address);
+
+	for(unsigned int i=0; i<DOC_in["RFID_addresses"].Size(); i++)
+		RFID_addresses.push_back(DOC_in["RFID_addresses"][i].GetString());
+	config.SetServerIPs(RFID_addresses);
+
+	for(unsigned int i=0; i<DOC_in["RFID_ports"].Size(); i++)
+		RFID_ports.push_back(DOC_in["RFID_ports"][i].GetInt());
+	config.SetServerPorts(RFID_ports);
+
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("SCFG");
+	AnswerWriter->Key("reply");
+	AnswerWriter->String("OK");
+	AnswerWriter->EndObject();
 }
 
 void Command_PING(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
@@ -683,7 +749,7 @@ std::string ProcessCommand(std::string Message)
     if(!result)
     {
     	 std::cout << "Message is not JSON or is corrupt: " << std::endl;
-    	 return "ERROR_MESSAGECORRUPT\n";
+    	 return "";
     }
 
     // 2. Modify it by DOM.
@@ -706,6 +772,8 @@ std::string ProcessCommand(std::string Message)
         else if(boost::equals(command_ID, "PLRD")) Command_PLRD(DOC_in, &writer);
         else if(boost::equals(command_ID, "FOTP")) Command_FOTP(DOC_in, &writer);
         else if(boost::equals(command_ID, "GDIS")) Command_GDIS(DOC_in, &writer);
+        else if(boost::equals(command_ID, "SCFG")) Command_SCFG(DOC_in, &writer);
+        else if(boost::equals(command_ID, "GCFG")) Command_GCFG(DOC_in, &writer);
         else if(boost::equals(command_ID, "PING")) Command_PING(DOC_in, &writer);
         else std::cout << "Unknown command: " << command_ID << std::endl;
     }
