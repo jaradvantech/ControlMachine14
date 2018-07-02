@@ -95,7 +95,7 @@ int main()
 
 	init();
 
-	std::cout<< "Initialization routine completed." << std::endl;
+	std::cout << std::endl << "Initialization routine completed." << std::endl;
 
 
 

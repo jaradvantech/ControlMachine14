@@ -75,11 +75,6 @@ int PetitionOf_ConfigUnit(int RFIDServer,std::string address , int port,
 
 int PetitionOf_ConfigChannel(int RFIDServer, short Channel, short Mode, short unsigned DataHoldTime, short unsigned LengthOfTagBlock,
 		   short unsigned NumberOfBlocksOnTag,  bool ActivateDataHoldTime){
-	if (!RFIDReader_isConnected(RFIDServer)){
-		std::cout << "Error: Not connected" << Channel << std::endl;
-		std::cout << "+-----------------------------------------------------" <<std::endl;
-		return 0;
-	}
 
 	if((Channel==1 || Channel==2 || Channel==3 || Channel==4) &&
 	   (Mode   ==1 || Mode   ==2 || Mode   ==3 || Mode   ==11 )&&
@@ -97,28 +92,29 @@ int PetitionOf_ConfigChannel(int RFIDServer, short Channel, short Mode, short un
 		//--------------------------------------------------------------------
 		// MESSAGE CRAFTING
 		//--------------------------------------------------------------------
-					std::string message, framedmessage;
-					message+="_CI_";
-					message+=(boost::format("%02u") % Channel).str();
-					message+="_";
-					message+=(boost::format("%02u") % Mode).str();
-					message+="_";
-					message+=(boost::format("%04u") % DataHoldTime).str();
-					message+="_";
-					message+=(boost::format("%03u") % LengthOfTagBlock).str();
-					message+="_";
-					message+=(boost::format("%03u") % NumberOfBlocksOnTag).str();
-					message+="_01_01_";
-					message+=(boost::format("%02u") % ActivateDataHoldTime).str();
-					message+="\r\n";
+		std::string message, framedmessage;
+		message+="_CI_";
+		message+=(boost::format("%02u") % Channel).str();
+		message+="_";
+		message+=(boost::format("%02u") % Mode).str();
+		message+="_";
+		message+=(boost::format("%04u") % DataHoldTime).str();
+		message+="_";
+		message+=(boost::format("%03u") % LengthOfTagBlock).str();
+		message+="_";
+		message+=(boost::format("%03u") % NumberOfBlocksOnTag).str();
+		message+="_01_01_";
+		message+=(boost::format("%02u") % ActivateDataHoldTime).str();
+		message+="\r\n";
 
-					framedmessage+=(boost::format("%01u") % RFIDServer).str();
-					framedmessage+="1010_"; //1010 Means configuration of channel
-					framedmessage+=(boost::format("%04u") % (message.length()+9)).str();
-					framedmessage+=message;
-					EmergencyAddMessage(framedmessage);
+		framedmessage+=(boost::format("%01u") % RFIDServer).str();
+		framedmessage+="1010_"; //1010 Means configuration of channel
+		framedmessage+=(boost::format("%04u") % (message.length()+9)).str();
+		framedmessage+=message;
+		EmergencyAddMessage(framedmessage);
 
-					return 1;
+		return 1;
+
 	} else {
 		std::cout << "Incorrect parameters, no action was performed: " << Channel << std::endl;
 		std::cout << "+-----------------------------------------------------" <<std::endl;
@@ -127,17 +123,6 @@ int PetitionOf_ConfigChannel(int RFIDServer, short Channel, short Mode, short un
 }
 
 int PetitionOf_ReadUID(int RFIDServer, short Channel){
-	if (!RFIDReader_isConnected(RFIDServer)){
-		 //emergencyList.clear();
-		 //maybe close connection, but not sure JAGM
-		 //RFIDManager[RFIDServer]->ShutdownConnection();
-		 //RFIDManager[RFIDServer]->InitializeClient();
-		 //PetitionOf_ConfigUnit(RFIDServer,RFIDIPADRESS[RFIDServer],33000,0,0,0);
-		 //for(short j=1; j<=4;j++) PetitionOf_ConfigChannel(RFIDServer,j, 11, 1000, 4, 28, 0);
-		std::cout << "Attempt to read without a connection" << std::endl;
-		return 0;
-	}
-
 	if(Channel==1 || Channel==2 || Channel==3 || Channel==4){
 		std::string message,framedmessage;
 
@@ -165,11 +150,6 @@ int PetitionOf_ReadUID(int RFIDServer, short Channel){
 
 int PetitionOf_ReadAllMemory(int RFIDServer, short Channel){
 	IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
-	if (!RFIDReader_isConnected(RFIDServer)){
-		std::cout << "Error: Not connected" << Channel << std::endl;
-		std::cout << "+-----------------------------------------------------" <<std::endl;
-		return 0;
-	}
 	if(boost::equals(mPallet->UID,"0000000000000000")){
 		std::cout << "Try to read from where there is no pallet : " <<  Channel << std::endl; //DEBUG
 		std::cout << "+-----------------------------------------------------" <<std::endl;
@@ -203,11 +183,6 @@ int PetitionOf_ReadAllMemory(int RFIDServer, short Channel){
 
 int PetitionOf_FormatMemory(int RFIDServer, short Channel){
 	IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
-	if (!RFIDReader_isConnected(RFIDServer)){
-		std::cout << "Error: Not connected" << Channel << std::endl;
-		std::cout << "+-----------------------------------------------------" <<std::endl;
-		return 0;
-	}
 	if(boost::equals(mPallet->UID,"0000000000000000")){
 		std::cout << "Try to format where there is no pallet : " <<  Channel << std::endl; //DEBUG
 		std::cout << "+-----------------------------------------------------" <<std::endl;
@@ -248,11 +223,6 @@ int PetitionOf_FormatMemory(int RFIDServer, short Channel){
 
 int PetitionOf_AddBrick(int RFIDServer, short Channel,int Grade, int Colour){
 	IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
-	if (!RFIDReader_isConnected(RFIDServer)){
-		std::cout << "Error: Not connected" << Channel << std::endl;
-		std::cout << "+-----------------------------------------------------" <<std::endl;
-		return 0; //0 means no connection
-	}
 	if(mPallet->Brick[0]>=100+17){
 
 		std::cout << "The limit of 100 bricks has been reached: " <<  Channel << std::endl; //DEBUG
@@ -304,11 +274,6 @@ int PetitionOf_AddBrick(int RFIDServer, short Channel,int Grade, int Colour){
 
 int PetitionOf_DeleteBrick(int RFIDServer, short Channel,int PositionToDelete){
 	IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
-	if (!RFIDReader_isConnected(RFIDServer)){
-		std::cout << "Error: Not connected" << Channel << std::endl;
-		std::cout << "+-----------------------------------------------------" <<std::endl;
-		return 0; //0 means no connection
-	}
 	if(boost::equals(mPallet->UID,"0000000000000000")){
 		std::cout << "Try to add brick where there is no pallet : " <<  Channel << std::endl; //DEBUG
 		std::cout << "+-----------------------------------------------------" <<std::endl;

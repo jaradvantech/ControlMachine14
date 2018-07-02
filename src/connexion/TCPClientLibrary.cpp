@@ -26,7 +26,7 @@ bool TCPClient::setup(std::string address , int port)
 		sock = socket(AF_INET , SOCK_STREAM , 0);
 		if (sock == -1)
 		{
-      			printf("| Could not create socket\n");
+				std::cout << "| Could not create socket" << std::endl;
     		}
         }
 
@@ -37,7 +37,7 @@ bool TCPClient::setup(std::string address , int port)
     		if ( (he = gethostbyname( address.c_str() ) ) == NULL)
     		{
 		      herror("gethostbyname");
-      		      printf("| Failed to resolve hostname\n");
+		      std::cout << "| Failed to resolve hostname" << std::endl;
 		      return false;
     		}
 	   	addr_list = (struct in_addr **) he->h_addr_list;
@@ -63,17 +63,18 @@ bool TCPClient::setup(std::string address , int port)
   	setsockopt(sock, SOL_SOCKET,SO_REUSEPORT,(char*)&iSetOption,sizeof(iSetOption));
   	if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
   	{
-	    	printf("+-----------------------------------------------------\n");
-	    	perror("| Connect failed. Error");
-    	    printf("| FAILED to connect to the RFID Receiver at %s\n",address.c_str());
-    	    printf("+-----------------------------------------------------\n");
+  			std::cout << std::endl;
+  			std::cout << "+-----------------------------------------------------" << std::endl;
+  			std::cerr << "| Connect failed. Error" << std::endl;
+	    	std::cout << "| FAILED to connect to the RFID Receiver at " << address << " : " << port << std::endl;
+	    	std::cout << "+-----------------------------------------------------" << std::endl;
     		return 0;
   	} else {
   		_connected=1;
-    printf("\n");
-    printf("+-----------------------------------------------------\n");
-    printf("| Connected to the RFID Receiver at %s\n",address.c_str());
-    printf("+-----------------------------------------------------\n");
+  	std::cout << std::endl;
+    std::cout << "+-----------------------------------------------------" << std::endl;
+    std::cout << "| Connected to the RFID Receiver at " << address.c_str()<< std::endl;
+    std::cout << "+-----------------------------------------------------" << std::endl;
 
     }
   	return true;
@@ -84,7 +85,7 @@ bool TCPClient::Send(std::string data)
 	int sendresult=send(sock , data.c_str() , strlen( data.c_str() ) , 0);
 	//std::cout << "This happends when send: " << sendresult << std::endl;
 	if(sendresult <= 0)	{
-		std::cout << "Send failed : " << data << std::endl;
+		//std::cout << "Send failed : " << data << std::endl;
 		return false;
 	}
 	return true;
@@ -122,7 +123,7 @@ std::string TCPClient::read()
 				if( recvresult <= 0)
 				{
 					//Success=0;
-					printf("read failed!\n");
+					//printf("read failed!\n");
 					break;
 				}
 			reply += buffer[0];
@@ -140,24 +141,26 @@ void TCPClient::detach()
 		shutdown(sock,2);
 		if (close(sock)<0)
 		{
-				printf("+-----------------------------------------------------\n");
-				perror("| Disconnection failed. Error");
-				printf("| FAILED to disconnect RFID Receiver\n");
-				printf("+-----------------------------------------------------\n");
+				std::cout << std::endl;
+				std::cout << "+-----------------------------------------------------" << std::endl;
+				std::cerr << "| Disconnection failed. Error" << std::endl;
+				std::cout << "| FAILED to disconnect RFID Receiver" << std::endl;
+				std::cout << "+-----------------------------------------------------" << std::endl;
 		} else {
 			sock=-1;
 			port = 0;
 			address = "";
 			_connected=0;
-		printf("+-----------------------------------------------------\n");
-		printf("| Disconnected from RFID Receiver\n");
-		printf("+-----------------------------------------------------\n");
+		std::cout << std::endl;
+		std::cout << "+-----------------------------------------------------" << std::endl;
+		std::cout << "| Disconnected from RFID Receiver" << std::endl;
+		std::cout << "+-----------------------------------------------------" << std::endl;
 		}
 	}else{
 		close(sock);
-	  	printf("+-----------------------------------------------------\n");
-	    printf("| Tried to close a flagged as closed socket\n");
-	    printf("+-----------------------------------------------------\n");
+
+	    //std::cout << "| Tried to close a flagged as closed socket\n");
+
 	}
 }
 

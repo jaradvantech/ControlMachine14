@@ -16,6 +16,30 @@ const int LOCAL_DB     = 0x01;
 const int GLOBAL_DB    = 0x02;
 const int DBTYPE	   = GLOBAL_DB;
 
+//RBS According to PLC "documentation"
+#define RESET		0
+#define DONE		1
+#define MANUAL		0
+#define AUTOMATIC	1
+#define OPEN		0
+#define CLOSE		1
+#define STOP		0
+#define FORWARD		1
+#define	BACKWARD	2
+#define LEFT		1
+#define RIGHT		2
+#define	UP			1
+#define DOWN		2
+#define RIGHT_SIDE	1
+#define LEFT_SIDE	2
+#define CATCH		1
+#define	DROP		2
+
+#define DISCHARGED_TRUE		0
+#define DISCHARGED_FALSE	1
+#define PHOTOSENSOR_TRUE	0
+#define PHOTOSENSOR_FALSE	1
+
 
 struct RoboticArmConfigInfo{
 	public:

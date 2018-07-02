@@ -24,6 +24,8 @@
 #define MODE_DISABLED 3
 #define MODE_MAMUAL   4 //RBS this is just an idea (?) Not implemented.
 
+#define GAP			  0
+
 #define BRICK_READY_SPOT_ASSIGNED		-1
 #define BRICK_READY_NO_SPOT_ASSIGNED	 1
 #define BRICK_NOT_READY					 0
@@ -294,13 +296,14 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 	static std::vector<bool> HasDischarged_Previous={0,0,0,0,0,0,0,0,0,0};
 	static std::vector<bool> PhotosensorOfManipulator_Previous={0,0,0,0,0,0,0,0,0,0};
 
-	for(unsigned int i=0; i< _Pallet_LowSpeedPulse_Height_List->size();i++)
+	for(unsigned int i=0; i< _Pallet_LowSpeedPulse_Height_List->size(); i++)
 	{
 		int ArmIndex=(i/2)+1; //001 , 101
 
 		//Brick stored at a pallet
-		if(getArm(ArmIndex)->CatchOrDrop==1 && getArm(ArmIndex)->HasDischarged == 1 &&
-				HasDischarged_Previous.at(i)==0 && _Manipulator_TakenBrick->at(ArmIndex-1).DNI!=0)
+		//RBS the manipulator just finished storing a brick?
+		if(getArm(ArmIndex)->CatchOrDrop==CATCH && getArm(ArmIndex)->HasDischarged==DISCHARGED_FALSE &&
+				HasDischarged_Previous.at(i)==0 && _Manipulator_TakenBrick->at(ArmIndex-1).DNI !=0)
 		{
 			_Pallet_LowSpeedPulse_Height_List->at(i)= getArm(ArmIndex)->ActualValueEncoder - RoboticArm::Z_AxisDeceletationDistance;
 			std::cout<< "Updated height value to "<< _Pallet_LowSpeedPulse_Height_List->at(i) <<std::endl;
@@ -319,14 +322,14 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 
 
 		//Brick taken by a manipulator
-		else if(getArm(ArmIndex)->CatchOrDrop == 2 && getArm(ArmIndex)->PhotosensorOfManipulator == 1 &&
-				PhotosensorOfManipulator_Previous.at(i)==0)
+		else if(getArm(ArmIndex)->CatchOrDrop==DROP && getArm(ArmIndex)->PhotosensorOfManipulator == PHOTOSENSOR_FALSE &&
+				PhotosensorOfManipulator_Previous.at(i)==PHOTOSENSOR_TRUE)
 		{
 			//Add Brick to the manipulator Taken Brick.
 			// i will iterate every pallet to
 			int pallet = 0;
-			if (getArm(ArmIndex)->WhatToDoWithTheBrick == 1) 	 pallet=ArmIndex*2-1;	 // right
-			else if	(getArm(ArmIndex)->WhatToDoWithTheBrick == 2) pallet=ArmIndex*2;	 //left
+			if (getArm(ArmIndex)->WhatToDoWithTheBrick == RIGHT_SIDE) 	 pallet=ArmIndex*2-1;	 // right
+			else if	(getArm(ArmIndex)->WhatToDoWithTheBrick == LEFT_SIDE) pallet=ArmIndex*2;	 //left
 			std::cout<< "Brick taken at the pallet " << pallet << std::endl;
 			std::cout<< "The number of bricks before the pick up was " << StorageGetNumberOfBricks(pallet)<< std::endl; // says 0
 			if(StorageGetNumberOfBricks(pallet)>0)
@@ -348,8 +351,8 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 		}
 
 		//Brick discharged on the line
-		else if(getArm(ArmIndex)->CatchOrDrop == 2 && getArm(ArmIndex)->HasDischarged == 1 &&
-				HasDischarged_Previous.at(i)==0)
+		else if(getArm(ArmIndex)->CatchOrDrop == DROP && getArm(ArmIndex)->HasDischarged == DISCHARGED_FALSE &&
+				HasDischarged_Previous.at(i) == DISCHARGED_TRUE)
 		{
 			std::cout << "Discharge operation detected at manipulator " << ArmIndex <<std::endl;
 			for(unsigned int j=0; j<_ListOfBricksOnLine->size();j++)
@@ -358,8 +361,8 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 						 << "(i+1)" << (i+1) << std::endl;
 
 				int pallet=0;
-				if (getArm(ArmIndex)->WhatToDoWithTheBrick == 1) 	 pallet=ArmIndex*2-1;	 // right
-				else if	(getArm(ArmIndex)->WhatToDoWithTheBrick == 2) pallet=ArmIndex*2;	 //left
+				if (getArm(ArmIndex)->WhatToDoWithTheBrick == RIGHT_SIDE) 	 pallet=ArmIndex*2-1;	 // right
+				else if	(getArm(ArmIndex)->WhatToDoWithTheBrick == LEFT_SIDE) pallet=ArmIndex*2;	 //left
 
 				if(_ListOfBricksOnLine->at(j).AssignedPallet==pallet)// &&
 						//_ListOfBricksOnLine->at(j).Type==0					//&&
@@ -407,7 +410,7 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 
 	std::vector<int>ListOfPoints={10000,10000,10000,10000,10000,10000,10000,10000,10000,10000};
 
-	for(unsigned int i=0;i<_Manipulator_Order_List.NumberOfManipulators();i++) //Check for every manipulator
+	for(unsigned int i=0; i<_Manipulator_Order_List.NumberOfManipulators(); i++) //Check for every manipulator
 	{
 		//bool ManipulatorWillBeReady = true; //Let's agree that unless noted otherwise the manipulator will be ready
 		//CONDITION 1: Manipulator is enabled as input (0=in, 1=in/out, 2=out, 3=disabled)
@@ -417,7 +420,7 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 			ManipulatorWillBeReady = false;
 		}
 		else{
-			for(unsigned int j=0;j<_Manipulator_Order_List.atManipulator(i)->NumberOfOrders();j++) //And for every order
+			for(unsigned int j=0; j<_Manipulator_Order_List.atManipulator(i)->NumberOfOrders(); j++) //And for every order
 			{
 				//----------------------------------------------------------------------
 				//CONDITION 2: Manipulator unavailable if it's before the brick.

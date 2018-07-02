@@ -46,7 +46,7 @@ bool CliConnectPLC(TS7Client *Client, StructInfoPlc Config)
 {
 
     int res = Client->ConnectTo(Config.PlcAddress,Config.PlcRack,Config.PlcSlot);
-    if (Check(Client, res, "UNIT Connection"))
+    if (Check(Client, res, "PLC Connection"))
     {
           printf("  Connected to   : %s (Rack=%d, Slot=%d)\n",Config.PlcAddress,Config.PlcRack,Config.PlcSlot);
           printf("  PDU Requested  : %d bytes\n",Client->PDURequested());
