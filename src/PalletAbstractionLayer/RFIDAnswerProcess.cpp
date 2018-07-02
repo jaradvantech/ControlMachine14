@@ -24,12 +24,12 @@
 
 int AnswerOfCU(std::string Answer, int RFIDServer){
 	if(Answer.substr(13,2)=="00"){ //00 means no error
-		std::cout << "Unit connected and configured OK " << RFIDServer << std::endl;
-		std::cout << "+-----------------------------------------------------" <<std::endl;
+		std::cout << std::endl << "RFID server #" << RFIDServer << "connected and configured OK"  << std::endl;
+		//std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 1;
 	}else{
 		std::cout << "One error (or more) has been detected, restart of the unit is recommended: " << RFIDServer << std::endl;
-		std::cout << "+-----------------------------------------------------" <<std::endl;
+		//std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 0;
 	}
 }
@@ -37,11 +37,11 @@ int AnswerOfCU(std::string Answer, int RFIDServer){
 int AnswerOfCI(std::string Answer, int RFIDServer){
 	if(Answer.substr(16,2)=="00"){
 		std::cout << "Channel connected and configured OK. Server: "<< RFIDServer << "   Channel:" << Answer.substr(13,2) << std::endl;
-		std::cout << "+-----------------------------------------------------" <<std::endl;
+		//std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 1;
 	}else{
 		std::cout << "One error (or more) has been detected, restart of the unit is recommended: Server: " << RFIDServer << "   Channel:" << Answer.substr(13,2) << std::endl;
-		std::cout << "+-----------------------------------------------------" <<std::endl;
+		//std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 0;
 	}
 }
@@ -52,7 +52,7 @@ int AnswerOfRU(std::string Answer, int RFIDServer){
 	short UIDLength;
 	short Channel;
 	if(Answer.substr(16,2)!="00"){
-		std::cout << "One error (or more) has been detected when reading the UID" << std::endl;
+		//std::cout << "One error (or more) has been detected when reading the UID" << std::endl;
 		return 0;
 	}else{
 
@@ -100,9 +100,9 @@ int AnswerOfReadAllMemory(std::string Answer, int RFIDServer){
 		std::cout
 				<< "One error (or more) has been detected when reading the memory"
 				<< std::endl;
-		std::cout
-				<< "+-----------------------------------------------------"
-				<< std::endl;
+		//std::cout
+		//		<< "+-----------------------------------------------------"
+		//		<< std::endl;
 		return 0; // 0 means that there is some error in the message
 	} else {
 
@@ -115,7 +115,7 @@ int AnswerOfReadAllMemory(std::string Answer, int RFIDServer){
 		IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
 
 		Pos0 = (int) Answer.at(30); //store the number of bricks from the byte 0
-		std::cout << "Pos0: " << Pos0 << std::endl; //Debug purpose
+		//std::cout << "Pos0: " << Pos0 << std::endl; //Debug purpose
 		if (Pos0 == 1) { //Memory Empty
 			mPallet->Brick[0] = 17; //01 means Formated memory, treat it as a 17.
 		} else {
@@ -126,12 +126,12 @@ int AnswerOfReadAllMemory(std::string Answer, int RFIDServer){
 			mPallet->Brick[i] = (int) (Answer.at(30 + i));//Store the value at the computer's memory in the right position.
 			//std::cout << "Brick info read "<<  i << " :"  <<  answer.at(20+i) << std::endl; //Debug purpose
 		}
-		std::cout << "NOB: " << Pos0 - 17 << std::endl; //Debug purpose
+		//std::cout << "NOB: " << Pos0 - 17 << std::endl; //Debug purpose
 		//--------------------------------------------------------------------
 		//--------------------------------------------------------------------
 
-		std::cout << "Memory Red successfully. Channel: " << Channel << std::endl;
-		std::cout << "+-----------------------------------------------------"	<< std::endl;
+		//std::cout << "Memory Red successfully. Channel: " << Channel << std::endl;
+		//std::cout << "+-----------------------------------------------------"	<< std::endl;
 		return 1;
 	}
 
@@ -141,7 +141,7 @@ int AnswerOfReadAllMemory(std::string Answer, int RFIDServer){
 int AnswerOfFormatMemory(std::string Answer, int RFIDServer){
 	if(Answer.substr(16,2)!="00"){
 		std::cout << "One error (or more) has been detected when writing to the memory" << std::endl;
-		std::cout << "+-----------------------------------------------------" <<std::endl;
+		//std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 0;
 	}else{
 		//--------------------------------------------------------------------
@@ -154,7 +154,7 @@ int AnswerOfFormatMemory(std::string Answer, int RFIDServer){
 		//--------------------------------------------------------------------
 		//--------------------------------------------------------------------
 		std::cout << "Memory formated successfully. Channel: " <<  Channel << std::endl;
-		std::cout << "+-----------------------------------------------------" <<std::endl;
+		//std::cout << "+-----------------------------------------------------" <<std::endl;
 		//ReadAllMemory(Channel);
 		return 1;
 	}
@@ -163,7 +163,7 @@ int AnswerOfFormatMemory(std::string Answer, int RFIDServer){
 int AnswerOfAddBrick(std::string Answer, int RFIDServer){
 	if(Answer.substr(16,2)!="00"){
 		std::cout << "One error (or more) has been detected when writing to the memory" << std::endl;
-		std::cout << "+-----------------------------------------------------" <<std::endl;
+		//std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 0; //0 means that there is some error in the message
 	}else{
 		//--------------------------------------------------------------------
@@ -176,7 +176,7 @@ int AnswerOfAddBrick(std::string Answer, int RFIDServer){
 			//std::cout << "Memory writting successfully. Brick Info: " <<  Pallet[Channel-1]->Brick[Pallet[Channel-1]->Brick[0]-17] << std::endl;
 
 			std::cout << "Memory writting successfully. Channel: " <<  Channel << std::endl; //DEBUG
-			std::cout << "+-----------------------------------------------------" <<std::endl;
+			//std::cout << "+-----------------------------------------------------" <<std::endl;
 			return 1;
 		//--------------------------------------------------------------------
 		//--------------------------------------------------------------------
@@ -186,7 +186,7 @@ int AnswerOfAddBrick(std::string Answer, int RFIDServer){
 int AnswerOfDeleteBrick(std::string Answer, int RFIDServer){
 	if(Answer.substr(16,2)!="00"){
 		std::cout << "One error (or more) has been detected when writing to the memory" << std::endl;
-		std::cout << "+-----------------------------------------------------" <<std::endl;
+		//std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 0; //2 means that there is some error in the message
 	}else{
 		//--------------------------------------------------------------------
@@ -199,7 +199,7 @@ int AnswerOfDeleteBrick(std::string Answer, int RFIDServer){
 			//std::cout << "Memory writting successfully. Brick Info: " <<  Pallet[Channel-1]->Brick[Pallet[Channel-1]->Brick[0]-17] << std::endl;
 
 			std::cout << "Memory writting successfully. Channel: " <<  Channel << std::endl; //DEBUG
-			std::cout << "+-----------------------------------------------------" <<std::endl;
+			//std::cout << "+-----------------------------------------------------" <<std::endl;
 			return 1;
 		//--------------------------------------------------------------------
 		//--------------------------------------------------------------------

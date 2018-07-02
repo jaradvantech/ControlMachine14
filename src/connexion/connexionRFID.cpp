@@ -26,11 +26,10 @@ std::deque<std::string> emergencyList;
 
 void RFIDReaders_Configure()
 {
-	 //added by RBS on March 19th
-	 ConfigParser config("/etc/unit14/unit14.conf");
+	 ConfigParser config(CONFIG_FILE);
 	 RFID_PORT = config.GetServerPorts();
 	 RFID_IP_ADRESS = config.GetServerIPs();
-	 NUMBEROFRFIDREADERS = RFID_IP_ADRESS.size();
+	 NUMBEROFRFIDREADERS = config.GetNumberOfRFIDservers();
 
 	 for(int i=0;i<NUMBEROFRFIDREADERS;i++)
 	 {
@@ -97,8 +96,7 @@ void EmergencyAddMessage(std::string mMessage){
 /////////////////////////////////////////////////////////////////////
 RFIDReader::RFIDReader()
 {
-	TCPConnexion=nullptr; //JAGM I hope that this does the trick
-						  //and the TCP client doesn't leak memory anymore
+	TCPConnexion=nullptr;
 	 InitializeClient();
 }
 
@@ -115,15 +113,16 @@ void RFIDReader::ShutdownConnection(){
 bool RFIDReader::isConnected(){
 	return TCPConnexion->Connected();
 }
+
 bool RFIDReader::OpenConnexion(std::string address , int port){
 	return TCPConnexion->setup(address, port);
 }
-bool RFIDReader::SendCommand(std::string mMessage){
 
+bool RFIDReader::SendCommand(std::string mMessage){
 	return 	TCPConnexion->Send(mMessage);
 }
-std::string RFIDReader::ReadAnswer(){
 
+std::string RFIDReader::ReadAnswer(){
 	return 	TCPConnexion->read();
 }
 
@@ -139,45 +138,68 @@ void * RFIDLoop(void *Arg){
 
 	 std::deque<std::string>* ListToUse;
 		Synchro::DecreaseSynchronizationPointValue(0);
-	 while(1){
-		 if (emergencyList.size()>0){
+	 while(1)
+	 {
+		 if (emergencyList.size()>0)
 			 ListToUse = &emergencyList;
-		 } else{
+		 else
 			 ListToUse = &messageList;
-		 }
-		 try{
-			 if(ListToUse->size()>0){
-				 /////////////////////
+
+		 try
+		 {
+			 if(ListToUse->size()>0)
+			 {
 				 //PREPROCESS MESSAGE
-				 /////////////////////
 				 Message=ListToUse->front();
-				 RFIDServer=boost::lexical_cast<int>(Message.substr(0, 1));  //The message has to have the RFIDServer to who the message is
-				 Message=Message.substr(1); //Removes the RFIDServer to get the message that is going to be parsed.
+				 //The message has to have the RFIDServer to who the message is
+				 RFIDServer=boost::lexical_cast<int>(Message.substr(0, 1));
+				 //Removes the RFIDServer to get the message that is going to be parsed. //RBS I don't like this
+				 Message=Message.substr(1);
 
 				 //Send Command has to be blocking because how the servers work.
-				 if(RFIDManager[RFIDServer]->isConnected() != true)throw std::runtime_error("Server disconnected");
-				 if(RFIDManager[RFIDServer]->SendCommand(Message)){ //Send Message
-					 Answer=RFIDManager[RFIDServer]->ReadAnswer();   //Wait here until an answer is red.
-					 if(Answer=="") throw std::runtime_error("Empty Answer");
-				 if(processAnswer(Answer,RFIDServer)==0)	//Process here the answer.
+				 if(RFIDManager[RFIDServer]->isConnected() != true)
+					 throw std::runtime_error("Server disconnected");
+
+				 if(RFIDManager[RFIDServer]->SendCommand(Message))
 				 {
-					 throw std::runtime_error("Message Error");
+					 //Wait here until an answer is read.
+					 Answer=RFIDManager[RFIDServer]->ReadAnswer();
+
+					 if(Answer=="")
+						 throw std::runtime_error("Empty Answer");
+
+					 //Process here the answer.
+					 if(processAnswer(Answer,RFIDServer)==0)
+						 throw std::runtime_error("Message Error");
+
+					 //when the answer is processed, we just pop out the actual message
+					 ListToUse->pop_front();
 				 }
-				 ListToUse->pop_front();	//when the answer is processed, we just pop out the actual message
-
-				 } else{throw std::runtime_error("Error on send");}//throw exception maybe?
+				 else
+					 throw std::runtime_error("Error on send");
 			 }
-		 } catch( ... ){
-			 emergencyList.clear();
-			 //Close connection, but not sure if it's working as expected JAGM
-			 RFIDManager[RFIDServer]->ShutdownConnection();
-			 std::this_thread::sleep_for(std::chrono::seconds(2));
-			 RFIDManager[RFIDServer]->InitializeClient();
 
-			 PetitionOf_ConfigUnit(RFIDServer,RFID_IP_ADRESS[RFIDServer] , RFID_PORT[RFIDServer], 0, 0, 0);
-				for(int j=1;j<=4;j++){
-					PetitionOf_ConfigChannel(RFIDServer, j, 11, 1000, 4,28,  1);
-				}
+		 } catch( ... ){
+			//RBS This code does not work for a number of reasons
+			//	-isConnected() Only tells if it has ever connected, but won't detect a disconnection
+			//	-for some mysterious reason, we never get in the list messages destinated to unreachable servers
+			//	-And therefore, exceptions are not being thrown and this is never executing.
+			// UPDATE: RBS It's fixed (2/Jul/2018)
+
+			emergencyList.clear();
+			RFIDManager[RFIDServer]->ShutdownConnection();
+
+			std::this_thread::sleep_for(std::chrono::seconds(3));
+			RFIDManager[RFIDServer]->InitializeClient();
+
+			//Update IP and Port
+			ConfigParser config(CONFIG_FILE);
+			PetitionOf_ConfigUnit(RFIDServer, config.GetServerIPs().at(RFIDServer), config.GetServerPorts().at(RFIDServer), 0, 0, 0);
+
+			for(int j=1;j<=4;j++)
+			{
+				PetitionOf_ConfigChannel(RFIDServer, j, 11, 1000, 4,28,  1);
+			}
 		 }
 		 //Wait Before polling again
 		 std::this_thread::sleep_for(std::chrono::microseconds(500));

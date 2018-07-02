@@ -36,11 +36,6 @@ int StorageReadUID(int StorageNumber){
 	RFIDServer=(StorageNumber-1) / 4;
 	Channel=StorageNumber-RFIDServer*4;
 
-	//RFIDManager[RFIDServer]->ReadUID(Channel);
-	//IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
-	//if(mPallet->VirtualPallet) VirtualPallet_PetitionOf_ReadUID(mPallet, RFIDServer,Channel);
-	///else 	PetitionOf_ReadUID(RFIDServer,Channel);
-
 	return PetitionOf_ReadUID(RFIDServer,Channel);
 }
 
@@ -50,10 +45,6 @@ int StorageReadAllMemory(int StorageNumber){
 	RFIDServer=(StorageNumber-1) / 4;
 	Channel=StorageNumber-RFIDServer*4;
 
-	//RFIDManager[RFIDServer]->ReadAllMemory(Channel);
-	//IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
-	//if(mPallet->VirtualPallet) VirtualPallet_PetitionOf_ReadAllMemory(mPallet, RFIDServer,Channel);
-	//else PetitionOf_ReadAllMemory(RFIDServer,Channel);
 	PetitionOf_ReadAllMemory(RFIDServer,Channel);
 	return 1;
 }
@@ -64,10 +55,6 @@ int StorageFormatMemory(int StorageNumber){
 	RFIDServer=(StorageNumber-1) / 4;
 	Channel=StorageNumber-RFIDServer*4;
 
-	//RFIDManager[RFIDServer]->FormatMemory(Channel);
-	//IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
-	//if(mPallet->VirtualPallet) VirtualPallet_PetitionOf_FormatMemory(mPallet, RFIDServer,Channel);
-	//else PetitionOf_FormatMemory(RFIDServer,Channel);
 	PetitionOf_FormatMemory(RFIDServer,Channel);
 	return 1;
 }
@@ -78,10 +65,6 @@ int StorageAddBrick(int StorageNumber,int Grade, int Colour){
 	RFIDServer=(StorageNumber-1) / 4;
 	Channel=StorageNumber-RFIDServer*4;
 
-	//RFIDManager[RFIDServer]->AddBrick(Channel,Grade,Colour);
-	//IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
-	//if(mPallet->VirtualPallet) VirtualPallet_PetitionOf_AddBrick(mPallet, RFIDServer,Channel,Grade,Colour);
-	//else PetitionOf_AddBrick(RFIDServer,Channel,Grade,Colour);
 	PetitionOf_AddBrick(RFIDServer,Channel,Grade,Colour);
 	return 1;
 }
@@ -92,10 +75,6 @@ int StorageDeleteBrick(int StorageNumber,int Position){
 	RFIDServer=(StorageNumber-1) / 4;
 	Channel=StorageNumber-RFIDServer*4;
 
-	//RFIDManager[RFIDServer]->DeleteBrick(Channel,Position);
-	//IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
-	//if(mPallet->VirtualPallet) VirtualPallet_PetitionOf_DeleteBrick(mPallet, RFIDServer,Channel,Position);
-	//else PetitionOf_DeleteBrick(RFIDServer,Channel,Position);
 	PetitionOf_DeleteBrick(RFIDServer,Channel,Position);
 	return 1;
 }
@@ -106,10 +85,6 @@ int StorageEditBrick(int StorageNumber,int Position,int Grade, int Colour){
 	RFIDServer=(StorageNumber-1) / 4;
 	Channel=StorageNumber-RFIDServer*4;
 
-	//RFIDManager[RFIDServer]->DeleteBrick(Channel,Position);
-	//IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
-	//if(mPallet->VirtualPallet) VirtualPallet_PetitionOf_EditBrick(mPallet, RFIDServer,Channel,Position, Grade, Colour);
-	//else PetitionOf_EditBrick(RFIDServer,Channel,Position, Grade, Colour);
 	PetitionOf_EditBrick(RFIDServer,Channel,Position, Grade, Colour);
 	return 1;
 }
@@ -120,10 +95,6 @@ int StorageInsertBrick(int StorageNumber, int Position, int Grade, int Colour ){
 	RFIDServer=(StorageNumber-1) / 4;
 	Channel=StorageNumber-RFIDServer*4;
 
-	//RFIDManager[RFIDServer]->DeleteBrick(Channel,Position);
-	//IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
-	//if(mPallet->VirtualPallet) VirtualPallet_PetitionOf_InsertBrick(mPallet,RFIDServer,Channel,Position, Grade, Colour);
-	//else PetitionOf_InsertBrick(RFIDServer,Channel,Position, Grade, Colour);
 	PetitionOf_InsertBrick(RFIDServer,Channel,Position, Grade, Colour);
 	return 1;
 }
