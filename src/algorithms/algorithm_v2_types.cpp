@@ -151,3 +151,21 @@ void Foo(){
 	}
 	orders.atManipulator(3)->getOrder_beforePosition(2000)->What;
 }
+
+/*
+void Cancel_Order(std::deque<Brick>* _BricksOnTheLine, std::vector<std::deque<Order>>* _ManipulatorOrderList)
+{
+
+
+}
+
+void Cancel_Order(Brick* _BrickOnTheLine, std::vector<std::deque<Order>>* _ManipulatorOrderList)
+{
+
+}
+
+void Cancel_Order(int index, std::vector<std::deque<Order>>* Manipulator_Order_List)
+{
+
+}
+ */
