@@ -274,9 +274,11 @@ void * OpenServer(void *Arg)
 							   !boost::contains(bufferRead_Line, "RGMV") &&
 							   !boost::contains(bufferRead_Line, "RFMV") &&
 							   !boost::contains(bufferRead_Line, "RAMV") &&
+							   !boost::contains(bufferRead_Line, "REMV") &&
 							   !boost::contains(bufferRead_Line, "RDMV") &&
 							   !boost::contains(bufferRead_Line, "RPRV") &&
 							   !boost::contains(bufferRead_Line, "ALSC") &&
+							   !boost::contains(bufferRead_Line, "ALGC") &&
 							   !boost::contains(bufferRead_Line, "CHAL") &&
 							   !boost::contains(bufferRead_Line, "SCAP") &&
 							   !boost::contains(bufferRead_Line, "WADI") &&
@@ -301,6 +303,6 @@ void * OpenServer(void *Arg)
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
-    return nullptr;
+    pthread_exit(NULL);
 }
 

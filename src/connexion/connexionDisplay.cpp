@@ -87,7 +87,7 @@ void Command_PGSI(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 
 
 /*
- * RBS; PLC Write DAta
+ * RBS; PLC Write DAtaposition
  */
 void Command_PWDA(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
@@ -118,7 +118,7 @@ void Command_PWDA(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	FindAndAddTo(DOC_in, "ADD", &mArm->Z_AxisDeceletationDistance);
 	FindAndAddTo(DOC_in, "ZASV", &mArm->Z_AxisStandbyValue);
 	FindAndAddTo(DOC_in, "TPOX_AGB", &mArm->ThePulseOfX_AxisGoBackToTheWaitingPositionInAdvance);
-	FindAndAddTo(DOC_in, "TPOX_ADD", &mArm->ThePulseOfZ_AxisAdvanceDownInAdvance);
+	FindAndAddTo(DOC_in, "TPOX_AAD", &mArm->ThePulseOfZ_AxisAdvanceDownInAdvance);
 
 	DOC_in.IsNull();
 	AnswerWriter->StartObject();
@@ -220,9 +220,23 @@ void Command_RDMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	AnswerWriter->EndObject();
 }
 
-void Command_RGUV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
+void Command_REMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	//not implemented (?)
+	int selectedPallet=0, positionToEdit = 1, newGrade = 1, newColor = 1;
+	FindAndAddTo(DOC_in, "palletNumber", &selectedPallet);
+	FindAndAddTo(DOC_in, "positionToEdit", &positionToEdit);
+	FindAndAddTo(DOC_in, "newGrade", &newGrade);
+	FindAndAddTo(DOC_in, "newColor", &newColor);
+
+	StorageEditBrick(selectedPallet, positionToEdit, newGrade, newColor);
+
+	DOC_in.IsNull();
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("REMV");
+	AnswerWriter->Key("reply");
+	AnswerWriter->String("OK");
+	AnswerWriter->EndObject();
 }
 
 /*
@@ -352,7 +366,7 @@ void Command_ALGC(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 {
 
 	ConfigParser config(CONFIG_FILE);
-	std::vector<int> modes;
+	std::vector<int> modes = config.GetManipulatorModes();
 	int Manipulators = getTotalArms();
 
 	DOC_in.IsNull();
@@ -369,10 +383,7 @@ void Command_ALGC(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	AnswerWriter->StartArray();
 	for(int i=0; i<Manipulators; i++)
 	{
-		AnswerWriter->StartObject();
-		//AnswerWriter->Key(""); //TODO: Insert modes and other relevant information
-		//AnswerWriter->String();
-		AnswerWriter->EndObject();
+		AnswerWriter->Int(modes.at(i));
 	}
 	AnswerWriter->EndArray();
 
@@ -449,6 +460,7 @@ void Command_WADI(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	{
 		//WhetherOrNotPutTheTileTo is enabled
 		Algorithm::Set::enable_WhetherOrNotPutTheTileTo_16(true);
+		std::cout << "Changing WhetherOrNotPutTheTileTo_16 to ENABLED" << std::endl;
 
 	}
 	else
@@ -467,6 +479,8 @@ void Command_WADI(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 			Algorithm::Set::force_input(true);
 		else
 			Algorithm::Set::force_input(false);
+
+		std::cout << "DISABLED WhetherOrNotPutTheTileTo_16: Force input: " << forceInput << ", Force Output: " << forceOutput << std::endl;
 	}
 
 	//Reply
@@ -493,6 +507,11 @@ void Command_PLRD(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 
 	Brick brick(type,position,pallet,0); //DNI is meaningless here
 	Algorithm::Set::order(brick);
+
+	std::cout << "New debug order: " << std::endl;
+	std::cout << ">>>What: " << type << " (0=to pallet, 1=to line)"<< std::endl;
+	std::cout << ">>>Where: " << pallet << " (Pallet number)"<< std::endl;
+	std::cout << ">>>When: " << position << " (Encoder units)"<< std::endl;
 
 	//Reply
 	DOC_in.IsNull();
@@ -764,8 +783,10 @@ std::string ProcessCommand(std::string Message)
         else if(boost::equals(command_ID, "RFMV")) Command_RFMV(DOC_in, &writer);
         else if(boost::equals(command_ID, "RAMV")) Command_RAMV(DOC_in, &writer);
         else if(boost::equals(command_ID, "RDMV")) Command_RDMV(DOC_in, &writer);
+        else if(boost::equals(command_ID, "REMV")) Command_REMV(DOC_in, &writer);
         else if(boost::equals(command_ID, "RPRV")) Command_RPRV(DOC_in, &writer);
         else if(boost::equals(command_ID, "ALSC")) Command_ALSC(DOC_in, &writer);
+        else if(boost::equals(command_ID, "ALGC")) Command_ALGC(DOC_in, &writer);
         else if(boost::equals(command_ID, "CHAL")) Command_CHAL(DOC_in, &writer);
         else if(boost::equals(command_ID, "SCAP")) Command_SCAP(DOC_in, &writer);
         else if(boost::equals(command_ID, "WADI")) Command_WADI(DOC_in, &writer);

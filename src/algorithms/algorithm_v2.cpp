@@ -1035,7 +1035,7 @@ void * AlgorithmV2(void *Arg)
 	Synchro::DecreaseSynchronizationPointValue(0);
 	while(1)
 	{
-		int RawCurrentPackagingBrick = (CurrentPackagingGrade << 4) + CurrentPackagingColor +1; //TODO: Check why +1
+		int RawCurrentPackagingBrick = ((CurrentPackagingGrade+1) << 4) + CurrentPackagingColor +1; //color, grade starting at 0
 		//RFIDSubroutine();  WHAT THE FUCK!! THIS IS LEAKING MEMORY!!! JAGM: not really, just filling the stack too fast. Could be avoided by launching this in a different thread with a slower rate. As seen in main loop
 
 		//std::cout<< "inside the algorithm loop"<<std::endl;

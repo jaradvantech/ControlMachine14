@@ -185,7 +185,7 @@ std::string ConfigParser::GetPLCAddress()
 	}
 	catch(const std::out_of_range& exc)
 	{
-		PLC_adddress = "127.0.0.1"; //default
+		PLC_adddress = "000.000.000.000"; //default
 	}
 	return PLC_adddress;
 }
@@ -201,10 +201,10 @@ std::vector<int> ConfigParser::GetMechanicalParameters()
 	//If configuration is not complete, fill with defaults to avoid crashings.
 	std::vector<int> saved_parameters = ReadLineAndAddToVector<int>(9);
 	std::vector<int> total_parameters;
-	int total_saved_paramters = saved_parameters.size();
+	int total_saved_parameters = saved_parameters.size();
 	for(int i=0; i<2; i++)
 	{
-		if(i<total_saved_paramters)
+		if(i<total_saved_parameters)
 			total_parameters.push_back(saved_parameters.at(i));
 		else
 			total_parameters.push_back(0); //Default

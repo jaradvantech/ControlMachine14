@@ -4,6 +4,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
+../src/Algorithm.cpp \
 ../src/ConfigParser.cpp \
 ../src/PLC_communications.cpp \
 ../src/Prueba1.cpp \
@@ -12,6 +13,7 @@ CPP_SRCS += \
 ../src/SynchronizationPoints.cpp 
 
 OBJS += \
+./src/Algorithm.o \
 ./src/ConfigParser.o \
 ./src/PLC_communications.o \
 ./src/Prueba1.o \
@@ -20,6 +22,7 @@ OBJS += \
 ./src/SynchronizationPoints.o 
 
 CPP_DEPS += \
+./src/Algorithm.d \
 ./src/ConfigParser.d \
 ./src/PLC_communications.d \
 ./src/Prueba1.d \
