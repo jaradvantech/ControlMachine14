@@ -7,8 +7,8 @@
 
 
 #include "Pallet.h"
-
-IndividualPallet* Pallet[10];
+#include <vector>
+std::vector<IndividualPallet> Pallet;
 
 IndividualPallet::IndividualPallet(){
 	//Empty Constructor
@@ -22,13 +22,11 @@ IndividualPallet::IndividualPallet(){
 		Brick[i]=1;		//Write in the computer's memory the value used for empty
 	}
 }
-
 IndividualPallet * DesiredPallet(int NumberOfThePallet){
-	return Pallet[NumberOfThePallet-1];
+	return &Pallet.at(NumberOfThePallet-1);
 }
 void initPallet(int NumberOfPallets){
 	for(int i=0;i<NumberOfPallets;i++){
-		Pallet[i]=new IndividualPallet();
+		Pallet.push_back(IndividualPallet());
 	}
-
 }

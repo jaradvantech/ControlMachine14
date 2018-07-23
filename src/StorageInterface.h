@@ -27,6 +27,8 @@ int StorageFormatMemory(int StorageNumber);
 
 int StorageAddBrick(int StorageNumber,int Grade, int Colour);
 
+int StorageEditBrick(int StorageNumber,int Position,int Grade, int Colour);
+
 int StorageGetNumberOfBricks(int StorageNumber);
 
 int StorageDeleteBrick(int StorageNumber, int Position);

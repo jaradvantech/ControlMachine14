@@ -148,7 +148,8 @@ int PetitionOf_ReadUID(int RFIDServer, short Channel){
 	}
 }
 
-int PetitionOf_ReadAllMemory(int RFIDServer, short Channel){
+int PetitionOf_ReadAllMemory(int RFIDServer, short Channel)
+{
 	IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
 	if(boost::equals(mPallet->UID,"0000000000000000")){
 		std::cout << "Try to read from where there is no pallet : " <<  Channel << std::endl; //DEBUG
@@ -181,7 +182,8 @@ int PetitionOf_ReadAllMemory(int RFIDServer, short Channel){
 
 }
 
-int PetitionOf_FormatMemory(int RFIDServer, short Channel){
+int PetitionOf_FormatMemory(int RFIDServer, short Channel)
+{
 	IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
 	if(boost::equals(mPallet->UID,"0000000000000000")){
 		std::cout << "Try to format where there is no pallet : " <<  Channel << std::endl; //DEBUG
@@ -221,7 +223,8 @@ int PetitionOf_FormatMemory(int RFIDServer, short Channel){
 	return 0;
 }
 
-int PetitionOf_AddBrick(int RFIDServer, short Channel,int Grade, int Colour){
+int PetitionOf_AddBrick(int RFIDServer, short Channel,int Grade, int Colour)
+{
 	IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
 	if(mPallet->Brick[0]>=100+17){
 
@@ -272,7 +275,8 @@ int PetitionOf_AddBrick(int RFIDServer, short Channel,int Grade, int Colour){
 	}
 }
 
-int PetitionOf_DeleteBrick(int RFIDServer, short Channel,int PositionToDelete){
+int PetitionOf_DeleteBrick(int RFIDServer, short Channel,int PositionToDelete)
+{
 	IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
 	if(boost::equals(mPallet->UID,"0000000000000000")){
 		std::cout << "Try to add brick where there is no pallet : " <<  Channel << std::endl; //DEBUG
@@ -326,7 +330,58 @@ int PetitionOf_DeleteBrick(int RFIDServer, short Channel,int PositionToDelete){
 	}
 }
 
-int PetitionOf_EditBrick(int RFIDServer, short Channel,int Position, int Grade, int Colour){
+int PetitionOf_EditBrick(int RFIDServer, short Channel, int Position, int Grade, int Colour)
+{
+	IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
+	if(boost::equals(mPallet->UID,"0000000000000000")){
+		std::cout << "Try to add brick where there is no pallet : " <<  Channel << std::endl; //DEBUG
+		std::cout << "+-----------------------------------------------------" <<std::endl;
+		return 4; //4 means that it tried to perform an add operation where there is no pallet.
+	}
+	if(mPallet->Brick[0]<=17){
+		std::cout << "Attempt to perform a delete operation on an empty pallet: " <<  Channel << std::endl; //DEBUG
+		std::cout << "+-----------------------------------------------------" <<std::endl;
+		return 3; //3 means that the limit has been reached
+	}
+	if((Channel==1 || Channel==2 || Channel==3 || Channel==4)) {
+
+		//--------------------------------------------------------------------
+		// MESSAGE CRAFTING: Writes the brick information
+		//--------------------------------------------------------------------
+		std::string message, framedmessage;
+		short NumberOfBricks = mPallet->Brick[0]-17;
+
+		message+="_WR_";
+		message+=(boost::format("%02u") % Channel).str();
+		message+="_00000_";
+		message+=(boost::format("%04u") % (NumberOfBricks + 1)).str(); // Number of bytes to write, so, it's NumberOfBricks + 1
+		message+="_";
+		message+=char(mPallet->Brick[0]-1);//Add the coded number of bricks -1
+		for(int i=1;i<Position;i++){
+			message+=char(mPallet->Brick[i]);//Add the previous bricks
+		}
+			message+=char(((Grade+1) << 4) + Colour +1); //insert new brick
+
+		for(int i=Position;i<=NumberOfBricks;i++){
+			message+=char(mPallet->Brick[i+1]);//Skip that one and add every other
+		}
+		message+="\r\n";
+
+		framedmessage+=(boost::format("%01u") % RFIDServer).str();
+		framedmessage+="1060_"; //1060 Delete
+		framedmessage+=(boost::format("%04u") % (message.length()+9)).str();
+		framedmessage+=message;
+		AddMessage(framedmessage);
+
+		//RBS Update on program memory (?)
+		mPallet->Brick[Position]=((Grade+1) << 4) + Colour +1;
+		return 1;
+
+	}else{
+		std::cout << "Incorrect parameters, no action was performed: " << Channel << std::endl;
+		std::cout << "+-----------------------------------------------------" <<std::endl;
+		return 0;
+	}
 	return 1;
 }
 

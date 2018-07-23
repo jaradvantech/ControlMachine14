@@ -21,6 +21,7 @@ namespace Algorithm {
 		void force_input(bool set_to);
 		void force_output(bool set_to);
 		void forced_pallet(int set_to);
+		void FIXEDBRICKS(bool set_to);
 		void order(Brick brick);
 		void CurrentPackagingColor(int PackagingColor);
 		void CurrentPackagingGrade(int PackagingGrade);

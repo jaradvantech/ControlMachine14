@@ -31,7 +31,7 @@ pthread_t PLCThread;
 pthread_t AlgorithmThread;
 
 
-void init(){
+void init(int numberOfArms){
 
 	//--------------------------------------------------------------------
 	// OPEN DISPLAY COMMUNICATIONS
@@ -66,7 +66,7 @@ void init(){
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
-	initPallet(10);
+	initPallet(numberOfArms*2);
 	//Wait until all previous threads are working in their loops
 	Synchro::IncreaseSynchronizationPointValue(0);
 
@@ -93,7 +93,7 @@ int main()
 	}
 	std::cout<< "Powered By JARA" << std::endl;
 
-	init();
+	init(total_arms);
 
 	std::cout << std::endl << "Initialization routine completed." << std::endl;
 
@@ -110,7 +110,7 @@ int main()
 
 		//cout<< "MAIN PROGRAM END CYCLE" << endl;
 		//Asks for the RFID tags.
-		for(int i=1;i<=10;i++)
+		for(int i=1;i<=total_arms*2;i++)
 		{
 			if(StorageReadUID(i)==0)
 			{

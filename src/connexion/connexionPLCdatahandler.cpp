@@ -79,7 +79,7 @@ int S7_GetDataTypeSize(int type) {
 uint16_t S7_GetWordFromTSAP(string TSAP) {
 	short int pos = TSAP.find('.'); // find the delimiter into the source string
 
-	if (pos == string::npos) { // no delimiter was found, return 0
+	if (pos == (short int)string::npos) { // no delimiter was found, return 0
 		return 0;
 	} else { // was found '.'
 		string first = TSAP.substr(0, pos);    // get the first argument
