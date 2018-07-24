@@ -186,6 +186,8 @@ int PerformGlobalReading()
 	//----------------------//
 	//Get common information//
 	//----------------------//
+123 678
+
 
 	RoboticArm::TheQueueOfPhotosensor_1=S7_GetBitAt(Buffer, 0, 0);
 	RoboticArm::TheQueueOfPhotosensor_2=S7_GetBitAt(Buffer, 0, 1);
