@@ -74,14 +74,24 @@ void OrderManager::AddOrder(const Brick& mBrick, const std::vector<int>& _Manipu
 {
 	//What stands for what order 1=catch and pick down 0=retrieve from the storage and put on the line
 	//Where is at which side, 0=left 1=right
+	if(mBrick.AssignedPallet != 0)
+	{
+		int mWho = (mBrick.AssignedPallet-1)/2;	//Who is which manipulator. From 0 to NMANIPULATORS-1
 
-	int mWho = (mBrick.AssignedPallet-1)/2;	//Who is which manipulator. From 0 to NMANIPULATORS-1
+		Order OrderToPlace(0,0,0);
+		OrderToPlace.What = mBrick.Type==0;//If has a Type, must be picked down, what = 0. If it's a hole, must retrieve. what = 1
+		OrderToPlace.Where = mBrick.AssignedPallet%2 == 1; //0=left 1=right
+		OrderToPlace.When = _Manipulator_Fixed_Position.at(mWho)-mBrick.Position; //When is the distance in encoder units that is left to reach the assigned manipulator
+		this->atManipulator(mWho)->InsertOrder(OrderToPlace);
 
-	Order OrderToPlace(0,0,0);
-	OrderToPlace.What = mBrick.Type==0;//If has a Type, must be picked down, what = 0. If it's a hole, must retrieve. what = 1
-	OrderToPlace.Where = mBrick.AssignedPallet%2 == 1; //0=left 1=right
-	OrderToPlace.When = _Manipulator_Fixed_Position.at(mWho)-mBrick.Position; //When is the distance in encoder units that is left to reach the assigned manipulator
-	this->atManipulator(mWho)->InsertOrder(OrderToPlace);
+	} else {
+
+		//TODO: Should raise an alarm, we'll see how
+		//std::cout << "A brick will flow freely" << std::endl;
+
+
+	}
+
 }
 
 void OrderManager::ReplaceFirstOrder(const Brick& mBrick, const std::vector<int>& _Manipulator_Fixed_Position)

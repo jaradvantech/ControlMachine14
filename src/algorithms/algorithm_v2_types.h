@@ -11,7 +11,7 @@
 #include <deque>
 #include <vector>
 
-const int K = 14000;
+const int K = 12000;
 const int E = 2000;
 
 class Brick

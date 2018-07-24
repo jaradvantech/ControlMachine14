@@ -172,7 +172,7 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 	while(HasDischarged_Previous.size() != _Manipulator_TakenBrick->size()){
 		HasDischarged_Previous.push_back(0);
 	}
-	while(PhotosensorOfManipulator_Previous != _Manipulator_TakenBrick->size()){
+	while(PhotosensorOfManipulator_Previous.size() != _Manipulator_TakenBrick->size()){
 		PhotosensorOfManipulator_Previous.push_back(0);
 	}
 
@@ -464,7 +464,6 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 			{
 				if(true) //If the pallet exists and it's not full
 				{
-
 					ListOfPoints.at(i*2+j) = CheckInputScore(i*2+j+1, _BrickToClassify->Type, _RawCurrentPackagingBrick);
 					std::cout << "-Pallet checked:  " << i*2+j+1 << "   Points assigned " << ListOfPoints.at(i*2+j) << std::endl;
 				}
@@ -474,12 +473,16 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 	//TODO:Check to clear order in case of an output.
 
 	//Check minimum score TO CHANGE FOR STD::Minimum_at(vector)
-	int PalletWithMinimumScore=0;
-	for(int i=0;i<ListOfPoints.size();i++)
+	int PalletWithMinimumScore=-1;
+	for(unsigned int i=0;i<ListOfPoints.size();i++)
 	{
-		if(ListOfPoints.at(i)<ListOfPoints.at(PalletWithMinimumScore)) PalletWithMinimumScore=i;
+
+		//If the index PalletWithMinimumScore is -1, returns 0. Otherwise, returns PalletWithMinimumScore
+		if(ListOfPoints.at(i)<ListOfPoints.at((PalletWithMinimumScore<0 ? 0 : PalletWithMinimumScore )) && ListOfPoints.at(i) != 10000) PalletWithMinimumScore=i;
 	}
-	std::cout << "The points assigned are " << ListOfPoints.at(PalletWithMinimumScore) << " goes to pallet:"<< PalletWithMinimumScore+1 << std::endl;
+
+	if(PalletWithMinimumScore<0)	std::cout << "The brick doesn't go to any pallet:" << std::endl;
+	else std::cout << "The points assigned are " << ListOfPoints.at(PalletWithMinimumScore) << " goes to pallet:"<< PalletWithMinimumScore+1 << std::endl;
 	PalletWithMinimumScore++;//To translate from index to actual pallet
 
 #define __PRODUCTIONMODE 1
@@ -518,8 +521,6 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 
 
 #endif
-
-
 }
 
 
@@ -701,7 +702,7 @@ namespace Algorithm {
 void CheckForBricksAtTheTop(std::vector<int>* _Bricks_Ready_For_Output, int _RawCurrentPackagingBrick)
 {
 
-	for(int i=_Bricks_Ready_For_Output->size(); i>=0; i--)//for every pallet
+	for(int i=_Bricks_Ready_For_Output->size()-1; i>=0; i--)//for every pallet
 	{
 		//_Bricks_Ready_For_Output:
 		//	it's 0	when it does not match the top (BRICK_NOT_READY)
@@ -753,7 +754,7 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 								const std::vector<Brick>& _Manipulator_TakenBrick)
 {
 	//for(unsigned int i=0; i<_Bricks_Ready_For_Output->size(); i++) //For all the pallets
-	int i=_Bricks_Ready_For_Output->size();
+	int i = _Bricks_Ready_For_Output->size()-1;
 	while(i-->0)
 	{
 		int destinationManipulator = (i/2);
@@ -932,10 +933,10 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 			//As soon as a gap is required, the manipulator has to take the brick. For that a temporary order is issued
 			static std::vector<bool> SPOTNEEDED;
 			static std::vector<bool> SPOTFOUND;
-			while(SPOTNEEDED.size() != _Manipulator_Fixed_Position.size()){
+			while(SPOTNEEDED.size() != _Manipulator_Fixed_Position.size()*2){
 				SPOTNEEDED.push_back(0);
 			}
-			while(SPOTFOUND != _Manipulator_Fixed_Position.size()){
+			while(SPOTFOUND.size() != _Manipulator_Fixed_Position.size()*2){
 				SPOTFOUND.push_back(0);
 			}
 
