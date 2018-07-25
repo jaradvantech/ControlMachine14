@@ -199,8 +199,6 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 
 			std::cout<< "Updated height value of pallet " << palletIndex +1 << " to "<< _Pallet_LowSpeedPulse_Height_List->at(palletIndex) <<std::endl;
 
-
-
 			std::cout<< "We are going to use the arm "<< ArmIndex+1 << " to put a brick " <<
 					_Manipulator_TakenBrick->at(ArmIndex).Type << " at pallet " <<
 					_Manipulator_TakenBrick->at(ArmIndex).AssignedPallet << std::endl;
@@ -635,6 +633,8 @@ namespace Algorithm {
 	bool force_output = false;
 	int	forced_pallet=0;
 	bool FIXEDBRICKS = false;
+	int lineSpeed = 0;
+
 }
 
 //-----------------------------------------------------------------------//
@@ -1120,6 +1120,16 @@ void CheckManualModes(OrderManager* _Manipulator_Order_List,
 
 }
 
+void CheckLineSpeed()
+{
+	//static std::chrono::duration<double> lastTime;
+
+	//std::chrono::time_point<std::chrono::system_clock>
+
+	//lastTime=std::chrono::system_clock::now();
+
+}
+
 //-----------------------------------------------------------------------//
 void * AlgorithmV2(void *Arg)
 {
@@ -1130,6 +1140,8 @@ void * AlgorithmV2(void *Arg)
 	CurrentPackagingGrade = config.GetPackagingGrade();
 	Manipulator_Fixed_Position = config.GetArmPositions();
 	Manipulator_Modes = config.GetManipulatorModes();
+	for(unsigned int i = 0;i< Manipulator_Modes.size();i++) if(Manipulator_Modes.at(i)==2) Manipulator_Modes.at(i) =0;
+
 	SetNumberOfManipulators(&Manipulator_Order_List,
 			&Pallet_LowSpeedPulse_Height_List,
 			&Bricks_Ready_For_Output,
@@ -1138,9 +1150,9 @@ void * AlgorithmV2(void *Arg)
 			Manipulator_Fixed_Position.size());
 
 	if(Manipulator_Fixed_Position.size()>0){
-		Bricks_On_The_Line.push_back(Brick(0,Manipulator_Fixed_Position.back()+2*E,0,0));
+		//Bricks_On_The_Line.push_back(Brick(0,Manipulator_Fixed_Position.back()+2*E,0,0));
 	} else {
-		Bricks_On_The_Line.push_back(Brick(0,99999,0,0));
+		//Bricks_On_The_Line.push_back(Brick(0,99999,0,0));
 	}
 
 

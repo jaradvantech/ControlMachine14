@@ -141,6 +141,7 @@ std::vector<int>ConfigParser::GetManipulatorModes()
 	for(int i=0; i<total_arms; i++)
 	{
 		if(i<total_saved_modes)
+			//JAGM: Avoid output mode
 			total_modes.push_back(saved_modes.at(i));
 		else
 			total_modes.push_back(0); //Default

@@ -24,6 +24,7 @@
 #include "connexion/connexionDisplay.h"
 #include "ConfigParser.h"
 #include "PLC_communications.h"
+#include <connexionMySQL.h>
 
 pthread_t DisplayServerThread;
 pthread_t RFIDClientThread;
@@ -76,6 +77,9 @@ void init(int numberOfArms){
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 	//Wait until the algorithm has entered in its loop
+
+
+	dummyFunction();
 }
 
 int main()
