@@ -87,7 +87,7 @@ int AnswerOfRU(std::string Answer, int RFIDServer){
 		//--------------------------------------------------------------------
 		//--------------------------------------------------------------------
 
-		//std::cout << "UID Red successfully. Server: " << RFIDServer <<" Channel: " <<  Channel << "  Tag: "<< mUID << std::endl;
+		//std::cout << "UID Read successfully. Server: " << RFIDServer <<" Channel: " <<  Channel << "  Tag: "<< mUID << std::endl;
 		//std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 1;
 	}
@@ -100,10 +100,6 @@ int AnswerOfReadAllMemory(std::string Answer, int RFIDServer){
 		std::cout
 				<< "One error (or more) has been detected when reading the memory"
 				<< std::endl;
-		//std::cout
-		//		<< "+-----------------------------------------------------"
-		//		<< std::endl;
-		return 0; // 0 means that there is some error in the message
 	} else {
 
 		//--------------------------------------------------------------------
@@ -121,21 +117,23 @@ int AnswerOfReadAllMemory(std::string Answer, int RFIDServer){
 		} else {
 
 			mPallet->Brick[0] = Pos0; //Save that value at the computer's memory at the position 0
-		}
-		for (int i = 1; i < 112; i++) {	//For each byte starting at position 1, so: for each brick
-			mPallet->Brick[i] = (int) (Answer.at(30 + i));//Store the value at the computer's memory in the right position.
-			//std::cout << "Brick info read "<<  i << " :"  <<  answer.at(20+i) << std::endl; //Debug purpose
+		}try{
+			for (int i = 1; i < 112; i++)
+			{	//For each byte starting at position 1, so: for each brick
+				mPallet->Brick[i] = (int) (Answer.at(30 + i));//Store the value at the computer's memory in the right position.
+			}
+		}catch(const std::exception &exc){
+					std::cerr << exc.what() << " when parsing request from server " << RFIDServer << ", channel " << Channel << std::endl;
+					//std::cout << "Brick info read "<<  i << " :"  <<  answer.at(20+i) << std::endl;
 		}
 		//std::cout << "NOB: " << Pos0 - 17 << std::endl; //Debug purpose
 		//--------------------------------------------------------------------
 		//--------------------------------------------------------------------
 
-		//std::cout << "Memory Red successfully. Channel: " << Channel << std::endl;
+		//std::cout << "Memory Read successfully. Channel: " << Channel << std::endl;
 		//std::cout << "+-----------------------------------------------------"	<< std::endl;
 		return 1;
 	}
-
-
 }
 
 int AnswerOfFormatMemory(std::string Answer, int RFIDServer){
@@ -172,14 +170,8 @@ int AnswerOfAddBrick(std::string Answer, int RFIDServer){
 		short Channel;
 
 		Channel=boost::lexical_cast<short>(Answer.substr(13,2)); //Get the channel of the UID
-			//std::cout << "Memory writting successfully. Brick N: " <<  Pallet[Channel-1]->Brick[0]-17 << std::endl;
-			//std::cout << "Memory writting successfully. Brick Info: " <<  Pallet[Channel-1]->Brick[Pallet[Channel-1]->Brick[0]-17] << std::endl;
-
-			std::cout << "Memory writting successfully. Channel: " <<  Channel << std::endl; //DEBUG
-			//std::cout << "+-----------------------------------------------------" <<std::endl;
-			return 1;
-		//--------------------------------------------------------------------
-		//--------------------------------------------------------------------
+		std::cout << "Memory written successfully. Channel: " <<  Channel << std::endl; //DEBUG
+		return 1;
 	}
 }
 
@@ -198,7 +190,7 @@ int AnswerOfDeleteBrick(std::string Answer, int RFIDServer){
 			//std::cout << "Memory writting successfully. Brick N: " <<  Pallet[Channel-1]->Brick[0]-17 << std::endl;
 			//std::cout << "Memory writting successfully. Brick Info: " <<  Pallet[Channel-1]->Brick[Pallet[Channel-1]->Brick[0]-17] << std::endl;
 
-			std::cout << "Memory writting successfully. Channel: " <<  Channel << std::endl; //DEBUG
+			std::cout << "Memory written successfully. Channel: " <<  Channel << std::endl; //DEBUG
 			//std::cout << "+-----------------------------------------------------" <<std::endl;
 			return 1;
 		//--------------------------------------------------------------------

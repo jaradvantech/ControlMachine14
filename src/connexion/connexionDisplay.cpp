@@ -185,11 +185,15 @@ void Command_RFMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
  */
 void Command_RAMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	int selectedPallet=1, valueToAdd=0;
+	int selectedPallet=1, valueToAdd=0, position=0, color=0, grade=0;
 	FindAndAddTo(DOC_in, "selectedPallet", &selectedPallet);
-	FindAndAddTo(DOC_in, "valueToAdd", &valueToAdd);
+	FindAndAddTo(DOC_in, "color", &color);
+	FindAndAddTo(DOC_in, "grade", &grade);
 
-	StorageAddBrick(selectedPallet, valueToAdd >> 4, valueToAdd & 15);
+	FindAndAddTo(DOC_in, "position", &position);
+
+	//StorageAddBrick(selectedPallet, grade, color);
+	StorageInsertBrick(selectedPallet, position, grade, color);
 
 	DOC_in.IsNull();
 	AnswerWriter->StartObject();

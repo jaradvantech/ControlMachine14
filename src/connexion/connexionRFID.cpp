@@ -145,20 +145,19 @@ void * RFIDLoop(void *Arg){
 		 else
 			 ListToUse = &messageList;
 
-		 try
-		 {
+		try{
 			 if(ListToUse->size()>0)
 			 {
 				 //PREPROCESS MESSAGE
 				 Message=ListToUse->front();
 				 //The message has to have the RFIDServer to who the message is
 				 RFIDServer=boost::lexical_cast<int>(Message.substr(0, 1));
-				 //Removes the RFIDServer to get the message that is going to be parsed. //RBS I don't like this
+				 //Removes the RFIDServer to get the message that is going to be parsed
 				 Message=Message.substr(1);
 
 				 //Send Command has to be blocking because how the servers work.
 				 if(RFIDManager[RFIDServer]->isConnected() != true)
-					 throw std::runtime_error("Server disconnected");
+					 throw std::runtime_error("Server Not Connected");
 
 				 if(RFIDManager[RFIDServer]->SendCommand(Message))
 				 {
@@ -178,13 +177,8 @@ void * RFIDLoop(void *Arg){
 				 else
 					 throw std::runtime_error("Error on send");
 			 }
-
-		 } catch( ... ){
-			//RBS This code does not work for a number of reasons
-			//	-isConnected() Only tells if it has ever connected, but won't detect a disconnection
-			//	-for some mysterious reason, we never get in the list messages destinated to unreachable servers
-			//	-And therefore, exceptions are not being thrown and this is never executing.
-			// UPDATE: RBS It's fixed (2/Jul/2018)
+		 }catch(const std::exception &exc){
+			std::cerr << exc.what();
 
 			emergencyList.clear();
 			RFIDManager[RFIDServer]->ShutdownConnection();

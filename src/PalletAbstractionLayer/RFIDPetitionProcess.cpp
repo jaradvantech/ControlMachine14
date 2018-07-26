@@ -10,13 +10,15 @@
 //Petition Layer. This layer crafts messages and puts them in the list
 /////////////////////////////////////////////////////////////////////////////
 
-
 #include <PalletAbstractionLayer/RFIDPetitionProcess.h>
 #include <connexionRFID.h>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <PalletAbstractionLayer/Pallet.h>
+
+#define TOTAL_GRADES 7
+#define TOTAL_COLORS 15
 
 inline const char * const RFIDBoolToString(bool b)
 {
@@ -190,7 +192,8 @@ int PetitionOf_FormatMemory(int RFIDServer, short Channel)
 		std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 4; //4 means that it tried to perform a formate operation where there is no pallet.
 	}
-	if(Channel==1 || Channel==2 || Channel==3 || Channel==4){
+	if(Channel==1 || Channel==2 || Channel==3 || Channel==4)
+	{
 		//--------------------------------------------------------------------
 		// MESSAGE CRAFTING
 		//--------------------------------------------------------------------
@@ -239,7 +242,8 @@ int PetitionOf_AddBrick(int RFIDServer, short Channel,int Grade, int Colour)
 	}
 
 	if((Channel==1 || Channel==2 || Channel==3 || Channel==4) &&
-		Grade  >=1 && Grade  <=7 && Colour >=1 && Colour  <=15 ) {
+		Grade  >=0 && Grade  <=TOTAL_GRADES && Colour >=0 && Colour <=TOTAL_COLORS )
+	{
 
 		//--------------------------------------------------------------------
 		// MESSAGE CRAFTING: Writes the brick information
@@ -256,7 +260,7 @@ int PetitionOf_AddBrick(int RFIDServer, short Channel,int Grade, int Colour)
 			message+=char(mPallet->Brick[i]);//Add the previous bricks
 
 		}
-		message+=char((Grade<<4)+Colour); //Finally, the actual brick
+		message+=char(((Grade+1)<<4)+(Colour+1)); //Finally, the current brick
 		message+="\r\n";
 
 		framedmessage+=(boost::format("%01u") % RFIDServer).str();
@@ -266,7 +270,7 @@ int PetitionOf_AddBrick(int RFIDServer, short Channel,int Grade, int Colour)
 		AddMessage(framedmessage);
 
 		mPallet->Brick[0]+=1;											 //Increase the computers memory byte 0 AKA number of bricks in one
-		mPallet->Brick[mPallet->Brick[0]-17]=(Grade<<4)+Colour; //Go to the memory position of the new brick and write the information
+		mPallet->Brick[mPallet->Brick[0]-17]=((Grade+1)<<4)+(Colour+1); //Go to the memory position of the new brick and write the information
 		return 1;
 	}else{
 		std::cout << "Incorrect parameters, no action was performed: " << Channel << std::endl;
@@ -288,7 +292,8 @@ int PetitionOf_DeleteBrick(int RFIDServer, short Channel,int PositionToDelete)
 		std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 3; //3 means that the limit has been reached
 	}
-	if((Channel==1 || Channel==2 || Channel==3 || Channel==4)) {
+	if((Channel==1 || Channel==2 || Channel==3 || Channel==4))
+	{
 
 		//--------------------------------------------------------------------
 		// MESSAGE CRAFTING: Writes the brick information
@@ -319,11 +324,12 @@ int PetitionOf_DeleteBrick(int RFIDServer, short Channel,int PositionToDelete)
 		mPallet->Brick[0]-=1;											 //Decrease the computers memory byte 0 AKA number of bricks in one
 
 		for(int i=PositionToDelete;i<=NumberOfBricks;i++){
-			mPallet->Brick[i]=
-					mPallet->Brick[i+1];//Skip the one to delete
+			mPallet->Brick[i]=mPallet->Brick[i+1];//Skip the one to delete
 		}
 		return 1;
-	}else{
+	}
+	else
+	{
 		std::cout << "Incorrect parameters, no action was performed: " << Channel << std::endl;
 		std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 0;
@@ -334,16 +340,18 @@ int PetitionOf_EditBrick(int RFIDServer, short Channel, int Position, int Grade,
 {
 	IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
 	if(boost::equals(mPallet->UID,"0000000000000000")){
-		std::cout << "Try to add brick where there is no pallet : " <<  Channel << std::endl; //DEBUG
+		std::cout << "Try to edit brick where there is no pallet : " <<  Channel << std::endl; //DEBUG
 		std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 4; //4 means that it tried to perform an add operation where there is no pallet.
 	}
-	if(mPallet->Brick[0]<=17){
-		std::cout << "Attempt to perform a delete operation on an empty pallet: " <<  Channel << std::endl; //DEBUG
+	if(Position==0){
+		std::cout << "Attempt to edit null brick" <<  Channel << std::endl; //DEBUG
 		std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 3; //3 means that the limit has been reached
 	}
-	if((Channel==1 || Channel==2 || Channel==3 || Channel==4)) {
+	if((Channel==1 || Channel==2 || Channel==3 || Channel==4) &&
+		Grade  >=0 && Grade  <=TOTAL_GRADES && Colour >=0 && Colour <=TOTAL_COLORS )
+	{
 
 		//--------------------------------------------------------------------
 		// MESSAGE CRAFTING: Writes the brick information
@@ -373,11 +381,12 @@ int PetitionOf_EditBrick(int RFIDServer, short Channel, int Position, int Grade,
 		framedmessage+=message;
 		AddMessage(framedmessage);
 
-		//RBS Update on program memory (?)
 		mPallet->Brick[Position]=((Grade+1) << 4) + Colour +1;
 		return 1;
 
-	}else{
+	}
+	else
+	{
 		std::cout << "Incorrect parameters, no action was performed: " << Channel << std::endl;
 		std::cout << "+-----------------------------------------------------" <<std::endl;
 		return 0;
@@ -385,6 +394,67 @@ int PetitionOf_EditBrick(int RFIDServer, short Channel, int Position, int Grade,
 	return 1;
 }
 
-int PetitionOf_InsertBrick(int RFIDServer, short Channel,int Position, int Grade, int Colour){
-	return 1;
+int PetitionOf_InsertBrick(int RFIDServer, short Channel,int position, int Grade, int Colour)
+{
+	IndividualPallet* mPallet=DesiredPallet(RFIDServer*4+(Channel));
+	if(mPallet->Brick[0]>=100+17){
+
+		std::cout << "The limit of 100 bricks has been reached: " <<  Channel << std::endl; //DEBUG
+		std::cout << "+-----------------------------------------------------" <<std::endl;
+		return 3; //3 means that the limit has been reached
+	}
+	if(boost::equals(mPallet->UID,"0000000000000000")){
+		std::cout << "Try to insert brick where there is no pallet : " <<  Channel << std::endl; //DEBUG
+		std::cout << "+-----------------------------------------------------" <<std::endl;
+		return 4; //4 means that it tried to perform an add operation where there is no pallet.
+	}
+
+	//RBS; arreglar gran problema de indices, luego continuar con esto.
+
+	if((Channel==1 || Channel==2 || Channel==3 || Channel==4) &&
+		Grade  >=0 && Grade  <=TOTAL_GRADES && Colour >=0 && Colour  <=TOTAL_COLORS ) {
+
+		//--------------------------------------------------------------------
+		// MESSAGE CRAFTING: Writes the brick information
+		//--------------------------------------------------------------------
+		std::string message, framedmessage;
+		short NumberOfBricks = mPallet->Brick[0]-17;
+
+		//Move right every brick from insert position to the end
+		for(int i=NumberOfBricks; i>position; i--)
+		{
+			mPallet->Brick[i+1] = mPallet->Brick[i];
+		}
+		//Insert new brick
+		mPallet->Brick[position+1] = ((Grade+1)<<4)+(Colour+1);
+		//Update count
+		NumberOfBricks++;
+	    mPallet->Brick[0] += 1;
+
+		message+="_WR_";
+		message+=(boost::format("%02u") % Channel).str();
+		message+="_00000_";
+		message+=(boost::format("%04u") % (NumberOfBricks+1)).str(); // Number of bytes to write
+		message+="_";
+
+		//Add all the data
+		for(int i=0; i<(NumberOfBricks+1); i++)
+		{
+			message+=char(mPallet->Brick[i]);
+		}
+		message+="\r\n";
+
+		framedmessage+=(boost::format("%01u") % RFIDServer).str();
+		framedmessage+="1050_"; //1050 I
+		framedmessage+=(boost::format("%04u") % (message.length()+9)).str();
+		framedmessage+=message;
+		AddMessage(framedmessage);
+
+		return 1;
+	}else{
+		std::cout << "Incorrect parameters, no action was performed: " << Channel << std::endl;
+		std::cout << "+-----------------------------------------------------" <<std::endl;
+		return 0;
+	}
+
 }

@@ -29,6 +29,8 @@ int PetitionOf_FormatMemory(int RFIDServer, short Channel);
 
 int PetitionOf_AddBrick(int RFIDServer, short Channel,int Grade, int Colour);
 
+int PetitionOf_InsertBrick(int RFIDServer, short Channel,int position, int Grade, int Colour);
+
 int PetitionOf_DeleteBrick(int RFIDServer, short Channel,int PositionToDelete);
 
 int PetitionOf_EditBrick(int RFIDServer, short Channel,int Position, int Grade, int Colour);

@@ -73,7 +73,7 @@ bool TCPClient::setup(std::string address , int port)
   		_connected=1;
   	std::cout << std::endl;
     std::cout << "+-----------------------------------------------------" << std::endl;
-    std::cout << "| Connected to the RFID Receiver at " << address.c_str()<< std::endl;
+    std::cout << "| Connected to the RFID Receiver at " << address.c_str() << " : " << port << std::endl;
     std::cout << "+-----------------------------------------------------" << std::endl;
 
     }
@@ -144,7 +144,7 @@ void TCPClient::detach()
 				std::cout << std::endl;
 				std::cout << "+-----------------------------------------------------" << std::endl;
 				std::cerr << "| Disconnection failed. Error" << std::endl;
-				std::cout << "| FAILED to disconnect RFID Receiver" << std::endl;
+				std::cout << "| FAILED to disconnect RFID Receiver at " << address.c_str() << " : " << port << std::endl;
 				std::cout << "+-----------------------------------------------------" << std::endl;
 		} else {
 			sock=-1;
@@ -153,7 +153,7 @@ void TCPClient::detach()
 			_connected=0;
 		std::cout << std::endl;
 		std::cout << "+-----------------------------------------------------" << std::endl;
-		std::cout << "| Disconnected from RFID Receiver" << std::endl;
+		std::cout << "| Disconnected from RFID Receiver at " << address.c_str() << " : " << port << std::endl;
 		std::cout << "+-----------------------------------------------------" << std::endl;
 		}
 	}else{
