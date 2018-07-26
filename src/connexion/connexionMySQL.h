@@ -5,8 +5,6 @@
  *      Author: andres
  */
 
-#ifndef CONNEXION_CONNEXIONMYSQL_H_
-#define CONNEXION_CONNEXIONMYSQL_H_
 
 #define COMPILE_WITH_MYSQL 0
 
@@ -29,4 +27,3 @@ void dummyFunction();
 
 #endif
 
-#endif /* CONNEXION_CONNEXIONMYSQL_H_ */

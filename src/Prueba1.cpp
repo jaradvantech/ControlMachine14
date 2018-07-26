@@ -24,7 +24,9 @@
 #include "connexion/connexionDisplay.h"
 #include "ConfigParser.h"
 #include "PLC_communications.h"
-#include <connexionMySQL.h>
+#ifdef COMPILE_WITH_MYSQL
+	#include "connexion/connexionMySQL.h"
+#endif
 
 pthread_t DisplayServerThread;
 pthread_t RFIDClientThread;
@@ -79,7 +81,7 @@ void init(int numberOfArms){
 	//Wait until the algorithm has entered in its loop
 
 
-	dummyFunction();
+	//dummyFunction();
 }
 
 int main()
