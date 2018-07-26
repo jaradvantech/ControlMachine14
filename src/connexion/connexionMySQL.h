@@ -6,24 +6,6 @@
  */
 
 
-#define COMPILE_WITH_MYSQL 0
 
-#ifdef COMPILE_WITH_MYSQL
-
-
-
-
-void dummyFunction();
-
-
-
-
-
-
-
-
-
-
-
-#endif
+void TestMySQL();
 

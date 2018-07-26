@@ -46,6 +46,7 @@
 								</option>
 								<option id="gnu.cpp.link.option.libs.1729010982" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" useByScannerDiscovery="false" valueType="libs">
 									<listOptionValue builtIn="false" value="connexionPLC"/>
+									<listOptionValue builtIn="false" value="mysqlcppconn"/>
 								</option>
 								<option id="gnu.cpp.link.option.shared.961373143" name="Shared (-shared)" superClass="gnu.cpp.link.option.shared" useByScannerDiscovery="false" value="false" valueType="boolean"/>
 								<option id="gnu.cpp.link.option.pthread.256895349" name="Support for pthread (-pthread)" superClass="gnu.cpp.link.option.pthread" useByScannerDiscovery="false" value="true" valueType="boolean"/>

@@ -7,7 +7,11 @@
 
 
 #include <connexionMySQL.h>
-/*
+
+//#include "mysqlx"
+//#include "mysql_connexion.h"
+
+
 #include <stdlib.h>
 #include <iostream>
 #include "jdbc/mysql_connection.h"
@@ -19,35 +23,49 @@
 #include <jdbc/cppconn/prepared_statement.h>
 
 
-void dummyFunction(){
+void TestMySQL(){
 
 
 	try {
 
 
 		sql::Driver *driver = get_driver_instance();
-
-		const sql::SQLString host = "tcp://127.0.0.1:3306";
+		std::string IP = "tcp://";
+		IP+= "192.168.0.151";
+		IP+= ":";
+		IP+="3306";
+		const sql::SQLString host = IP;
 		const sql::SQLString user = "root";
-		const sql::SQLString pass = "*****";
+		const sql::SQLString pass = "drogo";
 
 		sql::Connection *con = driver->connect(host, user, pass);
 
-	// Create a connection
-	driver = sql::mysql::get_driver_instance();
-	con = driver->connect("tcp://192.168.0.151:3306", "root", "drogo");
-	// Connect to the MySQL test database
-	con->setSchema("test");
+		bool isInfoSchemaUsed;
+		con->getClientOption("metadataUseInfoSchema", (void *) &isInfoSchemaUsed);
 
-	//stmt = con->createStatement();
-	//stmt->execute("DROP TABLE IF EXISTS test");
-	//stmt->execute("CREATE TABLE test(id INT)");
-	//delete stmt;
+		int defaultStmtResType;
+		int defaultPStmtResType;
+		con->getClientOption("defaultStatementResultType", (void *) &defaultStmtResType);
+		con->getClientOption("defaultPreparedStatementResultType", (void *) &defaultPStmtResType);
+		std::cout << std::endl;
+		std::cout << "+-----------------------------------------------------" << std::endl;
+		std::cout << "| Connected to database on " <<host<< std::endl;
+		std::cout << "| isInfoSchemaUsed: " <<isInfoSchemaUsed << std::endl;
+		std::cout << "| defaultStatementResultType: " <<defaultStmtResType << std::endl;
+		std::cout << "| defaultPreparedStatementResultType: " <<defaultPStmtResType << std::endl;
+		std::cout << "+-----------------------------------------------------" << std::endl;
+		// Connect to the MySQL test database
+		//con->setSchema("test");
 
-	//delete res;
+		//stmt = con->createStatement();
+		//stmt->execute("DROP TABLE IF EXISTS test");
+		//stmt->execute("CREATE TABLE test(id INT)");
+		//delete stmt;
 
-	//delete pstmt;
-	//delete con;
+		//delete res;
+
+		//delete pstmt;
+		//delete con;
 
 	} catch (sql::SQLException &e) {
 	std::cout << "# ERR: SQLException in " << __FILE__;
@@ -60,5 +78,4 @@ void dummyFunction(){
 	}
 }
 
-*/
 
