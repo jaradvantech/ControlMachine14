@@ -14,10 +14,14 @@
 
 bool MySQLAdapter::Connect()
 {
+
+		//the order in which this is placed is the only correct one. First check for null, then check for valid, then try to reconnect. Obscure? :P
         bool connected = (sql_connection != nullptr ) && (sql_connection->isValid() || sql_connection->reconnect());
 
         if (!connected)
         {
+
+        	//TODO: Remove hardcoded values
     		std::string IP = "tcp://";
     		IP+= _IP;
     		IP+= ":";
@@ -28,6 +32,8 @@ bool MySQLAdapter::Connect()
 
     		sql_connection = sql_driver->connect(host, user, pass);
             connected = sql_connection->isValid();
+
+            //if we got a good connextion, show it. Be proud
             if(connected){
         		bool isInfoSchemaUsed;
         		sql_connection->getClientOption("metadataUseInfoSchema", (void *) &isInfoSchemaUsed);
@@ -51,7 +57,10 @@ bool MySQLAdapter::Connect()
         return false;
 }
 
-void MySQLAdapter::OnErrorWipeClean(sql::SQLException &e){
+void MySQLAdapter::OnErrorWipeClean(sql::SQLException &e)
+{
+
+
 
 	std::cout << "# ERR: SQLException in " << __FILE__;
 	std::cout << "(" << __FUNCTION__ << ") on line "
@@ -107,8 +116,12 @@ void MySQLAdapter::RealInitMySQL(){
 void* MySQLAdapter::QueryThread(void* Arg)
 {
 
-	pthread_detach((unsigned long)pthread_self());
-	Thread_Semaphore_mutex.lock();
+	pthread_detach((unsigned long)pthread_self()); //this is a detached thread
+
+
+	Thread_Semaphore_mutex.lock();   //This mutex, together with the bool Thread_Semaphore avoids that more than one thread is created to consume the list.
+									 //We lock it at the beginning. Thread_Semaphore will hold a value of TRUE while this thread is working
+
 	bool ThereAreMoreQueries = true;
 		while(ThereAreMoreQueries)
 		{
@@ -144,10 +157,14 @@ void* MySQLAdapter::QueryThread(void* Arg)
 			}
 		}
 	Thread_Semaphore=false;
-	Thread_Semaphore_mutex.unlock();
+	Thread_Semaphore_mutex.unlock();//This mutex, together with the bool Thread_Semaphore avoids that more than one thread is created to consume the list.
 	return nullptr;
 }
 
+
+
+//When we call Execute we must provide a Query and a void function that accepts a sql::ResultSet* as argument to process the result of the query.
+//in case that it is an INSERT or we are not interested in process the result, we can pass nullptr as argument.
 void MySQLAdapter::Execute(std::string Query, void(*foo)(sql::ResultSet*))
 {
 	QueryStructure structure;
@@ -161,17 +178,22 @@ void MySQLAdapter::Execute(std::string Query, void(*foo)(sql::ResultSet*))
 
 
 
-
+	 //Thread_Semaphore == false, in other words, means that there is no QueryThread running at this moment
 
 	 if(Thread_Semaphore==false)
 	 {
 			Thread_Semaphore_mutex.lock();
 			Thread_Semaphore=true;
-			pthread_create(&MySQLThread, NULL, &QueryThread_wrapper, this);
+
+			pthread_create(&MySQLThread, NULL, &QueryThread_wrapper, this); //It's safe to create a new thread
+
 			Thread_Semaphore_mutex.unlock();
 	 }
 }
 
+
+//This function is needed to use pthread_create inside an object.
+//https://stackoverflow.com/questions/38224532/pthread-create-invalid-use-of-non-static-member-function
 void* MySQLAdapter::QueryThread_wrapper(void* object)
 {
     reinterpret_cast<MySQLAdapter*>(object)->QueryThread((void*) 0);
