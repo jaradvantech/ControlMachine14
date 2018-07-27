@@ -268,7 +268,7 @@ void * OpenServer(void *Arg)
         					//PROCESS MESSAGE
         					if(FunctionToProcessMessages==nullptr)bufferWrite=bufferRead_Line;
         					else bufferWrite=FunctionToProcessMessages(bufferRead_Line);
-
+/*
         					if(!boost::contains(bufferRead_Line, "PGSI") &&
         					   !boost::contains(bufferRead_Line, "PWDA") &&
 							   !boost::contains(bufferRead_Line, "RGMV") &&
@@ -292,7 +292,7 @@ void * OpenServer(void *Arg)
             					std::cout << "Received  :  " << bufferRead_Line << std::endl;
             					std::cout << "Sent back :  " << bufferWrite << std::endl;
         					}
-
+*/
         					send(TCPClients.at(i).client_socket , bufferWrite.c_str() , strlen( bufferWrite.c_str() ) , 0 );
         					//std::cout << "Sent: " << bufferWrite.c_str() << std::endl;
         					bufferWrite="";

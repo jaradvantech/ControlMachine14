@@ -28,7 +28,7 @@ bool MySQLAdapter::Connect()
     		IP+="3306";
     		const sql::SQLString host = IP;
     		const sql::SQLString user = "root";
-    		const sql::SQLString pass = "drogo";
+    		const sql::SQLString pass = "caudete";
 
     		sql_connection = sql_driver->connect(host, user, pass);
             connected = sql_connection->isValid();

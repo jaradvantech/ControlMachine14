@@ -24,7 +24,7 @@
 #include "connexion/connexionDisplay.h"
 #include "ConfigParser.h"
 #include "PLC_communications.h"
-#include "DB_AbstractionLayer.h"
+#include "DB_AbstractionLayer/DB_AbstractionLayer.h"
 
 
 pthread_t DisplayServerThread;
@@ -79,7 +79,7 @@ void init(int numberOfArms){
 	}
 	//Wait until the algorithm has entered in its loop
 
-	getMySQL_Manager()->InitMySQL("192.168.0.151","Machine14");
+	getMySQL_Manager()->InitMySQL("192.168.0.54","Machine14");
 	InsertRegister();
 	RetrieveRegister();
 	//TestMySQL();

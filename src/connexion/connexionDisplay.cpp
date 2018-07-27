@@ -746,6 +746,62 @@ void Command_SCFG(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 	AnswerWriter->EndObject();
 }
 
+/*
+ * Query Database ReQuest
+ */
+void Command_QDRQ(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
+{
+	DOC_in.IsNull();
+	int fromYear, fromMonth, fromDay, toYear, toMonth, toDay;
+
+	FindAndAddTo(DOC_in, "fromYear", &fromYear);
+	FindAndAddTo(DOC_in, "fromMonth", &fromMonth);
+	FindAndAddTo(DOC_in, "fromDay", &fromDay);
+	FindAndAddTo(DOC_in, "toYear", &toYear);
+	FindAndAddTo(DOC_in, "toMonth", &toMonth);
+	FindAndAddTo(DOC_in, "toDay", &toDay);
+
+
+
+
+
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("QDRQ");
+
+	AnswerWriter->EndObject();
+}
+
+
+/*
+ * Get Manual mode Info
+ */
+void Command_GMMI(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
+{
+	DOC_in.IsNull();
+	ConfigParser config(CONFIG_FILE);
+	RoboticArm* mArm = getArm(1);
+
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("GMMI");
+	AnswerWriter->Key("lineRunning");
+	if(mArm->TransmissionManualDebugging == true && mArm->PCState ==3)
+		AnswerWriter->Bool(true);
+	else
+		AnswerWriter->Bool(false);
+
+	AnswerWriter->Key("manualModes");
+	AnswerWriter->StartArray();
+	for(int i=0; i<config.GetNumberOfArms(); i++)
+	{
+		AnswerWriter->Bool(getArm(i+1)->ManipulatorMode==MANUAL);
+	}
+	AnswerWriter->EndArray();
+
+	AnswerWriter->EndObject();
+}
+
 void Command_PING(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
 	DOC_in.IsNull();
@@ -799,6 +855,8 @@ std::string ProcessCommand(std::string Message)
         else if(boost::equals(command_ID, "GDIS")) Command_GDIS(DOC_in, &writer);
         else if(boost::equals(command_ID, "SCFG")) Command_SCFG(DOC_in, &writer);
         else if(boost::equals(command_ID, "GCFG")) Command_GCFG(DOC_in, &writer);
+        else if(boost::equals(command_ID, "QDRQ")) Command_QDRQ(DOC_in, &writer);
+        else if(boost::equals(command_ID, "GMMI")) Command_GMMI(DOC_in, &writer);
         else if(boost::equals(command_ID, "PING")) Command_PING(DOC_in, &writer);
         else std::cout << "Unknown command: " << command_ID << std::endl;
     }
