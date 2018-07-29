@@ -18,6 +18,7 @@
 #include "ScoreCalculation.h"
 #include "LineOperations.h"
 #include <algorithm>
+#include <DB_AbstractionLayer/WritingLayer.h>
 
 #define MODE_INPUT    0
 #define MODE_INOUT    1
@@ -39,6 +40,7 @@ void SetNumberOfManipulators(OrderManager* _Manipulator_Order_List,
 		std::vector<int>* _Bricks_Ready_For_Output,
 		std::vector<Brick>* _Manipulator_TakenBrick,
 		std::deque<int>* _DNI_List,
+		std::vector<int> *_Manipulator_Modes,
 		short _NumberOfManipulators)
 {
 	_Manipulator_Order_List->SetNumberOfArms(_NumberOfManipulators);
@@ -51,6 +53,7 @@ void SetNumberOfManipulators(OrderManager* _Manipulator_Order_List,
 		_Pallet_LowSpeedPulse_Height_List->push_back(5000);
 		_Bricks_Ready_For_Output->push_back(BRICK_NOT_READY);
 		_Bricks_Ready_For_Output->push_back(BRICK_NOT_READY);
+		_Manipulator_Modes->push_back(MODE_DISABLED);
 	}
 
 	//Fill DNIs
@@ -196,7 +199,10 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 		   _Manipulator_TakenBrick->at(ArmIndex).DNI !=0)
 		{
 			_Pallet_LowSpeedPulse_Height_List->at(palletIndex)= getArm(ArmIndex+1)->ActualValueEncoder - RoboticArm::Z_AxisDeceletationDistance;
-
+			InsertOperation(_Manipulator_TakenBrick->at(ArmIndex).Type,
+							palletIndex+1,
+							CATCH,
+							StorageGetStoredUID(palletIndex+1));
 			std::cout<< "Updated height value of pallet " << palletIndex +1 << " to "<< _Pallet_LowSpeedPulse_Height_List->at(palletIndex) <<std::endl;
 
 			std::cout<< "We are going to use the arm "<< ArmIndex+1 << " to put a brick " <<
@@ -204,11 +210,13 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 					_Manipulator_TakenBrick->at(ArmIndex).AssignedPallet << std::endl;
 
 			StorageAddBrick(_Manipulator_TakenBrick->at(ArmIndex).AssignedPallet,
-				_Manipulator_TakenBrick->at(ArmIndex).Type >> 4,
-				_Manipulator_TakenBrick->at(ArmIndex).Type & 15);
+				(_Manipulator_TakenBrick->at(ArmIndex).Type >> 4)-1,
+				(_Manipulator_TakenBrick->at(ArmIndex).Type & 15)-1);
 			Brick NoBrick(0,0,0,0);
 			_Available_DNI_List->push_back(_Manipulator_TakenBrick->at(ArmIndex).DNI);
 			_Manipulator_TakenBrick->at(ArmIndex)=NoBrick;
+
+
 		}
 		//----------------------------------------------------------------------
 		//Brick on the line taken by a manipulator
@@ -239,9 +247,10 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 
 				std::cout << "The brick taken was of the type " << _Manipulator_TakenBrick->at(ArmIndex).Type << std::endl;
 				std::cout << "and was assigned the DNI " << _Manipulator_TakenBrick->at(ArmIndex).DNI  << std::endl;
-								_Available_DNI_List->pop_front();
-								StorageDeleteBrick(palletIndex+1,StorageGetNumberOfBricks(palletIndex+1));
+				_Available_DNI_List->pop_front();
+				StorageDeleteBrick(palletIndex+1,StorageGetNumberOfBricks(palletIndex+1));
 
+				//Check if Pallet is full
 			}
 			_Pallet_LowSpeedPulse_Height_List->at(palletIndex)= getArm(ArmIndex+1)->ActualValueEncoder - RoboticArm::Z_AxisDeceletationDistance;
 				std::cout<< "Updated height value to "<< _Pallet_LowSpeedPulse_Height_List->at(palletIndex) <<std::endl;
@@ -259,6 +268,12 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 				//We guess that the discharge operation happened in the spot assigned to the tile
 				if(_ListOfBricksOnLine->at(j).AssignedPallet == palletIndex+1)
 				{
+					InsertOperation(_Manipulator_TakenBrick->at(ArmIndex).Type,
+									palletIndex+1,
+									DROP,
+									StorageGetStoredUID(palletIndex+1));
+
+
 					_ListOfBricksOnLine->at(j).DNI =  _Manipulator_TakenBrick->at(ArmIndex).DNI;
 					_ListOfBricksOnLine->at(j).Type =  _Manipulator_TakenBrick->at(ArmIndex).Type;
 					_ListOfBricksOnLine->at(j).AssignedPallet =  _Manipulator_TakenBrick->at(ArmIndex).AssignedPallet;
@@ -361,6 +376,7 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 						OrderManager _Manipulator_Order_List,
 						const std::vector<int>& _Manipulator_Fixed_Position,
 						std::vector<int> _Manipulator_Modes,
+						std::vector<int> _Manipulator_Desired_Modes,
 						int _RawCurrentPackagingBrick,
 						int _forced_pallet)
 {
@@ -375,21 +391,21 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 		//bool ManipulatorWillBeReady = true; //Let's agree that unless noted otherwise the manipulator will be ready
 		//CONDITION 1: Manipulator is enabled as input (0=in, 1=in/out, 2=out, 3=disabled)
 		bool ManipulatorWillBeReady=true;
-		if(_Manipulator_Modes.at(i) == MODE_OUTPUT || _Manipulator_Modes.at(i) == MODE_DISABLED)
+		if(_Manipulator_Modes.at(i) == MODE_OUTPUT || _Manipulator_Modes.at(i) == MODE_DISABLED ||
+		   _Manipulator_Desired_Modes.at(i) == MODE_OUTPUT || _Manipulator_Desired_Modes.at(i) == MODE_DISABLED )
+		{
+			ManipulatorWillBeReady = false;
+		}
+					//----------------------------------------------------------------------
+			//CONDITION 2: Manipulator unavailable if it's before the brick.
+			//std::cout << "_BrickToClassify->Position " << _BrickToClassify->Position << "    "<< "_Manipulator_Fixed_Position.at(i) " << _Manipulator_Fixed_Position.at(i) << std::endl;
+		else if(_BrickToClassify->Position>_Manipulator_Fixed_Position.at(i))
 		{
 			ManipulatorWillBeReady = false;
 		}
 		else{
 			for(unsigned int j=0; j<_Manipulator_Order_List.atManipulator(i)->NumberOfOrders(); j++) //And for every order
 			{
-				//----------------------------------------------------------------------
-				//CONDITION 2: Manipulator unavailable if it's before the brick.
-				if(_BrickToClassify->Position>_Manipulator_Fixed_Position.at(i))
-				{
-					ManipulatorWillBeReady = false;
-					break; //pretty clear
-				}
-
 				//Once the action has started, we have to add the constant K that is the encoder units that will advance until the manipulator is ready again.
 
 				//CONDITION 3: Manipulator will be still busy because of previous order
@@ -460,10 +476,12 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 			if(ManipulatorWillBeReady)
 			for(int j=0;j<2;j++) //check both sides
 			{
-				if(true) //If the pallet exists and it's not full
+				if(!boost::equals(StorageGetStoredUID(i+1),"0000000000000000") && StorageGetNumberOfBricks(i*2+j+1) < 10)		//Check if Pallet is full
 				{
 					ListOfPoints.at(i*2+j) = CheckInputScore(i*2+j+1, _BrickToClassify->Type, _RawCurrentPackagingBrick);
 					std::cout << "-Pallet checked:  " << i*2+j+1 << "   Points assigned " << ListOfPoints.at(i*2+j) << std::endl;
+				} else{
+					std::cout << "-Pallet not checked:  " << i*2+j+1 << std::endl;
 				}
 			}
 		}
@@ -472,11 +490,12 @@ void Choose_Best_Pallet(Brick* _BrickToClassify,
 
 	//Check minimum score TO CHANGE FOR STD::Minimum_at(vector)
 	int PalletWithMinimumScore=-1;
+	if(ListOfPoints.size()>0)PalletWithMinimumScore=0;
 	for(unsigned int i=0;i<ListOfPoints.size();i++)
 	{
-
 		//If the index PalletWithMinimumScore is -1, returns 0. Otherwise, returns PalletWithMinimumScore
-		if(ListOfPoints.at(i)<ListOfPoints.at((PalletWithMinimumScore<0 ? 0 : PalletWithMinimumScore )) && ListOfPoints.at(i) != 10000) PalletWithMinimumScore=i;
+		if(ListOfPoints.at(i)<ListOfPoints.at((PalletWithMinimumScore<0 ? 0 : PalletWithMinimumScore )) && ListOfPoints.at(i) !=10000) PalletWithMinimumScore=i;
+		//std::cout<< "minimum score "<< ListOfPoints.at(i) << "   " << ListOfPoints.at((PalletWithMinimumScore<0 ? 0 : PalletWithMinimumScore )) <<std::endl;
 	}
 
 	if(PalletWithMinimumScore<0)	std::cout << "The brick doesn't go to any pallet:" << std::endl;
@@ -619,6 +638,7 @@ namespace Algorithm {
 	std::vector<int> Bricks_Ready_For_Output;
 	std::vector<int> Manipulator_Fixed_Position;
 	std::vector<int> Manipulator_Modes;
+	std::vector<int> Manipulator_Desired_Modes;
 	std::vector<int> Pallet_LowSpeedPulse_Height_List;
 	std::vector<int> OUTPUTCOOLDOWN = {0,0,0,0,0};
 	std::vector<Brick> Manipulator_TakenBrick;
@@ -665,7 +685,7 @@ namespace Algorithm {
 	}
 	void Algorithm::Set::ManipulatorModes(std::vector<int> mModes)
 	{
-		Algorithm::Manipulator_Modes=mModes;
+		Algorithm::Manipulator_Desired_Modes=mModes;
 	}
 	void Algorithm::Set::ManipulatorFixedPosition(std::vector<int> mManipulator_Fixed_Position){ Algorithm::Manipulator_Fixed_Position = mManipulator_Fixed_Position;}
 
@@ -794,7 +814,7 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 				}
 
 				//CONDITION 2.5: Gap out of range.
-				if(nextBrick.Position+E > _Manipulator_Fixed_Position.at(i))
+				if(nextBrick.Position+E > _Manipulator_Fixed_Position.at(destinationManipulator))
 				{
 					usableGap=false;
 					std::cout << "Brick index " << j << " It's problem of condition 2.5" << std::endl;
@@ -1004,17 +1024,17 @@ void FindASpotForOutputBricks(std::deque<Brick>* Bricks_On_The_Line,
 					}
 
 					//CONDITION 2: It has to be big enough, the size of the Gap > E
-					else if(mBrick.Position - nextBrick.Position < E+E/2)
+					else if(mBrick.Position - nextBrick.Position < E)
 					{
 						usableGap=false;
-						std::cout << "Brick index " << j << " It's problem of condition 2: not big enough " << mBrick.Position - nextBrick.Position << " < " << E+E/2 << std::endl;
+						std::cout << "Brick index " << j << " It's problem of condition 2: not big enough " << mBrick.Position - nextBrick.Position << " < " << E << std::endl;
 					}
 
 					//CONDITION 2.5: Gap out of range.
-					else if(nextBrick.Position+E+E/2 > _Manipulator_Fixed_Position.at(destinationManipulator))
+					else if(nextBrick.Position+E > _Manipulator_Fixed_Position.at(destinationManipulator))
 					{
 						usableGap=false;
-						std::cout << "Brick index " << j << " It's problem of condition 2.5: Gap out of range" << nextBrick.Position+E+E/2 << " > "<< _Manipulator_Fixed_Position.at(destinationManipulator)  << std::endl;
+						std::cout << "Brick index " << j << " It's problem of condition 2.5: Gap out of range" << nextBrick.Position+E << " > "<< _Manipulator_Fixed_Position.at(destinationManipulator)  << std::endl;
 					}
 
 					//-----------------------------------------------------------------------//
@@ -1102,22 +1122,92 @@ void RFIDSubroutine()
 		}
 	}
 }
-void CheckManualModes(OrderManager* _Manipulator_Order_List,
+void CheckModeChanged(OrderManager* _Manipulator_Order_List,
 			 std::vector<int>* _Bricks_Ready_For_Output,
 			 std::vector<Brick>* _Manipulator_TakenBrick,
-			 std::deque<int>* Available_DNI_List){
+			 std::deque<int>* _Available_DNI_List,
+			 std::vector<int> OUTPUTCOOLDOWN,
+			 std::vector<int> _Manipulator_Desired_Modes,
+			 std::vector<int>* _Manipulator_Modes,
+			 std::deque<Brick> _Bricks_On_The_Line,
+			 std::vector<int> _Manipulator_Fixed_Position
+			 )
+{
 	for(unsigned int i=0; i<_Manipulator_Order_List->NumberOfManipulators(); i++){
+
+		//Manual mode
 
 		if(getArm(i+1)->ManipulatorMode==0)
 		{
 			_Manipulator_Order_List->atManipulator(i)->ClearOrders();
 			_Bricks_Ready_For_Output->at(i*2)=0;
 			_Bricks_Ready_For_Output->at(i*2+1)=0;
-			if(_Manipulator_TakenBrick->at(i).DNI!=0)Available_DNI_List->push_back(_Manipulator_TakenBrick->at(i).DNI);
+			if(_Manipulator_TakenBrick->at(i).DNI!=0)_Available_DNI_List->push_back(_Manipulator_TakenBrick->at(i).DNI);
 			_Manipulator_TakenBrick->at(i)=Brick(0,0,0,0);
 		}
+
+		//From input to output
+		if(_Manipulator_Modes->at(i) == MODE_INPUT && (_Manipulator_Desired_Modes.at(i)==MODE_OUTPUT || _Manipulator_Desired_Modes.at(i)==MODE_DISABLED))
+		{
+			//For the change to succede there must be:
+			//	-No order for this manipulator
+			//  -No brick on the line prior this manipulator assigned to it
+			bool change_allowed = true;
+
+			if(_Manipulator_Order_List->atManipulator(i)->NumberOfOrders() > 0) change_allowed =false;
+
+
+			for(unsigned int j =_Bricks_On_The_Line.size()-1; j>=0; j--){
+				if(_Bricks_On_The_Line.at(j).Position < (_Manipulator_Fixed_Position.at(i)+500)
+				&& (_Bricks_On_The_Line.at(j).AssignedPallet == (i*2) ||
+					_Bricks_On_The_Line.at(j).AssignedPallet == (i*2)+1)
+					)
+				{
+					change_allowed = false;
+				} else if(_Bricks_On_The_Line.at(j).Position > (_Manipulator_Fixed_Position.at(i)+500)) break;
+			}
+
+
+			if(change_allowed) _Manipulator_Modes->at(i) = _Manipulator_Desired_Modes.at(i);
+		}
+
+
+		//From output to input or disabled
+		if(_Manipulator_Modes->at(i) == MODE_OUTPUT && (_Manipulator_Desired_Modes.at(i)==MODE_INPUT || _Manipulator_Desired_Modes.at(i)==MODE_DISABLED))
+		{
+			//Easy, will only change if it's making the cooldown
+			if(OUTPUTCOOLDOWN.at(i)>500 && OUTPUTCOOLDOWN.at(i)<2000)	_Manipulator_Modes->at(i) = _Manipulator_Desired_Modes.at(i);
+		}
+
+		//From disabled to others
+		if(_Manipulator_Modes->at(i) == MODE_DISABLED && (_Manipulator_Desired_Modes.at(i)==MODE_INPUT || _Manipulator_Desired_Modes.at(i)==MODE_OUTPUT || _Manipulator_Desired_Modes.at(i)==MODE_INOUT ))
+			_Manipulator_Modes->at(i) = _Manipulator_Desired_Modes.at(i);
+
+		if(_Manipulator_Modes->at(i) == MODE_INOUT && (_Manipulator_Desired_Modes.at(i)==MODE_DISABLED))
+					_Manipulator_Modes->at(i) = _Manipulator_Desired_Modes.at(i);
+		//Manipulator_Desired_Modes_Previous.at(i) = _Manipulator_Desired_Modes.at(i);
+
 	}
 
+}
+
+void CheckForFullPallets()
+{
+	for(unsigned int i=0; i<5; i++)
+	{
+
+		for(unsigned int j=0; j<2;j++)
+
+		if(StorageGetNumberOfBricks(i*2+j+1) >= 10)
+		{
+			if   (j==0) getArm(i+1)->StorageBinFullA = 0;	 // right
+			else 		getArm(i+1)->StorageBinFullB = 0;	 //left
+		} else
+		{
+			if   (j==0) getArm(i+1)->StorageBinFullA = 1;	 // right
+			else 		getArm(i+1)->StorageBinFullB = 1;	 //left
+		}
+	}
 }
 
 void CheckLineSpeed()
@@ -1130,6 +1220,7 @@ void CheckLineSpeed()
 
 }
 
+
 //-----------------------------------------------------------------------//
 void * AlgorithmV2(void *Arg)
 {
@@ -1139,22 +1230,23 @@ void * AlgorithmV2(void *Arg)
 	CurrentPackagingColor = config.GetPackagingColor();
 	CurrentPackagingGrade = config.GetPackagingGrade();
 	Manipulator_Fixed_Position = config.GetArmPositions();
-	Manipulator_Modes = config.GetManipulatorModes();
-	for(unsigned int i = 0;i< Manipulator_Modes.size();i++) if(Manipulator_Modes.at(i)==2) Manipulator_Modes.at(i) =0;
+	Manipulator_Desired_Modes = config.GetManipulatorModes();
+	for(unsigned int i = 0;i< Manipulator_Desired_Modes.size();i++) if(Manipulator_Desired_Modes.at(i)==MODE_OUTPUT
+																		|| Manipulator_Desired_Modes.at(i)==MODE_INOUT) Manipulator_Desired_Modes.at(i) =MODE_DISABLED;
 
 	SetNumberOfManipulators(&Manipulator_Order_List,
 			&Pallet_LowSpeedPulse_Height_List,
 			&Bricks_Ready_For_Output,
 			&Manipulator_TakenBrick,
 			&Available_DNI_List,
+			&Manipulator_Modes,
 			Manipulator_Fixed_Position.size());
 
 	if(Manipulator_Fixed_Position.size()>0){
-		//Bricks_On_The_Line.push_back(Brick(0,Manipulator_Fixed_Position.back()+2*E,0,0));
+		Bricks_On_The_Line.push_back(Brick(0,Manipulator_Fixed_Position.back()+2*E,0,0));
 	} else {
-		//Bricks_On_The_Line.push_back(Brick(0,99999,0,0));
+		Bricks_On_The_Line.push_back(Brick(0,99999,0,0));
 	}
-
 
 	Synchro::DecreaseSynchronizationPointValue(0);
 	while(1)
@@ -1164,7 +1256,16 @@ void * AlgorithmV2(void *Arg)
 
 		//std::cout<< "inside the algorithm loop"<<std::endl;
 		//UPDATE ENCODER VALUES
-		CheckManualModes(&Manipulator_Order_List, &Bricks_Ready_For_Output, &Manipulator_TakenBrick, &Available_DNI_List);
+		CheckForFullPallets();
+		CheckModeChanged(&Manipulator_Order_List,
+						 &Bricks_Ready_For_Output,
+						 &Manipulator_TakenBrick,
+						 &Available_DNI_List,
+						 OUTPUTCOOLDOWN,
+						 Manipulator_Desired_Modes,
+						 &Manipulator_Modes,
+						 Bricks_On_The_Line,
+						 Manipulator_Fixed_Position);
 
 		int EncoderAdvance = Calculate_Advance(&PreviousValueOfTheLineEncoder);
 		update_order_list(&Manipulator_Order_List, EncoderAdvance);
@@ -1185,7 +1286,21 @@ void * AlgorithmV2(void *Arg)
 		//Check for full pallets
 
 
-
+		static bool Enable_WhetherOrNotPutTheTileTo_16_Previous;
+		if(Enable_WhetherOrNotPutTheTileTo_16 ==false && Enable_WhetherOrNotPutTheTileTo_16_Previous ==true){
+			//Try_To_Empty_Line();
+			std::cout<< "trying to empty the line" << std::endl;
+			for(unsigned int brickIndex = 0; brickIndex<Bricks_On_The_Line.size();brickIndex++)
+			{
+				//std::cout<< "trying to empty the line" << std::endl;
+				if(Bricks_On_The_Line.at(brickIndex).Type != 0){
+					std::cout << "trying to find a place for a brick at " << Bricks_On_The_Line.at(brickIndex).Position << std::endl;
+					Choose_Best_Pallet(&Bricks_On_The_Line.at(brickIndex), Manipulator_Order_List, Manipulator_Fixed_Position, Manipulator_Desired_Modes, Manipulator_Modes, RawCurrentPackagingBrick, forced_pallet); //BrickToWorkWith is a pointer, take care
+					Manipulator_Order_List.AddOrder(Bricks_On_The_Line.at(brickIndex), Manipulator_Fixed_Position);
+				}
+			}
+		}
+		Enable_WhetherOrNotPutTheTileTo_16_Previous = Enable_WhetherOrNotPutTheTileTo_16;
 		//CHECK FOR INPUTas
 
 		CheckPhotoSensor1(&Bricks_Before_The_Line); //Check for brick on photosensor 1 to store the grade
@@ -1200,19 +1315,20 @@ void * AlgorithmV2(void *Arg)
 			{
 
 				//if((RoboticArm::WhetherOrNotPutTheTileTo_16 && Enable_WhetherOrNotPutTheTileTo_16) || !force_input) //If the path is not blocked, go freely
-				if(RoboticArm::WhetherOrNotPutTheTileTo_16 && false)
+				//if(RoboticArm::WhetherOrNotPutTheTileTo_16)
+				if(Enable_WhetherOrNotPutTheTileTo_16)
 				{
-					BrickToWorkWith->AssignedPallet=-3;//Because why not? -1 could mean go freely
+					BrickToWorkWith->AssignedPallet=0;//Because why not?
 				}
 				else
 				{
-					Choose_Best_Pallet(BrickToWorkWith, Manipulator_Order_List, Manipulator_Fixed_Position, Manipulator_Modes, RawCurrentPackagingBrick, forced_pallet); //BrickToWorkWith is a pointer, take care
+					Choose_Best_Pallet(BrickToWorkWith, Manipulator_Order_List, Manipulator_Fixed_Position, Manipulator_Desired_Modes, Manipulator_Modes, RawCurrentPackagingBrick, forced_pallet); //BrickToWorkWith is a pointer, take care
 					Manipulator_Order_List.AddOrder(*BrickToWorkWith, Manipulator_Fixed_Position);
 				}
 			}
 			else
 			{
-				Choose_Best_Pallet(BrickToWorkWith, Manipulator_Order_List, Manipulator_Fixed_Position, Manipulator_Modes, RawCurrentPackagingBrick, forced_pallet); //BrickToWorkWith is a pointer, take care
+				Choose_Best_Pallet(BrickToWorkWith, Manipulator_Order_List, Manipulator_Fixed_Position, Manipulator_Desired_Modes, Manipulator_Modes, RawCurrentPackagingBrick, forced_pallet); //BrickToWorkWith is a pointer, take care
 				Manipulator_Order_List.AddOrder(*BrickToWorkWith, Manipulator_Fixed_Position);
 			}
 		}
@@ -1221,7 +1337,8 @@ void * AlgorithmV2(void *Arg)
 		//The output is:
 		//Check that the output operation is allowed
 		//if((RoboticArm::WhetherOrNotPutTheTileTo_16 && Enable_WhetherOrNotPutTheTileTo_16)  || force_output)
-		if(RoboticArm::WhetherOrNotPutTheTileTo_16 || true)
+		//if(RoboticArm::WhetherOrNotPutTheTileTo_16 || true)
+		if(Enable_WhetherOrNotPutTheTileTo_16)
 		{
 			//Draft()
 			//Es tan simple como si hay una baldosa en el top de un palet del mismo tipo que lo que se esta empaquetando, se ponga en el primer hueco
