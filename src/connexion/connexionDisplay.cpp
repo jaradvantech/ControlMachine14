@@ -20,6 +20,7 @@
 #include "rapidjson/stringbuffer.h"
 #include "TCPServerLibrary.h"
 #include "JSON_FindAndAdd.h"
+#include "DB_AbstractionLayer/ReadingLayer.h"
 
 /*
  * PLC Get Status Information
@@ -185,14 +186,13 @@ void Command_RFMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
  */
 void Command_RAMV(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
-	int selectedPallet=1, valueToAdd=0, position=0, color=0, grade=0;
+	int selectedPallet=1, position=0, color=0, grade=0;
+
 	FindAndAddTo(DOC_in, "selectedPallet", &selectedPallet);
 	FindAndAddTo(DOC_in, "color", &color);
 	FindAndAddTo(DOC_in, "grade", &grade);
-
 	FindAndAddTo(DOC_in, "position", &position);
 
-	//StorageAddBrick(selectedPallet, grade, color);
 	StorageInsertBrick(selectedPallet, position, grade, color);
 
 	DOC_in.IsNull();
@@ -752,22 +752,71 @@ void Command_SCFG(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson
 void Command_QDRQ(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
 {
 	DOC_in.IsNull();
-	int fromYear, fromMonth, fromDay, toYear, toMonth, toDay;
+	std::string from, to, sortBy;
 
-	FindAndAddTo(DOC_in, "fromYear", &fromYear);
-	FindAndAddTo(DOC_in, "fromMonth", &fromMonth);
-	FindAndAddTo(DOC_in, "fromDay", &fromDay);
-	FindAndAddTo(DOC_in, "toYear", &toYear);
-	FindAndAddTo(DOC_in, "toMonth", &toMonth);
-	FindAndAddTo(DOC_in, "toDay", &toDay);
+	FindAndAddTo(DOC_in, "from", &from);
+	FindAndAddTo(DOC_in, "to", &to);
+	FindAndAddTo(DOC_in, "sortBy", &sortBy);
 
-
-
-
+	if(sortBy=="DATE")
+	{
+		requestLogsByDate(from, to);
+	}
+	else if (sortBy=="GRADE")
+	{
+		requestLogsByGrade(from, to);
+	}
+	else if (sortBy=="COLOR")
+	{
+		requestLogsByColor(from, to);
+	}
 
 	AnswerWriter->StartObject();
 	AnswerWriter->Key("command_ID");
 	AnswerWriter->String("QDRQ");
+	AnswerWriter->Key("reply");
+	AnswerWriter->String("OK");
+
+	AnswerWriter->EndObject();
+}
+
+/*
+ * Query Database ReSult
+ */
+void Command_QDRE(const rapidjson::Document& DOC_in, rapidjson::Writer<rapidjson::StringBuffer>* AnswerWriter)
+{
+	DOC_in.IsNull();
+
+	AnswerWriter->StartObject();
+	AnswerWriter->Key("command_ID");
+	AnswerWriter->String("QDRE");
+
+	std::vector<std::string> characteristic;
+	std::vector<int> qty;
+	int total_rows, total_qty;
+
+	bool success = getQueryResult(&characteristic, &qty, total_rows, total_qty);
+
+	AnswerWriter->Key("dataIsReady");
+	AnswerWriter->Bool(success);
+	if(success)
+	{
+		AnswerWriter->Key("totalBricksForPeriod");
+		AnswerWriter->Int(total_qty);
+
+		AnswerWriter->Key("results");
+		AnswerWriter->StartArray();
+		for(int i=0; i<total_rows; i++)
+		{
+			AnswerWriter->StartObject();
+			AnswerWriter->Key("characteristicName");
+			AnswerWriter->String(characteristic.at(i).c_str());
+			AnswerWriter->Key("bricksWithThisCharacteristic");
+			AnswerWriter->Int(qty.at(i));
+			AnswerWriter->EndObject();
+		}
+		AnswerWriter->EndArray();
+	}
 
 	AnswerWriter->EndObject();
 }
@@ -856,6 +905,7 @@ std::string ProcessCommand(std::string Message)
         else if(boost::equals(command_ID, "SCFG")) Command_SCFG(DOC_in, &writer);
         else if(boost::equals(command_ID, "GCFG")) Command_GCFG(DOC_in, &writer);
         else if(boost::equals(command_ID, "QDRQ")) Command_QDRQ(DOC_in, &writer);
+        else if(boost::equals(command_ID, "QDRE")) Command_QDRE(DOC_in, &writer);
         else if(boost::equals(command_ID, "GMMI")) Command_GMMI(DOC_in, &writer);
         else if(boost::equals(command_ID, "PING")) Command_PING(DOC_in, &writer);
         else std::cout << "Unknown command: " << command_ID << std::endl;

@@ -199,7 +199,8 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 		   _Manipulator_TakenBrick->at(ArmIndex).DNI !=0)
 		{
 			_Pallet_LowSpeedPulse_Height_List->at(palletIndex)= getArm(ArmIndex+1)->ActualValueEncoder - RoboticArm::Z_AxisDeceletationDistance;
-			InsertOperation(_Manipulator_TakenBrick->at(ArmIndex).Type,
+			InsertOperation((_Manipulator_TakenBrick->at(ArmIndex).Type & 15)-1,
+							(_Manipulator_TakenBrick->at(ArmIndex).Type >> 4)-1,
 							palletIndex+1,
 							CATCH,
 							StorageGetStoredUID(palletIndex+1));
@@ -268,7 +269,8 @@ void update_PalletHeight(std::vector<int>* _Pallet_LowSpeedPulse_Height_List,
 				//We guess that the discharge operation happened in the spot assigned to the tile
 				if(_ListOfBricksOnLine->at(j).AssignedPallet == palletIndex+1)
 				{
-					InsertOperation(_Manipulator_TakenBrick->at(ArmIndex).Type,
+					InsertOperation((_Manipulator_TakenBrick->at(ArmIndex).Type & 15)-1,
+									(_Manipulator_TakenBrick->at(ArmIndex).Type >> 4)-1,
 									palletIndex+1,
 									DROP,
 									StorageGetStoredUID(palletIndex+1));

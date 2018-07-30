@@ -79,7 +79,7 @@ void init(int numberOfArms){
 	}
 	//Wait until the algorithm has entered in its loop
 
-	getMySQL_Manager()->InitMySQL("192.168.0.151","Machine14");
+	getMySQL_Manager()->InitMySQL("192.168.0.160","Machine14");
 	//InsertOperation(17, 3, 2, "FAKEPALLET");
 	//TestMySQL();
 }

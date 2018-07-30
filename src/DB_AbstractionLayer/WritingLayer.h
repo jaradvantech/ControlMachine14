@@ -10,7 +10,7 @@
 
 #include <string>
 
-void InsertOperation(int Type_Of_Brick, int Pallet_Position, int Operation_Type, std::string Pallet_UID);
+void InsertOperation(int Color_Of_Brick, int Grade_Of_Brick, int Pallet_Position, int Operation_Type, std::string Pallet_UID);
 
 
 
