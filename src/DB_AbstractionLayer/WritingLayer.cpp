@@ -10,7 +10,7 @@
 
 void InsertOperation(int Color_Of_Brick, int Grade_Of_Brick, int Pallet_Position, int Operation_Type, std::string Pallet_UID)
 {
-	std::string Query="INSERT INTO operations_log (Timestamp,Color_Of_Brick,Grade_Of_Brick,Grade_Of_Brick,Pallet_Position,Operation_Type,Pallet_UID) VALUES (CURRENT_TIMESTAMP()";
+	std::string Query="INSERT INTO operations_log (Timestamp,Color_Of_Brick,Grade_Of_Brick,Pallet_Position,Operation_Type,Pallet_UID) VALUES (CURRENT_TIMESTAMP()";
 	Query+=",'";
 	Query+=boost::lexical_cast<std::string>(Color_Of_Brick);
 	Query+="'";
