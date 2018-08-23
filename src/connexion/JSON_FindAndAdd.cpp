@@ -82,5 +82,3 @@ bool FindAndAddTo(const rapidjson::Document& DOC, std::string Key, bool* Variabl
 }
 
 
-
-
